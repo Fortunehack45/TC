@@ -1,0 +1,6 @@
+{
+  "name": "The Global Chronicle - World News, Finance, Tech & Culture",
+  "description": "A full-spectrum digital news publication covering world politics, global finance, technology, science, lifestyle, fashion, celebrity, and sports.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

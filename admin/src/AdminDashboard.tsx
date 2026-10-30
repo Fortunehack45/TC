@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import {
   FileText, Plus, Flag, Eye, Edit3, Trash2, Search, ArrowLeft, BarChart2,
   Clock, Check, X, ShieldAlert, Sparkles, Users, UserCheck, UserX, UserMinus, ShieldCheck,
-  Activity, RefreshCw, LogOut
+  Activity, RefreshCw, LogOut, KeyRound, Lock, EyeOff
 } from 'lucide-react';
 import { DBArticle, DBReport, Profile } from './database.types';
 import {
-  getArticles, deleteArticle, upsertArticle, getReports, updateReportStatus,
+  supabase, getArticles, deleteArticle, upsertArticle, getReports, updateReportStatus,
   deleteComment, getUsers, updateUserStatus, updateUserRole, deleteUser
 } from './supabase';
 import { WordEditor } from './WordEditor';
@@ -74,6 +74,52 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminEmail, onSi
   const [userSearchQuery, setUserSearchQuery] = useState('');
 
   const [previewArticle, setPreviewArticle] = useState<DBArticle | null>(null);
+
+  // Password Management State
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [newAdminPassword, setNewAdminPassword] = useState('');
+  const [confirmAdminPassword, setConfirmAdminPassword] = useState('');
+  const [showAdminPass, setShowAdminPass] = useState(false);
+  const [passUpdating, setPassUpdating] = useState(false);
+  const [passError, setPassError] = useState<string | null>(null);
+  const [passSuccess, setPassSuccess] = useState<string | null>(null);
+
+  const handleUpdateAdminPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPassError(null);
+    setPassSuccess(null);
+
+    if (!newAdminPassword || newAdminPassword.length < 6) {
+      setPassError('Password must contain at least 6 characters.');
+      return;
+    }
+    if (newAdminPassword !== confirmAdminPassword) {
+      setPassError('Passwords do not match. Please re-enter.');
+      return;
+    }
+
+    setPassUpdating(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newAdminPassword,
+      });
+      if (error) {
+        setPassError(error.message);
+      } else {
+        setPassSuccess('Password successfully updated! You can now use your new password.');
+        setTimeout(() => {
+          setIsPasswordModalOpen(false);
+          setNewAdminPassword('');
+          setConfirmAdminPassword('');
+          setPassSuccess(null);
+        }, 1500);
+      }
+    } catch (err: any) {
+      setPassError(err.message || 'Failed to update password.');
+    } finally {
+      setPassUpdating(false);
+    }
+  };
 
   // Pagination for 500+ dispatches
   const [currentPage, setCurrentPage] = useState(1);
@@ -371,6 +417,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminEmail, onSi
                   {adminEmail}
                 </span>
               )}
+              <button
+                onClick={() => {
+                  setPassError(null);
+                  setPassSuccess(null);
+                  setIsPasswordModalOpen(true);
+                }}
+                title="Change Administrative Password"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#202020] hover:bg-stone-700 text-stone-300 hover:text-white rounded-xs font-mono-meta text-xs transition-colors cursor-pointer border border-[#303030]"
+              >
+                <KeyRound className="w-3.5 h-3.5 text-amber-400" />
+                <span className="hidden sm:inline">CHANGE PASSWORD</span>
+              </button>
               <button
                 onClick={onSignOut}
                 title="Sign out of Admin Console"
@@ -1153,6 +1211,103 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminEmail, onSi
           publishedAt={previewArticle.published_at || previewArticle.created_at}
           onClose={() => setPreviewArticle(null)}
         />
+      )}
+
+      {/* Admin Change Password Modal */}
+      {isPasswordModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs">
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md bg-[#161616] border border-[#2D2D2D] p-6 sm:p-8 shadow-2xl relative text-stone-200"
+          >
+            <div className="flex items-center justify-between border-b border-[#262626] pb-4 mb-5">
+              <div className="flex items-center gap-2">
+                <KeyRound className="w-5 h-5 text-amber-400" />
+                <h3 className="font-editorial text-lg font-bold text-white tracking-wide">
+                  Change Admin Password
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsPasswordModalOpen(false)}
+                className="text-stone-400 hover:text-white p-1 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {passError && (
+              <div className="mb-4 p-3 bg-red-950/60 border border-red-800 text-red-200 text-xs rounded-xs flex items-center gap-2">
+                <ShieldAlert className="w-4 h-4 shrink-0 text-red-400" />
+                <span>{passError}</span>
+              </div>
+            )}
+
+            {passSuccess && (
+              <div className="mb-4 p-3 bg-emerald-950/60 border border-emerald-800 text-emerald-200 text-xs rounded-xs flex items-center gap-2">
+                <Check className="w-4 h-4 shrink-0 text-emerald-400" />
+                <span>{passSuccess}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleUpdateAdminPassword} className="space-y-4">
+              <div>
+                <label className="block text-[11px] font-mono-meta text-stone-400 uppercase mb-1">
+                  New Password (min 6 characters)
+                </label>
+                <div className="relative">
+                  <input
+                    type={showAdminPass ? 'text' : 'password'}
+                    required
+                    minLength={6}
+                    value={newAdminPassword}
+                    onChange={(e) => setNewAdminPassword(e.target.value)}
+                    placeholder="Enter new password"
+                    className="w-full bg-[#1F1F1F] border border-[#333333] rounded-xs pl-3 pr-10 py-2.5 text-white text-sm focus:border-[#E50914] focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowAdminPass(!showAdminPass)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-white cursor-pointer"
+                  >
+                    {showAdminPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-mono-meta text-stone-400 uppercase mb-1">
+                  Confirm New Password
+                </label>
+                <input
+                  type={showAdminPass ? 'text' : 'password'}
+                  required
+                  minLength={6}
+                  value={confirmAdminPassword}
+                  onChange={(e) => setConfirmAdminPassword(e.target.value)}
+                  placeholder="Re-type new password"
+                  className="w-full bg-[#1F1F1F] border border-[#333333] rounded-xs px-3 py-2.5 text-white text-sm focus:border-[#E50914] focus:outline-none"
+                />
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsPasswordModalOpen(false)}
+                  className="px-4 py-2 bg-[#222222] hover:bg-[#2A2A2A] text-stone-300 font-mono-meta text-xs uppercase cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={passUpdating}
+                  className="px-5 py-2 bg-[#E50914] hover:bg-[#C40711] text-white font-mono-meta text-xs uppercase font-bold tracking-wider cursor-pointer disabled:opacity-50"
+                >
+                  {passUpdating ? 'Saving...' : 'Update Password'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

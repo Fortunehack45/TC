@@ -370,7 +370,14 @@ function MainApp() {
         onCategoryChange={setSelectedCategory}
         isSearchInlineOpen={isSearchInlineOpen}
         onToggleInlineSearch={() => setIsSearchInlineOpen(!isSearchInlineOpen)}
-        onOpenAuth={() => setIsAuthModalOpen(true)}
+        onOpenAuth={() => {
+          setAuthModalMode('signin');
+          setIsAuthModalOpen(true);
+        }}
+        onOpenResetPassword={() => {
+          setAuthModalMode('reset');
+          setIsAuthModalOpen(true);
+        }}
       />
 
       {/* Main Application Content Area */}
@@ -388,7 +395,10 @@ function MainApp() {
               handleCloseArticle();
               handleSelectSection(sec);
             }}
-            onOpenAuth={() => setIsAuthModalOpen(true)}
+            onOpenAuth={() => {
+              setAuthModalMode('signin');
+              setIsAuthModalOpen(true);
+            }}
           />
         ) : (searchQuery.trim() !== '' || (isSearchInlineOpen && selectedCategory !== 'ALL')) ? (
           /* Inline Search Results Section */
@@ -407,7 +417,10 @@ function MainApp() {
             onToggleBookmark={handleToggleBookmark}
             bookmarkedIds={bookmarkedIds}
             onBackToHome={() => handleSelectSection('HOME')}
-            onOpenAuth={() => setIsAuthModalOpen(true)}
+            onOpenAuth={() => {
+              setAuthModalMode('signin');
+              setIsAuthModalOpen(true);
+            }}
             onNavigateToSection={(sec) => handleSelectSection(sec)}
           />
         ) : (

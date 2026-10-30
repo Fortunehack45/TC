@@ -12,6 +12,7 @@ import {
   LogOut,
   ShieldCheck,
   ChevronDown,
+  KeyRound,
 } from 'lucide-react';
 import { MarketTicker } from './MarketTicker';
 import { useAuth } from '../context/AuthContext';
@@ -30,6 +31,7 @@ interface HeaderNavProps {
   isSearchInlineOpen: boolean;
   onToggleInlineSearch: () => void;
   onOpenAuth: () => void;
+  onOpenResetPassword?: () => void;
 }
 
 export const HeaderNav: React.FC<HeaderNavProps> = ({
@@ -46,6 +48,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
   isSearchInlineOpen,
   onToggleInlineSearch,
   onOpenAuth,
+  onOpenResetPassword,
 }) => {
   const { user, profile, isAdmin, signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -281,6 +284,18 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                         <span>OPEN ADMIN HUB →</span>
                       </a>
                     )}
+
+                    {/* Change Password */}
+                    <button
+                      onClick={() => {
+                        setIsProfileDropdownOpen(false);
+                        onOpenResetPassword?.();
+                      }}
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-stone-300 hover:text-white hover:bg-[#222222] transition-colors text-left"
+                    >
+                      <KeyRound className="w-4 h-4 text-stone-400" />
+                      <span>Change Password</span>
+                    </button>
 
                     {/* Bookmarks */}
                     <button

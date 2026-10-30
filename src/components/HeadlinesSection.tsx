@@ -100,14 +100,14 @@ export const HeadlinesSection: React.FC<HeadlinesSectionProps> = ({
 
   return (
     <section className="w-full bg-[#121212] py-3 sm:py-5 px-2 sm:px-4 md:px-5 max-w-[98%] 2xl:max-w-[1920px] mx-auto border-b border-[#222222]">
-      {/* Red Rectangle Card: Simple, Elegant, Professional, No Picture, Max 5 */}
+      {/* Red Rectangle Card: Fixed Stable Dimensions, Zero Layout Shift, Line Clamped */}
       <div
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
-        className="w-full bg-gradient-to-r from-[#D30713] via-[#E50914] to-[#B3060F] text-white rounded-xs p-5 sm:p-7 md:p-8 shadow-xl relative overflow-hidden border border-red-500/30 select-none transition-all"
+        className="w-full min-h-[250px] sm:min-h-[270px] md:min-h-[285px] flex flex-col justify-between bg-gradient-to-r from-[#D30713] via-[#E50914] to-[#B3060F] text-white rounded-xs p-5 sm:p-7 md:p-8 shadow-xl relative overflow-hidden border border-red-500/30 select-none transition-all"
       >
-        {/* Card Header: Clean Title Pill, Category, Bookmark (No 5/5 counter) */}
-        <div className="flex items-center justify-between pb-3 sm:pb-3.5 border-b border-white/20 relative z-10 text-xs font-mono-meta">
+        {/* Card Header: Clean Title Pill, Category, Bookmark (Shrink-0 to protect card height) */}
+        <div className="flex items-center justify-between pb-3 sm:pb-3.5 border-b border-white/20 relative z-10 text-xs font-mono-meta shrink-0">
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             <span className="bg-white text-[#E50914] px-2.5 py-0.5 rounded-xs font-black uppercase tracking-wider text-[11px] shadow-xs flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-[#E50914]" />
@@ -133,26 +133,26 @@ export const HeadlinesSection: React.FC<HeadlinesSectionProps> = ({
           </button>
         </div>
 
-        {/* Center Headline Content: Big Text, High Readability */}
+        {/* Center Headline Content: Dedicated Stable Height Box, Strictly Line Clamped */}
         <div
           key={currentHeadline.id}
           onClick={() => onSelectArticle(currentHeadline)}
-          className="animate-slide-in-right py-4 sm:py-5 cursor-pointer group relative z-10"
+          className="animate-slide-in-right py-3 sm:py-4 cursor-pointer group relative z-10 flex-1 flex flex-col justify-center min-h-[135px] sm:min-h-[150px] md:min-h-[160px] overflow-hidden"
         >
-          {/* Headline Title */}
-          <h2 className="font-editorial text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white group-hover:text-stone-100 transition-colors leading-snug sm:leading-tight drop-shadow-sm max-w-5xl">
+          {/* Headline Title: Strictly line-clamp-2 so posts never add to card length */}
+          <h2 className="font-editorial text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white group-hover:text-stone-100 transition-colors leading-snug sm:leading-tight drop-shadow-sm max-w-5xl line-clamp-2">
             {currentHeadline.title}
           </h2>
 
-          {/* Excerpt */}
-          <p className="font-editorial text-xs sm:text-sm md:text-base text-white/90 line-clamp-2 leading-relaxed mt-2.5 max-w-4xl">
+          {/* Excerpt: Strictly line-clamp-1 on mobile, line-clamp-2 on larger */}
+          <p className="font-editorial text-xs sm:text-sm md:text-base text-white/90 line-clamp-1 sm:line-clamp-2 leading-relaxed mt-2 sm:mt-2.5 max-w-4xl">
             {currentHeadline.excerpt ||
               (currentHeadline as any).subtitle ||
               'Authoritative dispatch on priority developments reported directly from our international news desk.'}
           </p>
 
           {/* Dispatch Metadata */}
-          <div className="flex items-center gap-2 font-mono-meta text-[11px] text-white/80 mt-3.5">
+          <div className="flex items-center gap-2 font-mono-meta text-[11px] text-white/80 mt-2 sm:mt-3">
             <span className="font-semibold text-white">{currentHeadline.author || 'Chronicles Bureau'}</span>
             <span>•</span>
             <span>{currentHeadline.lifecycle?.timeAgoFormatted || currentHeadline.date}</span>
@@ -161,8 +161,8 @@ export const HeadlinesSection: React.FC<HeadlinesSectionProps> = ({
           </div>
         </div>
 
-        {/* Card Footer: Slide Dots and Navigation Controls */}
-        <div className="pt-3 sm:pt-3.5 border-t border-white/20 flex items-center justify-between relative z-10">
+        {/* Card Footer: Slide Dots and Navigation Controls (Shrink-0 to protect card height) */}
+        <div className="pt-3 sm:pt-3.5 border-t border-white/20 flex items-center justify-between relative z-10 shrink-0">
           {/* 5 Continuous Slide Indicator Dots */}
           <div className="flex items-center gap-1.5 sm:gap-2">
             {headlinesList.map((_, idx) => (

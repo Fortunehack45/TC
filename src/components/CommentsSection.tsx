@@ -274,7 +274,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
       {/* Comment Body */}
       <p
         className={`text-stone-300 text-sm leading-relaxed mb-3 ${
-          depth === 0 ? 'pl-10' : 'pl-9'
+          depth === 0 ? 'pl-0 sm:pl-10' : 'pl-0 sm:pl-9'
         }`}
       >
         {comment.content}
@@ -282,8 +282,8 @@ const CommentItem: React.FC<CommentItemProps> = ({
 
       {/* Action Bar (Like / Reply / Collapse-Expand Replies) */}
       <div
-        className={`flex flex-wrap items-center gap-4 pt-2 border-t border-[#222222] font-mono-meta text-xs ${
-          depth === 0 ? 'pl-10' : 'pl-9'
+        className={`flex flex-wrap items-center gap-3 sm:gap-4 pt-2 border-t border-[#222222] font-mono-meta text-xs ${
+          depth === 0 ? 'pl-0 sm:pl-10' : 'pl-0 sm:pl-9'
         }`}
       >
         {/* Like Button */}
@@ -338,8 +338,8 @@ const CommentItem: React.FC<CommentItemProps> = ({
 
       {/* Inline Reply Box (Opens right under the active comment or reply) */}
       {isReplying && (
-        <div className={`mt-3 pt-3 border-t border-[#262626] ${depth === 0 ? 'pl-10' : 'pl-9'}`}>
-          <div className="bg-[#1D1D1D] border border-[#333333] p-3.5 rounded-xs">
+        <div className={`mt-3 pt-3 border-t border-[#262626] ${depth === 0 ? 'pl-0 sm:pl-10' : 'pl-0 sm:pl-9'}`}>
+          <div className="bg-[#1D1D1D] border border-[#333333] p-3 sm:p-3.5 rounded-xs">
             <div className="flex items-center justify-between text-[11px] font-mono-meta text-stone-400 mb-2">
               <span>
                 Replying to <span className="text-[#E50914] font-bold">@{displayName}</span>:
@@ -404,7 +404,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
             </button>
           ) : (
             /* Expanded Replies Tree with Thread Guide Line */
-            <div className="relative pl-3 sm:pl-4 space-y-3 mt-3">
+            <div className={`relative ${depth >= 2 ? 'pl-2 sm:pl-3' : 'pl-2.5 sm:pl-4'} space-y-3 mt-3`}>
               {/* Interactive Left Threadline: Hoverable and clickable to collapse */}
               <div
                 onClick={() => onToggleRepliesCollapse(comment.id)}

@@ -317,42 +317,48 @@ export const WordEditor: React.FC<WordEditorProps> = ({
           </span>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           <button
             type="button"
             onClick={onCancel}
-            className="px-3 py-1.5 font-mono-meta text-xs uppercase text-stone-400 hover:text-white transition-colors cursor-pointer"
+            className="px-2 sm:px-3 py-1.5 font-mono-meta text-xs uppercase text-stone-400 hover:text-white transition-colors cursor-pointer"
+            title="Cancel editing"
           >
-            Cancel
+            <span className="hidden sm:inline">Cancel</span>
+            <span className="sm:hidden">Exit</span>
           </button>
 
           <button
             type="button"
             onClick={() => setIsPreviewOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#222] hover:bg-[#2C2C2C] text-stone-300 hover:text-white rounded-xs font-mono-meta text-xs uppercase font-semibold transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-[#222] hover:bg-[#2C2C2C] text-stone-300 hover:text-white rounded-xs font-mono-meta text-xs uppercase font-semibold transition-colors cursor-pointer"
+            title="Preview Article as rendered on blog"
           >
             <Eye className="w-3.5 h-3.5 text-[#E50914]" />
-            <span>PREVIEW</span>
+            <span className="hidden sm:inline">PREVIEW</span>
           </button>
 
           <button
             type="button"
             disabled={saving}
             onClick={() => handleSave('draft')}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#252525] hover:bg-[#303030] text-stone-200 rounded-xs font-mono-meta text-xs uppercase font-bold transition-colors disabled:opacity-50 cursor-pointer"
+            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-[#252525] hover:bg-[#303030] text-stone-200 rounded-xs font-mono-meta text-xs uppercase font-bold transition-colors disabled:opacity-50 cursor-pointer"
+            title="Save as Draft"
           >
             <Save className="w-3.5 h-3.5" />
-            <span>SAVE DRAFT</span>
+            <span className="hidden sm:inline">SAVE DRAFT</span>
+            <span className="sm:hidden">DRAFT</span>
           </button>
 
           <button
             type="button"
             disabled={saving}
             onClick={() => handleSave('published')}
-            className="flex items-center gap-1.5 px-4 py-1.5 bg-[#E50914] hover:bg-[#C40711] text-white rounded-xs font-mono-meta text-xs uppercase font-bold tracking-wider transition-colors disabled:opacity-50 shadow-md cursor-pointer"
+            className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 bg-[#E50914] hover:bg-[#C40711] text-white rounded-xs font-mono-meta text-xs uppercase font-bold tracking-wider transition-colors disabled:opacity-50 shadow-md cursor-pointer"
+            title="Publish Live Dispatch"
           >
             <Send className="w-3.5 h-3.5" />
-            <span>{saving ? 'PUBLISHING...' : 'PUBLISH'}</span>
+            <span>{saving ? '...' : 'PUBLISH'}</span>
           </button>
         </div>
       </div>

@@ -108,29 +108,29 @@ export const ArticlePreviewModal: React.FC<ArticlePreviewModalProps> = ({
       </div>
 
       {/* Top Secondary Action Bar (Exact copy of Main Blog ArticleModal) */}
-      <div className="bg-[#141414] border-b border-[#252525] py-2.5 px-3 sm:px-6 mb-6 sticky top-0 z-40 shadow-md">
-        <div className="w-full max-w-[94%] 2xl:max-w-[1480px] mx-auto flex items-center justify-between">
+      <div className="bg-[#141414] border-b border-[#252525] py-2 px-2.5 sm:px-6 mb-6 sticky top-0 z-40 shadow-md">
+        <div className="w-full max-w-[98%] 2xl:max-w-[1480px] mx-auto flex items-center justify-between gap-2">
           <button
             onClick={onClose}
-            className="flex items-center gap-2 text-xs font-mono-meta tracking-wider uppercase text-stone-400 hover:text-white transition-colors bg-[#1E1E1E] hover:bg-[#282828] px-3.5 py-1.5 rounded-xs border border-[#2E2E2E] cursor-pointer"
+            className="flex items-center gap-1.5 text-xs font-mono-meta tracking-wider uppercase text-stone-400 hover:text-white transition-colors bg-[#1E1E1E] hover:bg-[#282828] px-2.5 sm:px-3.5 py-1.5 rounded-xs border border-[#2E2E2E] cursor-pointer shrink-0"
           >
             <ArrowLeft className="w-4 h-4 text-[#E50914]" />
-            <span>BACK</span>
+            <span className="font-bold">BACK</span>
           </button>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             {/* Like button */}
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xs text-xs font-mono-meta font-bold bg-[#222222] text-stone-300">
-              <Heart className="w-4 h-4 text-[#E50914]" />
-              <span>142</span>
+            <div className="flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-xs text-xs font-mono-meta font-bold bg-[#222222] text-stone-300">
+              <Heart className="w-3.5 h-3.5 text-[#E50914] fill-white" />
+              <span className="text-[11px] sm:text-xs">142</span>
             </div>
 
             {/* Font size toggle */}
-            <div className="flex items-center gap-1 bg-[#222222] p-1 rounded-xs border border-[#333333]">
+            <div className="flex items-center gap-0.5 bg-[#222222] p-0.5 sm:p-1 rounded-xs border border-[#333333]">
               <Type className="w-3.5 h-3.5 text-stone-400 hidden sm:inline ml-1" />
               <button
                 onClick={() => setFontSize('normal')}
-                className={`px-2 py-1 text-xs font-mono-meta font-bold rounded-xs cursor-pointer ${
+                className={`w-6 h-6 text-[10px] sm:text-xs font-mono-meta font-bold rounded-xs flex items-center justify-center cursor-pointer ${
                   fontSize === 'normal' ? 'bg-[#E50914] text-white' : 'text-stone-400 hover:text-white'
                 }`}
               >
@@ -138,7 +138,7 @@ export const ArticlePreviewModal: React.FC<ArticlePreviewModalProps> = ({
               </button>
               <button
                 onClick={() => setFontSize('large')}
-                className={`px-2 py-1 text-xs font-mono-meta font-bold rounded-xs cursor-pointer ${
+                className={`w-6 h-6 text-[10px] sm:text-xs font-mono-meta font-bold rounded-xs flex items-center justify-center cursor-pointer ${
                   fontSize === 'large' ? 'bg-[#E50914] text-white' : 'text-stone-400 hover:text-white'
                 }`}
               >
@@ -146,7 +146,7 @@ export const ArticlePreviewModal: React.FC<ArticlePreviewModalProps> = ({
               </button>
               <button
                 onClick={() => setFontSize('xlarge')}
-                className={`px-2 py-1 text-xs font-mono-meta font-bold rounded-xs cursor-pointer ${
+                className={`w-6 h-6 text-[10px] sm:text-xs font-mono-meta font-bold rounded-xs flex items-center justify-center cursor-pointer ${
                   fontSize === 'xlarge' ? 'bg-[#E50914] text-white' : 'text-stone-400 hover:text-white'
                 }`}
               >
@@ -155,12 +155,12 @@ export const ArticlePreviewModal: React.FC<ArticlePreviewModalProps> = ({
             </div>
 
             {/* Bookmark button */}
-            <div className="p-2 bg-[#222222] text-stone-300 rounded-xs flex items-center justify-center">
+            <div className="p-1.5 sm:p-2 bg-[#222222] text-stone-300 rounded-xs flex items-center justify-center">
               <Bookmark className="w-4 h-4" />
             </div>
 
             {/* Share button */}
-            <div className="p-2 bg-[#222222] text-stone-300 rounded-xs flex items-center justify-center">
+            <div className="p-1.5 sm:p-2 bg-[#222222] text-stone-300 rounded-xs flex items-center justify-center">
               <Share2 className="w-4 h-4" />
             </div>
           </div>

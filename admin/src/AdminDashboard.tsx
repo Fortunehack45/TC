@@ -427,7 +427,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminEmail, onSi
                 className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#202020] hover:bg-stone-700 text-stone-300 hover:text-white rounded-xs font-mono-meta text-xs transition-colors cursor-pointer border border-[#303030]"
               >
                 <KeyRound className="w-3.5 h-3.5 text-amber-400" />
-                <span className="hidden sm:inline">CHANGE PASSWORD</span>
+                <span className="hidden md:inline">CHANGE PASSWORD</span>
               </button>
               <button
                 onClick={onSignOut}
@@ -435,7 +435,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminEmail, onSi
                 className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#202020] hover:bg-[#E50914] text-stone-300 hover:text-white rounded-xs font-mono-meta text-xs transition-colors cursor-pointer border border-[#303030]"
               >
                 <LogOut className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">SIGN OUT</span>
+                <span className="hidden md:inline">SIGN OUT</span>
               </button>
             </div>
           )}
@@ -960,7 +960,98 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminEmail, onSi
               </div>
             ) : (
               <div className="bg-[#161616] border border-[#262626] rounded-xs overflow-hidden shadow-2xl">
-                <div className="overflow-x-auto">
+                {/* Mobile Cards View (md:hidden) */}
+                <div className="md:hidden divide-y divide-[#222222]">
+                  {filteredUsers.map((userItem) => {
+                    const isActive = userItem.status === 'active';
+                    return (
+                      <div key={userItem.id} className="p-4 bg-[#181818] space-y-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-3 min-w-0">
+                            {userItem.avatar_url ? (
+                              <img
+                                src={userItem.avatar_url}
+                                alt=""
+                                className="w-10 h-10 rounded-full border border-[#383838] object-cover shrink-0"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).style.display = 'none';
+                                }}
+                              />
+                            ) : (
+                              <div className="w-10 h-10 rounded-full bg-[#2A2A2A] text-stone-300 font-bold flex items-center justify-center shrink-0">
+                                {(userItem.display_name || userItem.email || 'U')[0].toUpperCase()}
+                              </div>
+                            )}
+                            <div className="min-w-0">
+                              <span className="font-bold text-white text-sm block truncate">
+                                {userItem.display_name || 'Anonymous Reader'}
+                              </span>
+                              <span className="text-xs text-stone-400 block truncate">
+                                {userItem.email || 'No email attached'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Badges & Timestamps */}
+                        <div className="flex flex-wrap items-center gap-2 text-[10px] font-mono-meta">
+                          <span
+                            className={`px-2 py-0.5 rounded-xs uppercase font-bold border ${
+                              userItem.role === 'admin'
+                                ? 'bg-[#E50914]/20 text-[#E50914] border-[#E50914]/40'
+                                : 'bg-[#222] text-stone-300 border-[#333]'
+                            }`}
+                          >
+                            {userItem.role === 'admin' ? 'CHIEF ADMIN' : 'READER'}
+                          </span>
+                          <span
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-xs uppercase font-bold border ${
+                              isActive
+                                ? 'bg-emerald-950/80 text-emerald-300 border-emerald-700'
+                                : 'bg-stone-800 text-stone-400 border-stone-600'
+                            }`}
+                          >
+                            <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-400' : 'bg-stone-500'}`} />
+                            {isActive ? 'ACTIVE' : 'INACTIVE'}
+                          </span>
+                          <span className="text-stone-500 text-[11px]">
+                            Joined {userItem.created_at ? new Date(userItem.created_at).toLocaleDateString() : 'N/A'}
+                          </span>
+                        </div>
+
+                        {/* Mobile Actions */}
+                        <div className="flex items-center gap-2 pt-2 border-t border-[#262626]">
+                          <button
+                            onClick={() => handleToggleUserRole(userItem)}
+                            className="flex-1 py-2 px-2 bg-[#222] hover:bg-[#2A2A2A] text-stone-300 text-xs font-mono-meta font-bold rounded-xs border border-[#333] transition-colors text-center"
+                          >
+                            {userItem.role === 'admin' ? 'Demote to Reader' : 'Make Admin'}
+                          </button>
+                          <button
+                            onClick={() => handleToggleUserStatus(userItem)}
+                            className={`flex-1 py-2 px-2 text-xs font-mono-meta font-bold rounded-xs border transition-colors text-center ${
+                              isActive
+                                ? 'bg-amber-950/50 hover:bg-amber-900/50 text-amber-300 border-amber-800'
+                                : 'bg-emerald-950/50 hover:bg-emerald-900/50 text-emerald-300 border-emerald-800'
+                            }`}
+                          >
+                            {isActive ? 'Deactivate' : 'Activate'}
+                          </button>
+                          <button
+                            onClick={() => handleDeleteUser(userItem)}
+                            className="p-2 bg-[#222] hover:bg-red-950 text-stone-400 hover:text-red-400 rounded-xs border border-[#333] transition-colors"
+                            title="Delete User"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Desktop Table View (hidden md:block) */}
+                <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-left font-mono-meta text-xs">
                     <thead className="bg-[#1D1D1D] text-stone-400 uppercase text-[10px] tracking-wider border-b border-[#262626]">
                       <tr>

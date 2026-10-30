@@ -115,61 +115,57 @@ export async function deleteArticle(id: string): Promise<void> {
 // Comments API
 export async function getComments(articleId: string, currentUserId?: string): Promise<DBComment[]> {
   try {
-    let rawComments: any[] = [];
-    const { data, error } = await supabase
+    // 1. Fetch comments directly from tc_comments table (guaranteed never to fail on PostgREST schema joins)
+    const { data: commentsData, error: commentsError } = await supabase
       .from('tc_comments')
-      .select(`
-        *,
-        user_profile:tc_profiles (
-          id, display_name, avatar_url, role
-        )
-      `)
+      .select('*')
       .eq('article_id', articleId)
       .order('created_at', { ascending: true });
 
-    if (!error && data) {
-      rawComments = data;
-    } else {
-      // Fallback: fetch raw comments and attach profiles
-      const { data: fallbackComments } = await supabase
-        .from('tc_comments')
-        .select('*')
-        .eq('article_id', articleId)
-        .order('created_at', { ascending: true });
+    if (commentsError || !commentsData) {
+      console.warn('Error fetching comments:', commentsError);
+      return [];
+    }
 
-      if (fallbackComments && fallbackComments.length > 0) {
-        const uids = Array.from(new Set(fallbackComments.map((c: any) => c.user_id)));
+    // 2. Fetch profiles for all distinct comment authors
+    const uids = Array.from(new Set(commentsData.map((c: any) => c.user_id).filter(Boolean)));
+    const profMap = new Map<string, any>();
+    if (uids.length > 0) {
+      try {
         const { data: profiles } = await supabase
           .from('tc_profiles')
           .select('id, display_name, avatar_url, role')
           .in('id', uids);
-
-        const profMap = new Map((profiles || []).map((p: any) => [p.id, p]));
-        rawComments = fallbackComments.map((c: any) => ({
-          ...c,
-          user_profile: profMap.get(c.user_id) || {
-            id: c.user_id,
-            display_name: 'Subscriber',
-            avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${c.user_id}&backgroundColor=e50914`,
-            role: 'user',
-          },
-        }));
+        if (profiles) {
+          profiles.forEach((p: any) => profMap.set(p.id, p));
+        }
+      } catch (err) {
+        console.warn('Failed to load comment profiles:', err);
       }
     }
 
+    // 3. User likes
     let likedCommentIds: Set<string> = new Set();
     if (currentUserId) {
-      const { data: likes } = await supabase
-        .from('tc_comment_likes')
-        .select('comment_id')
-        .eq('user_id', currentUserId);
-      if (likes) {
-        likedCommentIds = new Set(likes.map((l) => l.comment_id));
-      }
+      try {
+        const { data: likes } = await supabase
+          .from('tc_comment_likes')
+          .select('comment_id')
+          .eq('user_id', currentUserId);
+        if (likes) {
+          likedCommentIds = new Set(likes.map((l: any) => l.comment_id));
+        }
+      } catch {}
     }
 
-    const allComments = (rawComments || []).map((c: any) => ({
+    const allComments = commentsData.map((c: any) => ({
       ...c,
+      user_profile: profMap.get(c.user_id) || {
+        id: c.user_id,
+        display_name: 'Subscriber',
+        avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${c.user_id}&backgroundColor=e50914`,
+        role: 'user',
+      },
       is_liked_by_me: likedCommentIds.has(c.id),
       replies: [] as DBComment[],
     })) as DBComment[];

@@ -349,6 +349,28 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
         </div>
       </div>
 
+      {/* Mobile Horizontal Swipe Category Bar */}
+      <div className="xl:hidden w-full bg-[#151515] border-t border-[#222222] px-2 py-1.5 overflow-x-auto scrollbar-none overscroll-x-contain shadow-inner">
+        <div className="flex items-center gap-1.5 w-max">
+          {navItems.map((item) => {
+            const isActive = activeSection === item.id && !searchQuery;
+            return (
+              <button
+                key={item.id}
+                onClick={() => handleNavClick(item.id)}
+                className={`px-3 py-1.5 rounded-xs text-[11px] font-mono-meta font-bold uppercase whitespace-nowrap transition-colors min-h-[36px] flex items-center cursor-pointer ${
+                  isActive
+                    ? 'bg-[#E50914] text-white shadow-xs'
+                    : 'text-stone-300 hover:text-white bg-[#1E1E1E] hover:bg-[#282828]'
+                }`}
+              >
+                {item.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* INLINE IN-PAGE SEARCH PANEL */}
       {isSearchInlineOpen && (
         <div className="w-full bg-[#181818] border-t border-[#282828] py-4 px-3 sm:px-5">

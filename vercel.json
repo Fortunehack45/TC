@@ -9,10 +9,24 @@
     },
     {
       "source": "/p/:slug",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(facebookexternalhit|twitterbot|whatsapp|telegrambot|slackbot|linkedinbot|discordbot|applebot|googlebot|meta-externalagent|crawler|preview).*"
+        }
+      ],
       "destination": "/api/article?slug=:slug"
     },
     {
       "source": "/article/:slug",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(facebookexternalhit|twitterbot|whatsapp|telegrambot|slackbot|linkedinbot|discordbot|applebot|googlebot|meta-externalagent|crawler|preview).*"
+        }
+      ],
       "destination": "/api/article?slug=:slug"
     },
     {
@@ -26,7 +40,7 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": ".*(facebookexternalhit|twitterbot|whatsapp|telegrambot|slackbot|linkedinbot|discordbot|applebot|googlebot).*"
+          "value": ".*(facebookexternalhit|twitterbot|whatsapp|telegrambot|slackbot|linkedinbot|discordbot|applebot|googlebot|meta-externalagent|crawler|preview).*"
         }
       ],
       "destination": "/api/article?article=$article"

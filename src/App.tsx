@@ -29,6 +29,12 @@ function MainApp() {
   // Read initial section from URL (?section= or ?category=) or sessionStorage
   const getInitialSection = (): string => {
     try {
+      const path = window.location.pathname.toLowerCase();
+      const catMatch = path.match(/^\/(?:category|section)\/([^/]+)/);
+      if (catMatch && catMatch[1]) {
+        return catMatch[1].toUpperCase();
+      }
+
       const params = new URLSearchParams(window.location.search);
       const s = params.get('section') || params.get('category');
       if (s) return s.toUpperCase();
@@ -159,6 +165,11 @@ function MainApp() {
       const match = path.match(/^\/(?:p|article)\/([^/]+)/);
       if (match && match[1]) {
         return decodeURIComponent(match[1]);
+      }
+
+      const lastArticle = sessionStorage.getItem('tc_last_article');
+      if (lastArticle && (path === '/' || path === '' || path.startsWith('/p/'))) {
+        return lastArticle;
       }
     } catch {}
     return null;
@@ -327,6 +338,7 @@ function MainApp() {
     setSelectedArticle(null);
     try {
       sessionStorage.setItem('tc_active_section', target);
+      sessionStorage.removeItem('tc_last_article');
     } catch {}
     syncUrlState(target, null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -334,12 +346,18 @@ function MainApp() {
 
   const handleSelectArticle = (art: any) => {
     setSelectedArticle(art);
+    try {
+      sessionStorage.setItem('tc_last_article', art.slug || art.id);
+    } catch {}
     syncUrlState(activeSection, art);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleCloseArticle = () => {
     setSelectedArticle(null);
+    try {
+      sessionStorage.removeItem('tc_last_article');
+    } catch {}
     syncUrlState(activeSection, null);
   };
 

@@ -164,20 +164,38 @@ function MainApp() {
     return null;
   };
 
+  // Safe article lookup by slug or UUID without crashing PostgREST
+  const fetchArticleByParam = async (param: string): Promise<Article | null> => {
+    try {
+      // 1. Check in memory first
+      const inMemory = articles.find((a) => a.id === param || a.slug === param);
+      if (inMemory) return inMemory;
+
+      // 2. Query Supabase safely (never pass non-UUID string to id.eq)
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(param);
+      let query = supabase.from('tc_articles').select('*');
+      if (isUuid) {
+        query = query.or(`slug.eq.${param},id.eq.${param}`);
+      } else {
+        query = query.eq('slug', param);
+      }
+      const { data, error } = await query.limit(1);
+      if (!error && data && data.length > 0) {
+        return mapDBArticleToArticle(data[0]);
+      }
+    } catch (err) {
+      console.warn('Error querying requested article:', err);
+    }
+    return null;
+  };
+
   // Check for ?article= or /p/:slug in URL on initial mount
   useEffect(() => {
     const articleParam = getRequestedArticleParam();
     if (articleParam) {
-      supabase
-        .from('tc_articles')
-        .select('*')
-        .or(`slug.eq.${articleParam},id.eq.${articleParam}`)
-        .limit(1)
-        .then(({ data, error }) => {
-          if (data && data.length > 0 && !error) {
-            setSelectedArticle(mapDBArticleToArticle(data[0]));
-          }
-        });
+      fetchArticleByParam(articleParam).then((art) => {
+        if (art) setSelectedArticle(art);
+      });
     }
   }, []);
 
@@ -191,21 +209,9 @@ function MainApp() {
 
       const articleParam = getRequestedArticleParam();
       if (articleParam) {
-        const found = articles.find((a) => a.id === articleParam || a.slug === articleParam);
-        if (found) {
-          setSelectedArticle(found);
-        } else {
-          supabase
-            .from('tc_articles')
-            .select('*')
-            .or(`slug.eq.${articleParam},id.eq.${articleParam}`)
-            .limit(1)
-            .then(({ data, error }) => {
-              if (data && data[0] && !error) {
-                setSelectedArticle(mapDBArticleToArticle(data[0]));
-              }
-            });
-        }
+        fetchArticleByParam(articleParam).then((art) => {
+          setSelectedArticle(art);
+        });
       } else {
         setSelectedArticle(null);
       }

@@ -115,6 +115,7 @@ export async function deleteArticle(id: string): Promise<void> {
 // Comments API
 export async function getComments(articleId: string, currentUserId?: string): Promise<DBComment[]> {
   try {
+    let rawComments: any[] = [];
     const { data, error } = await supabase
       .from('tc_comments')
       .select(`
@@ -126,7 +127,35 @@ export async function getComments(articleId: string, currentUserId?: string): Pr
       .eq('article_id', articleId)
       .order('created_at', { ascending: true });
 
-    if (error) throw error;
+    if (!error && data) {
+      rawComments = data;
+    } else {
+      // Fallback: fetch raw comments and attach profiles
+      const { data: fallbackComments } = await supabase
+        .from('tc_comments')
+        .select('*')
+        .eq('article_id', articleId)
+        .order('created_at', { ascending: true });
+
+      if (fallbackComments && fallbackComments.length > 0) {
+        const uids = Array.from(new Set(fallbackComments.map((c: any) => c.user_id)));
+        const { data: profiles } = await supabase
+          .from('tc_profiles')
+          .select('id, display_name, avatar_url, role')
+          .in('id', uids);
+
+        const profMap = new Map((profiles || []).map((p: any) => [p.id, p]));
+        rawComments = fallbackComments.map((c: any) => ({
+          ...c,
+          user_profile: profMap.get(c.user_id) || {
+            id: c.user_id,
+            display_name: 'Subscriber',
+            avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${c.user_id}&backgroundColor=e50914`,
+            role: 'user',
+          },
+        }));
+      }
+    }
 
     let likedCommentIds: Set<string> = new Set();
     if (currentUserId) {
@@ -139,7 +168,7 @@ export async function getComments(articleId: string, currentUserId?: string): Pr
       }
     }
 
-    const allComments = (data || []).map((c: any) => ({
+    const allComments = (rawComments || []).map((c: any) => ({
       ...c,
       is_liked_by_me: likedCommentIds.has(c.id),
       replies: [] as DBComment[],
@@ -172,24 +201,72 @@ export async function addComment(
   content: string,
   parentId?: string
 ): Promise<DBComment> {
-  const { data, error } = await supabase
-    .from('tc_comments')
-    .insert({
-      article_id: articleId,
-      user_id: userId,
-      content,
-      parent_id: parentId || null,
-    })
-    .select(`
-      *,
-      user_profile:tc_profiles (
-        id, display_name, avatar_url, role
-      )
-    `)
-    .single();
+  // Ensure profile exists for this user in tc_profiles
+  try {
+    const { data: prof } = await supabase.from('tc_profiles').select('id').eq('id', userId).maybeSingle();
+    if (!prof) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await upsertProfile({
+          id: user.id,
+          email: user.email,
+          display_name: user.user_metadata?.display_name || user.email?.split('@')[0] || 'Subscriber',
+        });
+      }
+    }
+  } catch {}
 
-  if (error) throw error;
-  return data as DBComment;
+  try {
+    const { data, error } = await supabase
+      .from('tc_comments')
+      .insert({
+        article_id: articleId,
+        user_id: userId,
+        content,
+        parent_id: parentId || null,
+      })
+      .select(`
+        *,
+        user_profile:tc_profiles (
+          id, display_name, avatar_url, role
+        )
+      `)
+      .single();
+
+    if (!error && data) return data as DBComment;
+    if (error) throw error;
+  } catch (err) {
+    // Resilient fallback: insert without relational join and manually attach user profile
+    const { data: inserted, error: insertErr } = await supabase
+      .from('tc_comments')
+      .insert({
+        article_id: articleId,
+        user_id: userId,
+        content,
+        parent_id: parentId || null,
+      })
+      .select('*')
+      .single();
+
+    if (insertErr) throw insertErr;
+
+    const { data: profile } = await supabase
+      .from('tc_profiles')
+      .select('id, display_name, avatar_url, role')
+      .eq('id', userId)
+      .maybeSingle();
+
+    return {
+      ...inserted,
+      user_profile: profile || {
+        id: userId,
+        display_name: 'Subscriber',
+        avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${userId}&backgroundColor=e50914`,
+        role: 'user',
+      },
+    } as DBComment;
+  }
+  throw new Error('Failed to post comment.');
 }
 
 export async function toggleCommentLike(commentId: string, userId: string, currentlyLiked: boolean): Promise<boolean> {

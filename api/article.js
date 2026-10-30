@@ -59,8 +59,12 @@ export default async function handler(req, res) {
 
   let article = null;
   try {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(slugOrId);
     const encodedTarget = encodeURIComponent(slugOrId);
-    const endpoint = `${SUPABASE_URL}/rest/v1/tc_articles?or=(slug.eq.${encodedTarget},id.eq.${encodedTarget})&select=*&limit=1`;
+    const filter = isUuid
+      ? `or=(slug.eq.${encodedTarget},id.eq.${encodedTarget})`
+      : `slug.eq.${encodedTarget}`;
+    const endpoint = `${SUPABASE_URL}/rest/v1/tc_articles?${filter}&select=*&limit=1`;
     const resp = await fetch(endpoint, {
       headers: {
         apikey: SUPABASE_ANON_KEY,

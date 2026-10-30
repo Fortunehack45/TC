@@ -16,7 +16,7 @@
       "destination": "/api/article?slug=:slug*"
     },
     {
-      "source": "/",
+      "source": "/(.*)",
       "has": [
         {
           "type": "query",
@@ -25,7 +25,7 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": "(?i).*(bot|crawler|spider|facebook|twitter|whatsapp|telegram|slack|discord|linkedin|applebot|preview|embed|meta|fetch|curl|wget).*"
+          "value": ".*([wW]hats[aA]pp|[fF]acebook|[tT]witter|[tT]elegram|[lL]inked[iI]n|[sS]lack|[dD]iscord|[bB]ot|[cC]rawler|[sS]pider|[pP]review|[aA]pplebot).*"
         }
       ],
       "destination": "/api/article"

@@ -237,7 +237,9 @@ section::selection {
 
 
 /* Signature Chronicles Editorial Drop Cap (Big Crimson Red First Letter) */
-.drop-cap-red {
+.drop-cap-red,
+.article-prose .drop-cap-red,
+.prose .drop-cap-red {
   float: left !important;
   font-family: 'Playfair Display', Georgia, serif !important;
   font-size: 3.85rem !important;

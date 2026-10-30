@@ -251,6 +251,13 @@ export const WordEditor: React.FC<WordEditorProps> = ({
 
     try {
       const contentHtml = editor.getHTML();
+      const resolvedCover = coverImageUrl.trim() || getPostPreviewImage({
+        video_url: videoUrl.trim() || null,
+        content_html: contentHtml,
+        slug: slug.trim() || `dispatch-${Date.now()}`,
+        title: title.trim(),
+      });
+
       const savedArticle = await upsertArticle({
         id: initialArticle?.id,
         title: title.trim(),
@@ -258,7 +265,7 @@ export const WordEditor: React.FC<WordEditorProps> = ({
         slug: slug.trim() || `dispatch-${Date.now()}`,
         category_id: category,
         tags,
-        cover_image_url: coverImageUrl.trim() || null,
+        cover_image_url: resolvedCover,
         video_url: videoUrl.trim() || null,
         content_html: contentHtml,
         status: targetStatus,

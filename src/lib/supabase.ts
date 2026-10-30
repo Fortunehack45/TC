@@ -214,59 +214,51 @@ export async function addComment(
         });
       }
     }
-  } catch {}
-
-  try {
-    const { data, error } = await supabase
-      .from('tc_comments')
-      .insert({
-        article_id: articleId,
-        user_id: userId,
-        content,
-        parent_id: parentId || null,
-      })
-      .select(`
-        *,
-        user_profile:tc_profiles (
-          id, display_name, avatar_url, role
-        )
-      `)
-      .single();
-
-    if (!error && data) return data as DBComment;
-    if (error) throw error;
   } catch (err) {
-    // Resilient fallback: insert without relational join and manually attach user profile
-    const { data: inserted, error: insertErr } = await supabase
-      .from('tc_comments')
-      .insert({
-        article_id: articleId,
-        user_id: userId,
-        content,
-        parent_id: parentId || null,
-      })
-      .select('*')
-      .single();
+    console.warn('Profile check error before comment insert:', err);
+  }
 
-    if (insertErr) throw insertErr;
+  // 1. Insert comment row directly into tc_comments
+  const { data: inserted, error: insertError } = await supabase
+    .from('tc_comments')
+    .insert({
+      article_id: articleId,
+      user_id: userId,
+      content,
+      parent_id: parentId || null,
+    })
+    .select('*')
+    .single();
 
-    const { data: profile } = await supabase
+  if (insertError || !inserted) {
+    console.error('Comment insertion error:', insertError);
+    throw new Error(insertError?.message || 'Failed to post comment to database.');
+  }
+
+  // 2. Fetch the author profile cleanly (completely avoids PostgREST join/cache issues)
+  let authorProfile: any = null;
+  try {
+    const { data: prof } = await supabase
       .from('tc_profiles')
       .select('id, display_name, avatar_url, role')
       .eq('id', userId)
       .maybeSingle();
-
-    return {
-      ...inserted,
-      user_profile: profile || {
-        id: userId,
-        display_name: 'Subscriber',
-        avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${userId}&backgroundColor=e50914`,
-        role: 'user',
-      },
-    } as DBComment;
+    authorProfile = prof;
+  } catch (err) {
+    console.warn('Could not fetch user profile for inserted comment:', err);
   }
-  throw new Error('Failed to post comment.');
+
+  return {
+    ...inserted,
+    user_profile: authorProfile || {
+      id: userId,
+      display_name: 'Subscriber',
+      avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${userId}&backgroundColor=e50914`,
+      role: 'user',
+    },
+    replies: [],
+    is_liked_by_me: false,
+  } as DBComment;
 }
 
 export async function toggleCommentLike(commentId: string, userId: string, currentlyLiked: boolean): Promise<boolean> {

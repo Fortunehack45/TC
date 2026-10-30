@@ -104,8 +104,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       // 2. VERIFY OTP CODE & SET PASSWORD MODE
       if (mode === 'verify_code') {
         const code = otpToken.trim();
-        if (!code || code.length < 6) {
-          setErrorMsg('Please enter the 6-digit verification code from your email.');
+        if (!code) {
+          setErrorMsg('Please enter the verification code or paste the reset link from your email.');
           setLoading(false);
           return;
         }
@@ -340,24 +340,28 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </div>
           )}
 
-          {/* 6-DIGIT CODE INPUT (Verify Code Mode) */}
+          {/* VERIFICATION CODE / EMAIL LINK INPUT (Verify Code Mode) */}
           {mode === 'verify_code' && (
             <div>
-              <label className="block text-xs font-mono-meta text-stone-300 uppercase tracking-wider mb-1.5">
-                6-Digit Email Verification Code
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-mono-meta text-stone-300 uppercase tracking-wider">
+                  Verification Code or Email Link
+                </label>
+              </div>
               <div className="relative">
                 <Key className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 pointer-events-none" />
                 <input
                   type="text"
                   required
-                  maxLength={10}
-                  placeholder="123456"
+                  placeholder="Enter 6-digit code or paste email link"
                   value={otpToken}
                   onChange={(e) => setOtpToken(e.target.value)}
-                  className="w-full bg-[#1F1F1F] border border-[#333333] text-stone-100 pl-10 pr-3 py-2.5 text-sm focus:border-[#E50914] focus:outline-none font-mono-meta tracking-widest text-center"
+                  className="w-full bg-[#1F1F1F] border border-[#333333] text-stone-100 pl-10 pr-3 py-2.5 text-sm focus:border-[#E50914] focus:outline-none font-mono-meta text-center"
                 />
               </div>
+              <p className="font-mono-meta text-[11px] text-stone-400 mt-2 leading-relaxed">
+                💡 Enter the 6-digit code from your email, or if the email link opened <span className="text-amber-400">localhost:3000</span> on your device, copy and paste that link or token here to reset instantly.
+              </p>
             </div>
           )}
 

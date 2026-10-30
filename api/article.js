@@ -20,6 +20,15 @@ function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
+function simpleHash(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
+
 function resolveArticleImage(article) {
   // 1. Explicit cover image
   if (article.cover_image_url && article.cover_image_url.trim()) {
@@ -35,7 +44,7 @@ function resolveArticleImage(article) {
     const vUrl = article.video_url.trim();
     const ytMatch = vUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
     if (ytMatch && ytMatch[1]) {
-      return `https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg`;
+      return `https://img.youtube.com/vi/${ytMatch[1]}/maxresdefault.jpg`;
     }
     const vimeoMatch = vUrl.match(/vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/(?:[^\/]*)\/videos\/|album\/(?:\d+)\/video\/|video\/|)(\d+)/);
     if (vimeoMatch && vimeoMatch[1]) {
@@ -43,7 +52,26 @@ function resolveArticleImage(article) {
     }
   }
 
-  // 3. Fallback to default
+  // 3. Extract first image embedded in content_html
+  if (article.content_html) {
+    const imgMatch = article.content_html.match(/<img[^>]+src=["']([^"']+)["']/i);
+    if (imgMatch && imgMatch[1]) {
+      let embedded = imgMatch[1].trim();
+      if (!embedded.startsWith('http://') && !embedded.startsWith('https://')) {
+        embedded = `${SITE_URL}${embedded.startsWith('/') ? '' : '/'}${embedded}`;
+      }
+      return embedded;
+    }
+  }
+
+  // 4. Deterministic unique photographic preview per post seed
+  const seed = article.id || article.slug || article.title;
+  if (seed) {
+    const imgId = 10 + (simpleHash(seed) % 520);
+    return `https://picsum.photos/id/${imgId}/1200/800.jpg`;
+  }
+
+  // 5. Fallback to default
   return DEFAULT_OG_IMAGE;
 }
 

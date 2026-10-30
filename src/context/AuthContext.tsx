@@ -29,6 +29,46 @@ const getAdminEmails = (): string[] => {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function parseAuthTokenOrUrl(raw: string): {
+  accessToken?: string;
+  refreshToken?: string;
+  tokenHash?: string;
+  cleanCode: string;
+} {
+  const input = raw.trim();
+  // Check if user pasted a full URL or fragment with access_token
+  if (input.includes('access_token=') || input.includes('#access_token=')) {
+    try {
+      const fragment = input.includes('#') ? input.split('#')[1] : input.includes('?') ? input.split('?')[1] : input;
+      const params = new URLSearchParams(fragment);
+      const at = params.get('access_token');
+      const rt = params.get('refresh_token') || '';
+      if (at) {
+        return { accessToken: at, refreshToken: rt, cleanCode: at };
+      }
+    } catch {}
+  }
+
+  // Check if URL has token_hash
+  if (input.includes('token_hash=')) {
+    try {
+      const query = input.includes('?') ? input.split('?')[1] : input;
+      const params = new URLSearchParams(query);
+      const th = params.get('token_hash');
+      if (th) {
+        return { tokenHash: th, cleanCode: th };
+      }
+    } catch {}
+  }
+
+  // Check if raw JWT
+  if (input.startsWith('eyJ') && input.split('.').length === 3) {
+    return { accessToken: input, cleanCode: input };
+  }
+
+  return { cleanCode: input };
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -219,24 +259,53 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     newPassword: string
   ): Promise<{ error?: string }> => {
     try {
-      let verifyRes = await supabase.auth.verifyOtp({
-        email: email.trim(),
-        token: token.trim(),
-        type: 'recovery',
-      });
+      const parsed = parseAuthTokenOrUrl(token);
 
-      if (verifyRes.error) {
-        verifyRes = await supabase.auth.verifyOtp({
-          email: email.trim(),
-          token: token.trim(),
-          type: 'email',
+      // If user pasted a link or access_token (e.g. from the email that opened localhost:3000)
+      if (parsed.accessToken) {
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: parsed.accessToken,
+          refresh_token: parsed.refreshToken || '',
         });
+        if (sessionError) {
+          return { error: `Invalid or expired session token: ${sessionError.message}` };
+        }
+      } else if (parsed.tokenHash) {
+        let hashRes = await supabase.auth.verifyOtp({
+          token_hash: parsed.tokenHash,
+          type: 'recovery',
+        });
+        if (hashRes.error) {
+          hashRes = await supabase.auth.verifyOtp({
+            token_hash: parsed.tokenHash,
+            type: 'email',
+          });
+        }
+        if (hashRes.error) {
+          return { error: hashRes.error.message };
+        }
+      } else {
+        // Standard OTP code (6-digit or token)
+        let verifyRes = await supabase.auth.verifyOtp({
+          email: email.trim(),
+          token: parsed.cleanCode,
+          type: 'recovery',
+        });
+
+        if (verifyRes.error) {
+          verifyRes = await supabase.auth.verifyOtp({
+            email: email.trim(),
+            token: parsed.cleanCode,
+            type: 'email',
+          });
+        }
+
+        if (verifyRes.error) {
+          return { error: verifyRes.error.message };
+        }
       }
 
-      if (verifyRes.error) {
-        return { error: verifyRes.error.message };
-      }
-
+      // Password update once authenticated
       const { error: passError } = await supabase.auth.updateUser({
         password: newPassword,
       });

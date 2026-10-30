@@ -10,6 +10,43 @@ const getAdminEmails = (): string[] => {
   return ['fortunedomination@gmail.com', 'progressomemi@gmail.com'];
 };
 
+function parseAuthTokenOrUrl(raw: string): {
+  accessToken?: string;
+  refreshToken?: string;
+  tokenHash?: string;
+  cleanCode: string;
+} {
+  const input = raw.trim();
+  if (input.includes('access_token=') || input.includes('#access_token=')) {
+    try {
+      const fragment = input.includes('#') ? input.split('#')[1] : input.includes('?') ? input.split('?')[1] : input;
+      const params = new URLSearchParams(fragment);
+      const at = params.get('access_token');
+      const rt = params.get('refresh_token') || '';
+      if (at) {
+        return { accessToken: at, refreshToken: rt, cleanCode: at };
+      }
+    } catch {}
+  }
+
+  if (input.includes('token_hash=')) {
+    try {
+      const query = input.includes('?') ? input.split('?')[1] : input;
+      const params = new URLSearchParams(query);
+      const th = params.get('token_hash');
+      if (th) {
+        return { tokenHash: th, cleanCode: th };
+      }
+    } catch {}
+  }
+
+  if (input.startsWith('eyJ') && input.split('.').length === 3) {
+    return { accessToken: input, cleanCode: input };
+  }
+
+  return { cleanCode: input };
+}
+
 interface AdminLoginProps {
   onLoginSuccess: (email: string) => void;
 }
@@ -29,6 +66,26 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Listen for hash tokens if redirected from email or magic link
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const hash = window.location.hash;
+    if (hash && (hash.includes('access_token=') || hash.includes('type=recovery'))) {
+      const params = new URLSearchParams(hash.replace(/^#/, ''));
+      const at = params.get('access_token');
+      const rt = params.get('refresh_token') || '';
+      if (at) {
+        supabase.auth.setSession({ access_token: at, refresh_token: rt }).then(({ data, error }) => {
+          if (!error && data?.user?.email) {
+            setEmail(data.user.email);
+            setMode('setup_verify');
+            setSuccessMessage('Recovery session detected from email link. You may now specify your new password below.');
+          }
+        });
+      }
+    }
+  }, []);
 
   const cleanEmail = email.trim().toLowerCase();
 
@@ -134,9 +191,9 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    const code = otpToken.trim();
-    if (!code || code.length < 6) {
-      setErrorMessage('Please enter the full 6-digit verification code sent to your email.');
+    const inputCode = otpToken.trim();
+    if (!inputCode) {
+      setErrorMessage('Please enter the verification code or paste the link from your email.');
       return;
     }
 
@@ -152,16 +209,52 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
 
     setLoading(true);
     try {
-      // Step A: Verify the OTP token
-      const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
-        email: cleanEmail,
-        token: code,
-        type: 'email',
-      });
+      const parsed = parseAuthTokenOrUrl(inputCode);
 
-      if (verifyError) {
-        setErrorMessage(`Invalid or expired verification code: ${verifyError.message}`);
-        return;
+      if (parsed.accessToken) {
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: parsed.accessToken,
+          refresh_token: parsed.refreshToken || '',
+        });
+        if (sessionError) {
+          setErrorMessage(`Invalid or expired session token: ${sessionError.message}`);
+          return;
+        }
+      } else if (parsed.tokenHash) {
+        let hashRes = await supabase.auth.verifyOtp({
+          token_hash: parsed.tokenHash,
+          type: 'email',
+        });
+        if (hashRes.error) {
+          hashRes = await supabase.auth.verifyOtp({
+            token_hash: parsed.tokenHash,
+            type: 'recovery',
+          });
+        }
+        if (hashRes.error) {
+          setErrorMessage(`Invalid verification link: ${hashRes.error.message}`);
+          return;
+        }
+      } else {
+        // Step A: Verify the OTP token (try email OTP then recovery OTP)
+        let { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
+          email: cleanEmail,
+          token: parsed.cleanCode,
+          type: 'email',
+        });
+
+        if (verifyError) {
+          const recoveryAttempt = await supabase.auth.verifyOtp({
+            email: cleanEmail,
+            token: parsed.cleanCode,
+            type: 'recovery',
+          });
+          if (recoveryAttempt.error) {
+            setErrorMessage(`Invalid or expired verification code: ${verifyError.message}`);
+            return;
+          }
+          verifyData = recoveryAttempt.data;
+        }
       }
 
       // Step B: Set the permanent password
@@ -176,7 +269,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
 
       setSuccessMessage('Password successfully configured! Authenticating into console...');
       setTimeout(() => {
-        onLoginSuccess(verifyData.user?.email || cleanEmail);
+        onLoginSuccess(cleanEmail);
       }, 900);
     } catch (err: any) {
       setErrorMessage(err.message || 'Verification and password setup failed.');
@@ -369,7 +462,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="block font-mono-meta text-xs uppercase tracking-wider text-stone-300 font-bold">
-                  6-Digit Verification Code
+                  Verification Code or Email Link
                 </label>
                 <button
                   type="button"
@@ -384,14 +477,16 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
                 <input
                   type="text"
                   required
-                  maxLength={8}
                   value={otpToken}
                   onChange={(e) => setOtpToken(e.target.value)}
-                  placeholder="123456"
-                  className="w-full bg-[#111111] border border-[#303030] focus:border-[#E50914] focus:outline-none text-white px-3.5 py-2.5 pl-10 text-center tracking-widest font-mono text-base transition-colors rounded-xs"
+                  placeholder="Enter 6-digit code or paste email link"
+                  className="w-full bg-[#111111] border border-[#303030] focus:border-[#E50914] focus:outline-none text-white px-3.5 py-2.5 pl-10 text-center font-mono text-sm transition-colors rounded-xs"
                 />
                 <KeyRound className="w-4 h-4 text-stone-500 absolute left-3.5 top-3" />
               </div>
+              <p className="font-mono-meta text-[11px] text-stone-400 mt-2 leading-relaxed">
+                💡 Enter the 6-digit code from your email, or if the email link opened <span className="text-amber-400">localhost:3000</span> on your device, copy and paste that link or token here to configure your password immediately.
+              </p>
             </div>
 
             <div>

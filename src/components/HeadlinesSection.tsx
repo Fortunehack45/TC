@@ -110,7 +110,7 @@ export const HeadlinesSection: React.FC<HeadlinesSectionProps> = ({
         <div className="flex items-center justify-between pb-3 sm:pb-3.5 border-b border-white/20 relative z-10 text-xs font-mono-meta">
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             <span className="bg-white text-[#E50914] px-2.5 py-0.5 rounded-xs font-black uppercase tracking-wider text-[11px] shadow-xs flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#E50914] animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-[#E50914]" />
               DAILY HEADLINES
             </span>
 

@@ -124,7 +124,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           <div>
             <div className="flex items-center justify-between pb-3 mb-2 border-b border-[#282828] font-mono-meta text-xs">
               <span className="text-white font-bold uppercase tracking-wider flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-[#E50914] animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-[#E50914]" />
                 BREAKING NEWS
               </span>
               <span className="text-stone-400 text-[11px] font-mono-meta font-medium">LIVE UPDATES</span>

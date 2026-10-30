@@ -37,7 +37,7 @@ export const SportsSection: React.FC<SportsSectionProps> = ({
   if (!sportsArticles || sportsArticles.length === 0) return null;
 
   return (
-    <section className="w-full bg-[#121212] py-12 px-3 sm:px-6 max-w-[1600px] mx-auto border-b border-[#242424]">
+    <section className="w-full bg-[#121212] py-10 px-2 sm:px-4 md:px-5 max-w-[98%] 2xl:max-w-[1920px] mx-auto border-b border-[#242424]">
       {/* Section Broadsheet Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between pb-6 border-b border-[#242424] mb-8 gap-4">
         <div>

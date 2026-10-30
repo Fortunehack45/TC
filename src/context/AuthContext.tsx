@@ -14,7 +14,17 @@ interface AuthContextType {
   signUp: (email: string, pass: string, displayName: string) => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
   updateProfileName: (displayName: string) => Promise<void>;
+  resetPassword: (email: string) => Promise<{ error?: string }>;
+  updatePassword: (newPassword: string) => Promise<{ error?: string }>;
 }
+
+const getAdminEmails = (): string[] => {
+  const envAdmins = import.meta.env.VITE_ADMIN_EMAILS as string | undefined;
+  if (envAdmins) {
+    return envAdmins.split(',').map((e) => e.trim().toLowerCase()).filter(Boolean);
+  }
+  return ['fortunedomination@gmail.com', 'progressomemi@gmail.com'];
+};
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -47,7 +57,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       let prof = await getProfile(userId);
       if (!prof) {
         // Auto-create profile
-        const isMasterAdmin = userEmail?.toLowerCase() === 'fortunedomination@gmail.com';
+        const isMasterAdmin = getAdminEmails().includes(userEmail?.toLowerCase() || '');
         prof = await upsertProfile({
           id: userId,
           email: userEmail || null,
@@ -113,7 +123,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, pass: string, displayName: string): Promise<{ error?: string }> => {
     try {
-      const isMasterAdmin = email.toLowerCase() === 'fortunedomination@gmail.com';
+      const isMasterAdmin = getAdminEmails().includes(email.toLowerCase());
       const { data, error } = await supabase.auth.signUp({
         email,
         password: pass,
@@ -159,11 +169,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setProfile(updated);
   };
 
-  // Determine admin access: role === 'admin' OR master email OR dev admin override
+  const resetPassword = async (email: string): Promise<{ error?: string }> => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: `${window.location.origin}`,
+      });
+      if (error) return { error: error.message };
+      return {};
+    } catch (err: any) {
+      return { error: err.message || 'Failed to dispatch password recovery email.' };
+    }
+  };
+
+  const updatePassword = async (newPassword: string): Promise<{ error?: string }> => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+      if (error) return { error: error.message };
+      return {};
+    } catch (err: any) {
+      return { error: err.message || 'Failed to update account password.' };
+    }
+  };
+
+  // Determine admin access: role === 'admin' OR master email from env/whitelist OR dev admin override
   const isAdmin =
     isDevAdminOverride ||
     profile?.role === 'admin' ||
-    user?.email?.toLowerCase() === 'fortunedomination@gmail.com';
+    getAdminEmails().includes(user?.email?.toLowerCase() || '');
 
   return (
     <AuthContext.Provider
@@ -178,6 +212,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         signUp,
         signOut,
         updateProfileName,
+        resetPassword,
+        updatePassword,
       }}
     >
       {children}

@@ -156,7 +156,7 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({
     <div className="w-full bg-[#121212] text-stone-200 font-sans-body pb-20">
       {/* Category Masthead Header */}
       <section className="w-full border-b border-[#242424] bg-[#141414] py-8 px-4 sm:px-8">
-        <div className="max-w-[1600px] mx-auto">
+        <div className="w-full max-w-[98%] 2xl:max-w-[1920px] mx-auto px-2 sm:px-4 md:px-5">
           {/* Breadcrumb */}
           <nav className="flex items-center gap-1.5 font-mono-meta text-xs text-stone-400 mb-6">
             <button
@@ -213,7 +213,7 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({
       </section>
 
       {/* Main Category Broadsheet Grid */}
-      <main className="max-w-[1600px] mx-auto px-4 sm:px-8 mt-8 space-y-10">
+      <main className="w-full max-w-[98%] 2xl:max-w-[1920px] mx-auto px-2 sm:px-4 md:px-5 mt-8 space-y-10">
         {category === 'PODCASTS' ? (
           <div className="py-24 text-center max-w-xl mx-auto space-y-4">
             <div className="w-16 h-16 rounded-full bg-[#181818] border border-[#282828] flex items-center justify-center mx-auto text-[#E50914] shadow-lg">

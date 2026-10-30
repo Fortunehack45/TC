@@ -2,10 +2,13 @@ import React, { useState } from 'react';
 import { ShieldAlert, KeyRound, Mail, Lock, ArrowRight, CheckCircle2, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { supabase } from './supabase';
 
-const ALLOWED_ADMIN_EMAILS = [
-  'fortunedomination@gmail.com',
-  'progressomemi@gmail.com',
-];
+const getAdminEmails = (): string[] => {
+  const envAdmins = import.meta.env.VITE_ADMIN_EMAILS as string | undefined;
+  if (envAdmins) {
+    return envAdmins.split(',').map((e) => e.trim().toLowerCase()).filter(Boolean);
+  }
+  return ['fortunedomination@gmail.com', 'progressomemi@gmail.com'];
+};
 
 interface AdminLoginProps {
   onLoginSuccess: (email: string) => void;
@@ -30,7 +33,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
   const cleanEmail = email.trim().toLowerCase();
 
   const isEmailAuthorized = (targetEmail: string) => {
-    return ALLOWED_ADMIN_EMAILS.includes(targetEmail.toLowerCase());
+    return getAdminEmails().includes(targetEmail.toLowerCase());
   };
 
   // 1. Sign In with Email & Password
@@ -454,10 +457,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
 
         {/* Security Notice */}
         <div className="mt-6 pt-4 border-t border-[#202020] text-center text-[10px] font-mono-meta text-stone-500">
-          Authorized administrative personnel:
-          <span className="block text-stone-400 font-bold mt-0.5">
-            fortunedomination@gmail.com • progressomemi@gmail.com
-          </span>
+          Restricted Portal • Authorized Editorial Administration Only
         </div>
       </div>
     </div>

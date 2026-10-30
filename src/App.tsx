@@ -14,7 +14,7 @@ import { SportsSection } from './components/SportsSection';
 import { ColumnsSection } from './components/ColumnsSection';
 import { SearchResultsSection } from './components/SearchResultsSection';
 import { CategoryPage } from './components/CategoryPage';
-import { AuthModal } from './components/AuthModal';
+import { AuthModal, AuthMode } from './components/AuthModal';
 import { Footer } from './components/Footer';
 import { ArticleModal } from './components/ArticleModal';
 import { PodcastPlayer } from './components/PodcastPlayer';
@@ -43,6 +43,29 @@ function MainApp() {
   const [isPlayingPodcast, setIsPlayingPodcast] = useState(false);
   const [isBookmarksOpen, setIsBookmarksOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<AuthMode>('signin');
+
+  // Check for password recovery hash on mount or auth events
+  useEffect(() => {
+    const checkRecovery = () => {
+      if (window.location.hash && window.location.hash.includes('type=recovery')) {
+        setAuthModalMode('reset');
+        setIsAuthModalOpen(true);
+      }
+    };
+    checkRecovery();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setAuthModalMode('reset');
+        setIsAuthModalOpen(true);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   // Live Database Articles (100% directly loaded from Supabase tc_articles)
   const [articles, setArticles] = useState<Article[]>([]);
@@ -56,7 +79,9 @@ function MainApp() {
   // Bookmarks stored in localStorage and synced with Supabase
   const [bookmarkedIds, setBookmarkedIds] = useState<string[]>(() => {
     try {
-      const saved = localStorage.getItem('tan_bookmarks');
+      // Purge any legacy/fake prototype bookmarks
+      localStorage.removeItem('tan_bookmarks');
+      const saved = localStorage.getItem('tc_bookmarks_v2');
       return saved ? JSON.parse(saved) : [];
     } catch {
       return [];
@@ -227,7 +252,7 @@ function MainApp() {
 
   useEffect(() => {
     try {
-      localStorage.setItem('tan_bookmarks', JSON.stringify(bookmarkedIds));
+      localStorage.setItem('tc_bookmarks_v2', JSON.stringify(bookmarkedIds));
     } catch {
       // Ignore storage errors
     }
@@ -429,6 +454,7 @@ function MainApp() {
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
+        defaultMode={authModalMode}
       />
     </div>
   );

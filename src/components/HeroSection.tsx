@@ -41,7 +41,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   }, [articles, leadArticle.id]);
 
   return (
-    <section className="w-full bg-[#121212] pt-3 sm:pt-5 pb-8 sm:pb-12 px-3 sm:px-5 max-w-[1600px] mx-auto border-b border-[#222222]">
+    <section className="w-full bg-[#121212] pt-3 sm:pt-5 pb-8 sm:pb-12 px-2 sm:px-4 md:px-5 max-w-[98%] 2xl:max-w-[1920px] mx-auto border-b border-[#222222]">
       {/* Hero Grid Container - Clean Broadsheet Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         

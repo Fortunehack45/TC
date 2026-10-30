@@ -3,10 +3,13 @@ import { supabase } from './supabase';
 import { AdminDashboard } from './AdminDashboard';
 import { AdminLogin } from './AdminLogin';
 
-const ALLOWED_ADMIN_EMAILS = [
-  'fortunedomination@gmail.com',
-  'progressomemi@gmail.com',
-];
+const getAdminEmails = (): string[] => {
+  const envAdmins = import.meta.env.VITE_ADMIN_EMAILS as string | undefined;
+  if (envAdmins) {
+    return envAdmins.split(',').map((e) => e.trim().toLowerCase()).filter(Boolean);
+  }
+  return ['fortunedomination@gmail.com', 'progressomemi@gmail.com'];
+};
 
 export default function App() {
   const [adminEmail, setAdminEmail] = useState<string | null>(null);
@@ -19,7 +22,7 @@ export default function App() {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user?.email) {
           const email = session.user.email.toLowerCase();
-          if (ALLOWED_ADMIN_EMAILS.includes(email)) {
+          if (getAdminEmails().includes(email)) {
             setAdminEmail(email);
           } else {
             // Unauthorized email logged in -> sign out immediately
@@ -44,7 +47,7 @@ export default function App() {
       async (_event, session) => {
         if (session?.user?.email) {
           const email = session.user.email.toLowerCase();
-          if (ALLOWED_ADMIN_EMAILS.includes(email)) {
+          if (getAdminEmails().includes(email)) {
             setAdminEmail(email);
           } else {
             await supabase.auth.signOut();

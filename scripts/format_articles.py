@@ -1,10 +1,12 @@
+import os
 import urllib.request
 import json
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpbmF4cGdubmFkaGJrcGxva3ZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIxNTYxNDQsImV4cCI6MjEwNzczMjE0NH0.PtGQ_Yy4X-bKEPaukfydrlABsZKiYrzSfQ_Awz5075g'
-BASE_URL = 'https://yinaxpgnnadhbkplokvl.supabase.co/rest/v1/tc_articles'
+API_KEY = os.environ.get('VITE_SUPABASE_ANON_KEY') or os.environ.get('SUPABASE_ANON_KEY', '')
+SUPABASE_URL = os.environ.get('VITE_SUPABASE_URL') or os.environ.get('SUPABASE_URL', '')
+BASE_URL = f"{SUPABASE_URL}/rest/v1/tc_articles"
 
 HEADERS = {
     'apikey': API_KEY,

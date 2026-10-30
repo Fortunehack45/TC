@@ -40,7 +40,7 @@ export const SearchResultsSection: React.FC<SearchResultsSectionProps> = ({
   });
 
   return (
-    <section className="w-full bg-[#121212] py-8 px-3 sm:px-5 max-w-[1600px] mx-auto border-b border-[#222222]">
+    <section className="w-full bg-[#121212] py-8 px-2 sm:px-4 md:px-5 max-w-[98%] 2xl:max-w-[1920px] mx-auto border-b border-[#222222]">
       {/* Header bar */}
       <div className="flex items-center justify-between mb-8 pb-3 border-b border-[#282828]">
         <div className="flex items-center gap-2">

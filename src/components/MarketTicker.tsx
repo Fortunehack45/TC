@@ -283,7 +283,7 @@ export const MarketTicker: React.FC = () => {
 
   return (
     <div className="w-full bg-[#080808] border-b border-[#222222] text-stone-300 font-mono-meta text-[11px] select-none relative overflow-hidden">
-      <div className="max-w-[1600px] mx-auto px-3 sm:px-5 flex items-center justify-between gap-2 py-1.5">
+      <div className="w-full max-w-[98%] 2xl:max-w-[1920px] mx-auto px-2 sm:px-4 md:px-5 flex items-center justify-between gap-2 py-1.5">
         
         {/* Left: LIVE Badge & Category Selector */}
         <div className="flex items-center gap-2 shrink-0 pr-3 border-r border-[#222222] z-20 bg-[#080808]">

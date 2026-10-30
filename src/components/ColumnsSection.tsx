@@ -19,7 +19,7 @@ export const ColumnsSection: React.FC<ColumnsSectionProps> = ({
   if (articles.length === 0) return null;
 
   return (
-    <section id="SCIENCE" className="w-full bg-[#121212] py-12 px-3 sm:px-5 max-w-[1600px] mx-auto border-b border-[#222222]">
+    <section id="SCIENCE" className="w-full bg-[#121212] py-10 px-2 sm:px-4 md:px-5 max-w-[98%] 2xl:max-w-[1920px] mx-auto border-b border-[#222222]">
       {/* Section Header */}
       <div className="flex items-center justify-between mb-8 pb-3 border-b border-[#282828]">
         <h2 className="font-masthead text-2xl sm:text-3xl font-bold uppercase tracking-wider text-white">

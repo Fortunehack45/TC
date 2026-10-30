@@ -7,7 +7,7 @@ interface FooterProps {
 export const Footer: React.FC<FooterProps> = ({ onSelectSection }) => {
   return (
     <footer className="w-full bg-[#0E0E0E] text-stone-300 pt-16 pb-12 border-t border-[#222222]">
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6">
+      <div className="w-full max-w-[98%] 2xl:max-w-[1920px] mx-auto px-2 sm:px-4 md:px-5">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10 pb-12 border-b border-[#222222] text-left">
           {/* Logo Badge */}
           <div className="flex flex-col items-start text-left">

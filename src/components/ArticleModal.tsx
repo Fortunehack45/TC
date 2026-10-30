@@ -138,7 +138,7 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
     <div className="w-full bg-[#121212] text-stone-200">
       {/* Top Secondary Action Bar */}
       <div className="bg-[#141414] border-b border-[#252525] py-2.5 px-3 sm:px-6 mb-6">
-        <div className="max-w-[1200px] mx-auto flex items-center justify-between">
+        <div className="w-full max-w-[94%] 2xl:max-w-[1480px] mx-auto flex items-center justify-between">
           <button
             onClick={onClose}
             className="flex items-center gap-2 text-xs font-mono-meta tracking-wider uppercase text-stone-400 hover:text-white transition-colors bg-[#1E1E1E] hover:bg-[#282828] px-3.5 py-1.5 rounded-xs border border-[#2E2E2E] cursor-pointer"
@@ -213,7 +213,7 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
       </div>
 
       {/* Breadcrumb Navigation Bar */}
-      <div className="w-full max-w-[1200px] mx-auto px-3 sm:px-6 mb-6">
+      <div className="w-full max-w-[94%] 2xl:max-w-[1480px] mx-auto px-2 sm:px-4 mb-6">
         <nav aria-label="Breadcrumb" className="flex items-center flex-wrap gap-1.5 font-mono-meta text-xs text-stone-400 py-1 px-3 bg-[#181818] border border-[#262626] rounded-xs">
           <button
             onClick={onClose}
@@ -243,7 +243,7 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
       </div>
 
       {/* Main In-Page Article Body */}
-      <article className="w-full max-w-[1200px] mx-auto px-3 sm:px-6 py-2">
+      <article className="w-full max-w-[94%] 2xl:max-w-[1480px] mx-auto px-2 sm:px-4 py-2">
         {/* Category kicker */}
         <div className="flex flex-wrap items-center gap-3 text-xs font-mono-meta text-stone-400 mb-4">
           <span className="bg-[#E50914] text-white px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-xs">

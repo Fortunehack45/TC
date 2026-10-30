@@ -21,6 +21,7 @@ import { PodcastPlayer } from './components/PodcastPlayer';
 import { BookmarksModal } from './components/BookmarksModal';
 import { Article, mapDBArticleToArticle, setLoadedArticles } from './data/artData';
 import { toggleArticleBookmark, supabase } from './lib/supabase';
+import { getPostPreviewImage } from './lib/imageHelper';
 
 function MainApp() {
   const { user } = useAuth();
@@ -79,19 +80,35 @@ function MainApp() {
   // Bookmarks stored in localStorage and synced with Supabase
   const [bookmarkedIds, setBookmarkedIds] = useState<string[]>(() => {
     try {
-      // Purge any legacy/fake prototype bookmarks
+      // Purge any legacy/fake prototype bookmarks and caches
       localStorage.removeItem('tan_bookmarks');
-      const saved = localStorage.getItem('tc_bookmarks_v2');
-      return saved ? JSON.parse(saved) : [];
+      localStorage.removeItem('tc_bookmarks');
+      localStorage.removeItem('tc_bookmarks_v2');
+      const saved = localStorage.getItem('tc_bookmarks_v3');
+      if (!saved) return [];
+      const parsed = JSON.parse(saved);
+      if (!Array.isArray(parsed)) return [];
+      // Strictly cleanse any legacy/fake/prototype mock IDs
+      return parsed.filter(
+        (id) => typeof id === 'string' && id.length > 5 && !id.startsWith('hero-') && !id.startsWith('book-') && !id.startsWith('lead-') && !id.startsWith('mock-')
+      );
     } catch {
       return [];
     }
   });
 
-  // Helper to synchronize URL query parameters with active state
+  // Helper to synchronize URL query parameters and short paths with active state
   const syncUrlState = (section: string, article: any | null) => {
     try {
+      if (article) {
+        const slugOrId = article.slug || article.id;
+        const newUrl = `/p/${encodeURIComponent(slugOrId)}`;
+        window.history.replaceState({ section, articleId: article?.id }, '', newUrl);
+        return;
+      }
+
       const params = new URLSearchParams(window.location.search);
+      params.delete('article');
       if (section && section !== 'HOME') {
         params.set('section', section.toLowerCase());
       } else {
@@ -99,16 +116,9 @@ function MainApp() {
         params.delete('category');
       }
 
-      if (article) {
-        const slugOrId = article.slug || article.id;
-        params.set('article', slugOrId);
-      } else {
-        params.delete('article');
-      }
-
       const q = params.toString();
-      const newUrl = q ? `${window.location.pathname}?${q}` : window.location.pathname;
-      window.history.replaceState({ section, articleId: article?.id }, '', newUrl);
+      const newUrl = q ? `/?${q}` : '/';
+      window.history.replaceState({ section, articleId: null }, '', newUrl);
     } catch {}
   };
 
@@ -138,10 +148,25 @@ function MainApp() {
     loadDatabaseArticles();
   }, []);
 
-  // Check for ?article= in URL on initial mount
+  // Helper to extract article param from query (?article=) or short path (/p/:slug or /article/:slug)
+  const getRequestedArticleParam = (): string | null => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const q = params.get('article');
+      if (q) return q;
+
+      const path = window.location.pathname;
+      const match = path.match(/^\/(?:p|article)\/([^/]+)/);
+      if (match && match[1]) {
+        return decodeURIComponent(match[1]);
+      }
+    } catch {}
+    return null;
+  };
+
+  // Check for ?article= or /p/:slug in URL on initial mount
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const articleParam = params.get('article');
+    const articleParam = getRequestedArticleParam();
     if (articleParam) {
       supabase
         .from('tc_articles')
@@ -164,7 +189,7 @@ function MainApp() {
       const targetSec = secParam ? secParam.toUpperCase() : 'HOME';
       setActiveSection(targetSec);
 
-      const articleParam = params.get('article');
+      const articleParam = getRequestedArticleParam();
       if (articleParam) {
         const found = articles.find((a) => a.id === articleParam || a.slug === articleParam);
         if (found) {
@@ -207,27 +232,31 @@ function MainApp() {
 
     if (selectedArticle) {
       document.title = `${selectedArticle.title} - The Chronicles`;
-      const previewImg = selectedArticle.cover_image_url || selectedArticle.imageUrl || `${window.location.origin}/og-image.png`;
+      const previewImg = getPostPreviewImage(selectedArticle);
+      const absoluteImg = previewImg.startsWith('http://') || previewImg.startsWith('https://')
+        ? previewImg
+        : `https://tc-dusky.vercel.app${previewImg.startsWith('/') ? '' : '/'}${previewImg}`;
       const desc = selectedArticle.subtitle || selectedArticle.excerpt || 'Authoritative global reporting from The Chronicles.';
+      const articleUrl = `https://tc-dusky.vercel.app/?article=${encodeURIComponent(selectedArticle.slug || selectedArticle.id)}`;
 
       setMeta('property', 'og:title', `${selectedArticle.title} - The Chronicles`);
       setMeta('property', 'og:description', desc);
-      setMeta('property', 'og:image', previewImg);
-      setMeta('property', 'og:url', window.location.href);
+      setMeta('property', 'og:image', absoluteImg);
+      setMeta('property', 'og:url', articleUrl);
       setMeta('name', 'twitter:title', `${selectedArticle.title} - The Chronicles`);
       setMeta('name', 'twitter:description', desc);
-      setMeta('name', 'twitter:image', previewImg);
+      setMeta('name', 'twitter:image', absoluteImg);
     } else {
       const sectionTitle = activeSection !== 'HOME'
         ? `${activeSection} - The Chronicles`
         : 'The Chronicles - World News, Finance, Tech & Culture';
 
       document.title = sectionTitle;
-      const siteImg = `${window.location.origin}/og-image.png`;
+      const siteImg = 'https://tc-dusky.vercel.app/og-image.png';
       setMeta('property', 'og:title', sectionTitle);
       setMeta('property', 'og:description', 'A full-spectrum digital news publication covering world politics, global finance, technology, science, lifestyle, fashion, celebrity, and sports.');
       setMeta('property', 'og:image', siteImg);
-      setMeta('property', 'og:url', window.location.href);
+      setMeta('property', 'og:url', 'https://tc-dusky.vercel.app');
       setMeta('name', 'twitter:title', sectionTitle);
       setMeta('name', 'twitter:description', 'A full-spectrum digital news publication covering world politics, global finance, technology, science, lifestyle, fashion, celebrity, and sports.');
       setMeta('name', 'twitter:image', siteImg);
@@ -243,8 +272,16 @@ function MainApp() {
         .eq('user_id', user.id)
         .then(({ data }) => {
           if (data && data.length > 0) {
-            const dbIds = data.map((b) => b.article_id);
-            setBookmarkedIds((prev) => Array.from(new Set([...prev, ...dbIds])));
+            const dbIds = data
+              .map((b) => b.article_id)
+              .filter(
+                (id) => typeof id === 'string' && id.length > 5 && !id.startsWith('hero-') && !id.startsWith('book-') && !id.startsWith('lead-') && !id.startsWith('mock-')
+              );
+            setBookmarkedIds((prev) =>
+              Array.from(new Set([...prev.filter(
+                (id) => typeof id === 'string' && id.length > 5 && !id.startsWith('hero-') && !id.startsWith('book-') && !id.startsWith('lead-') && !id.startsWith('mock-')
+              ), ...dbIds]))
+            );
           }
         });
     }
@@ -252,7 +289,7 @@ function MainApp() {
 
   useEffect(() => {
     try {
-      localStorage.setItem('tc_bookmarks_v2', JSON.stringify(bookmarkedIds));
+      localStorage.setItem('tc_bookmarks_v3', JSON.stringify(bookmarkedIds));
     } catch {
       // Ignore storage errors
     }

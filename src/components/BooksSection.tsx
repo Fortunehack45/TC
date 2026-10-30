@@ -2,6 +2,7 @@ import React from 'react';
 import { Article } from '../data/artData';
 import { ArtGraphic } from './ArtGraphics';
 import { ArrowUpRight, Bookmark } from 'lucide-react';
+import { getPostPreviewImage } from '../lib/imageHelper';
 
 interface BooksSectionProps {
   onSelectArticle: (article: Article) => void;
@@ -44,9 +45,9 @@ export const BooksSection: React.FC<BooksSectionProps> = ({
             >
               <div>
                 <div className="w-full h-48 rounded-xs overflow-hidden mb-4 relative bg-[#111]">
-                  {item.cover_image_url || item.imageUrl ? (
+                  {getPostPreviewImage(item) !== '/og-image.png' ? (
                     <img
-                      src={item.cover_image_url || item.imageUrl}
+                      src={getPostPreviewImage(item)}
                       alt={item.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       onError={(e) => {

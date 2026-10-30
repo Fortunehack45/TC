@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Copy, Check, Share2, Mail, ExternalLink, Globe } from 'lucide-react';
 import { Article } from '../data/artData';
+import { getPostPreviewImage } from '../lib/imageHelper';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -13,12 +14,15 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, article
 
   if (!isOpen || !article) return null;
 
-  const origin = window.location.origin || 'http://localhost:3000';
+  const origin =
+    typeof window !== 'undefined' && window.location.origin && !window.location.origin.includes('localhost')
+      ? window.location.origin
+      : 'https://tc-dusky.vercel.app';
   const shareSlug = article.slug || article.id;
-  const shareUrl = `${origin}/?article=${encodeURIComponent(shareSlug)}`;
+  const shareUrl = `${origin}/p/${encodeURIComponent(shareSlug)}`;
   const shareTitle = article.title;
   const shareText = article.excerpt || article.subtitle || `Read this dispatch on The Chronicles: ${shareTitle}`;
-  const previewImage = article.cover_image_url || article.imageUrl || `${origin}/og-image.png`;
+  const previewImage = getPostPreviewImage(article);
 
   const handleCopyLink = async () => {
     try {

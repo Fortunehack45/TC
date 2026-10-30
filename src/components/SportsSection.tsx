@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ArrowUpRight, ArrowRight, Calendar, Clock } from 'lucide-react';
 import { getArticles } from '../lib/supabase';
 import { mapDBArticleToArticle } from '../data/artData';
+import { getPostPreviewImage } from '../lib/imageHelper';
 
 interface SportsSectionProps {
   onSelectArticle: (article: any) => void;
@@ -76,7 +77,7 @@ export const SportsSection: React.FC<SportsSectionProps> = ({
               {/* Cover Photo */}
               <div className="w-full h-48 rounded-xs overflow-hidden mb-4 relative bg-[#111] border border-[#2D2D2D]">
                 <img
-                  src={art.cover_image_url || art.imageUrl}
+                  src={getPostPreviewImage(art)}
                   alt={art.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   onError={(e) => {

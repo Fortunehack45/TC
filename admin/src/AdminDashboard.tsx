@@ -13,6 +13,7 @@ import { WordEditor } from './WordEditor';
 import { ArticlePreviewModal } from './ArticlePreviewModal';
 import { CustomDropdown } from './CustomDropdown';
 import { computeArticleLifecycle, ArticleLifecycle, LifecycleStatus } from './lib/lifecycle';
+import { getPostPreviewImage } from './lib/imageHelper';
 
 interface AdminDashboardProps {
   adminEmail?: string;
@@ -556,15 +557,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminEmail, onSi
                             <tr key={art.id} className="hover:bg-[#1C1C1C] transition-colors group">
                               <td className="py-3.5 px-4 max-w-md">
                                 <div className="flex items-center gap-3">
-                                  {art.cover_image_url && (
-                                    <img
-                                      src={art.cover_image_url}
-                                      alt=""
-                                      className="w-12 h-9 object-cover rounded-xs border border-[#333] shrink-0"
-                                      onError={(e) => {
-                                        (e.target as HTMLImageElement).src = '/og-image.png';
-                                      }}
-                                    />
+                                  {getPostPreviewImage(art) && (
+                                    <div className="relative shrink-0">
+                                      <img
+                                        src={getPostPreviewImage(art)}
+                                        alt=""
+                                        className="w-12 h-9 object-cover rounded-xs border border-[#333]"
+                                        onError={(e) => {
+                                          (e.target as HTMLImageElement).src = '/og-image.png';
+                                        }}
+                                      />
+                                      {art.video_url && !art.cover_image_url && (
+                                        <span className="absolute bottom-0.5 right-0.5 bg-black/80 text-[8px] font-mono-meta text-white px-1 rounded-xs">
+                                          VID
+                                        </span>
+                                      )}
+                                    </div>
                                   )}
                                   <div>
                                     <h4
@@ -688,15 +696,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminEmail, onSi
                                 By {art.author_name}
                               </p>
                             </div>
-                            {art.cover_image_url && (
-                              <img
-                                src={art.cover_image_url}
-                                alt=""
-                                className="w-14 h-12 object-cover rounded-xs border border-[#333] shrink-0"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).src = '/og-image.png';
-                                }}
-                              />
+                            {getPostPreviewImage(art) && (
+                              <div className="relative shrink-0">
+                                <img
+                                  src={getPostPreviewImage(art)}
+                                  alt=""
+                                  className="w-14 h-12 object-cover rounded-xs border border-[#333]"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).src = '/og-image.png';
+                                  }}
+                                />
+                                {art.video_url && !art.cover_image_url && (
+                                  <span className="absolute bottom-0.5 right-0.5 bg-black/80 text-[8px] font-mono-meta text-white px-1 rounded-xs">
+                                    VID
+                                  </span>
+                                )}
+                              </div>
                             )}
                           </div>
 

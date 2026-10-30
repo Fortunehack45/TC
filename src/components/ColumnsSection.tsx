@@ -2,6 +2,7 @@ import React from 'react';
 import { Article } from '../data/artData';
 import { ArtGraphic } from './ArtGraphics';
 import { ArrowUpRight, Bookmark } from 'lucide-react';
+import { getPostPreviewImage } from '../lib/imageHelper';
 
 interface ColumnsSectionProps {
   onSelectArticle: (article: Article) => void;
@@ -41,9 +42,9 @@ export const ColumnsSection: React.FC<ColumnsSectionProps> = ({
             >
               <div>
                 <div className="w-full h-44 rounded-xs overflow-hidden mb-3 relative bg-[#111] border border-[#282828]">
-                  {item.cover_image_url || item.imageUrl ? (
+                  {getPostPreviewImage(item) !== '/og-image.png' ? (
                     <img
-                      src={item.cover_image_url || item.imageUrl}
+                      src={getPostPreviewImage(item)}
                       alt={item.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       onError={(e) => {

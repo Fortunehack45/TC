@@ -4,6 +4,7 @@ import { DBArticle } from '../lib/database.types';
 import { getArticles } from '../lib/supabase';
 import { ArtGraphic } from './ArtGraphics';
 import { getAllArticles, Article } from '../data/artData';
+import { getPostPreviewImage } from '../lib/imageHelper';
 
 interface CategoryPageProps {
   category: string;
@@ -253,9 +254,9 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({
               >
                 {/* Visual Lead Cover (Left 7 cols) */}
                 <div className="lg:col-span-7 h-64 sm:h-96 md:h-[420px] rounded-xs overflow-hidden border border-[#2D2D2D] relative bg-[#111]">
-                  {leadArticle.cover_image_url ? (
+                  {getPostPreviewImage(leadArticle) !== '/og-image.png' ? (
                     <img
-                      src={leadArticle.cover_image_url}
+                      src={getPostPreviewImage(leadArticle)}
                       alt={leadArticle.title}
                       className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500"
                       onError={(e) => {
@@ -340,10 +341,10 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({
                       >
                         <div>
                           {/* Thumbnail if present */}
-                          {art.cover_image_url ? (
+                          {getPostPreviewImage(art) !== '/og-image.png' ? (
                             <div className="w-full h-44 mb-4 rounded-xs overflow-hidden border border-[#2D2D2D] bg-[#111]">
                               <img
-                                src={art.cover_image_url}
+                                src={getPostPreviewImage(art)}
                                 alt={art.title}
                                 className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-300"
                                 onError={(e) => {

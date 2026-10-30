@@ -29,6 +29,7 @@ import {
 import { DBArticle } from './database.types';
 import { uploadMedia, upsertArticle } from './supabase';
 import { ArticlePreviewModal } from './ArticlePreviewModal';
+import { getPostPreviewImage } from './lib/imageHelper';
 
 interface WordEditorProps {
   initialArticle?: DBArticle | null;
@@ -893,12 +894,56 @@ export const WordEditor: React.FC<WordEditorProps> = ({
                     type="button"
                     onClick={() => setCoverImageUrl('')}
                     className="absolute top-2 right-2 p-1 bg-black/70 text-white rounded-xs opacity-0 group-hover:opacity-100 transition-opacity hover:bg-[#E50914]"
+                    title="Remove cover image"
                   >
                     <X className="w-4 h-4" />
                   </button>
                 </div>
               )}
+
+              {!coverImageUrl && videoUrl && getPostPreviewImage({ video_url: videoUrl }) !== '/og-image.png' && (
+                <div className="mt-2 p-2.5 bg-[#141414] border border-[#2D2D2D] rounded-xs">
+                  <div className="flex items-center justify-between text-[11px] font-mono-meta text-stone-400 mb-1.5">
+                    <span>Auto-detected Video Cover:</span>
+                    <button
+                      type="button"
+                      onClick={() => setCoverImageUrl(getPostPreviewImage({ video_url: videoUrl }))}
+                      className="text-[#E50914] hover:underline font-bold"
+                    >
+                      Use as Lead Cover
+                    </button>
+                  </div>
+                  <div className="aspect-video w-full rounded-xs overflow-hidden border border-[#333]">
+                    <img
+                      src={getPostPreviewImage({ video_url: videoUrl })}
+                      alt="Video Cover"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
+          </div>
+
+          {/* Video Dispatch URL Input */}
+          <div className="bg-[#181818] border border-[#2E2E2E] p-5 shadow-lg">
+            <label className="block text-xs font-mono-meta text-stone-300 uppercase tracking-wider mb-2 font-bold flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <Video className="w-3.5 h-3.5 text-[#E50914]" />
+                Video Dispatch URL
+              </span>
+              <span className="text-[10px] text-stone-500 font-normal">YouTube / Vimeo / MP4</span>
+            </label>
+            <input
+              type="text"
+              value={videoUrl}
+              onChange={(e) => setVideoUrl(e.target.value)}
+              placeholder="e.g. https://www.youtube.com/watch?v=..."
+              className="w-full bg-[#141414] border border-[#333] text-stone-200 p-2.5 text-xs font-mono-meta rounded-xs focus:border-[#E50914] focus:outline-none"
+            />
+            <p className="text-[10px] text-stone-500 font-sans-body mt-1.5">
+              If no cover photo is uploaded, the video thumbnail is automatically used as the preview image across the publication and social link cards.
+            </p>
           </div>
 
           <div className="bg-[#181818] border border-[#2E2E2E] p-5 shadow-lg">

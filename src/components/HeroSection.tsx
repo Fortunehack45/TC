@@ -2,6 +2,7 @@ import React from 'react';
 import { ArtGraphic } from './ArtGraphics';
 import { HERO_NEWS } from '../data/artData';
 import { ArrowUpRight, Bookmark, Clock, Calendar } from 'lucide-react';
+import { getPostPreviewImage } from '../lib/imageHelper';
 
 interface HeroSectionProps {
   onSelectArticle: (article: any) => void;
@@ -50,11 +51,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           onClick={() => onSelectArticle(leadArticle)}
           className="lg:col-span-8 group cursor-pointer bg-[#181818] border border-[#282828] rounded-xs p-5 sm:p-8 flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:border-white/40 shadow-2xl min-h-[380px] sm:min-h-[480px] lg:min-h-[540px]"
         >
-          {/* Real Online Photography Background with Editorial Vignette */}
-          {(leadArticle as any).imageUrl || (leadArticle as any).cover_image_url ? (
+          {/* Real Photography Background or Video Thumbnail with Editorial Vignette */}
+          {getPostPreviewImage(leadArticle) !== '/og-image.png' ? (
             <div className="absolute inset-0 z-0">
               <img
-                src={(leadArticle as any).imageUrl || (leadArticle as any).cover_image_url}
+                src={getPostPreviewImage(leadArticle)}
                 alt={leadArticle.title}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-45"
                 onError={(e) => {

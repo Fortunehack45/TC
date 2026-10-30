@@ -16,6 +16,7 @@ interface AuthContextType {
   updateProfileName: (displayName: string) => Promise<void>;
   resetPassword: (email: string) => Promise<{ error?: string }>;
   updatePassword: (newPassword: string) => Promise<{ error?: string }>;
+  verifyResetCode: (email: string, token: string, newPassword: string) => Promise<{ error?: string }>;
 }
 
 const getAdminEmails = (): string[] => {
@@ -171,8 +172,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const resetPassword = async (email: string): Promise<{ error?: string }> => {
     try {
+      const redirectUrl =
+        typeof window !== 'undefined' && window.location.origin && !window.location.origin.includes('localhost')
+          ? window.location.origin
+          : 'https://tc-dusky.vercel.app';
+
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: `${window.location.origin}`,
+        redirectTo: redirectUrl,
       });
       if (error) return { error: error.message };
       return {};
@@ -190,6 +196,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return {};
     } catch (err: any) {
       return { error: err.message || 'Failed to update account password.' };
+    }
+  };
+
+  const verifyResetCode = async (
+    email: string,
+    token: string,
+    newPassword: string
+  ): Promise<{ error?: string }> => {
+    try {
+      let verifyRes = await supabase.auth.verifyOtp({
+        email: email.trim(),
+        token: token.trim(),
+        type: 'recovery',
+      });
+
+      if (verifyRes.error) {
+        verifyRes = await supabase.auth.verifyOtp({
+          email: email.trim(),
+          token: token.trim(),
+          type: 'email',
+        });
+      }
+
+      if (verifyRes.error) {
+        return { error: verifyRes.error.message };
+      }
+
+      const { error: passError } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (passError) {
+        return { error: passError.message };
+      }
+
+      return {};
+    } catch (err: any) {
+      return { error: err.message || 'Verification and password update failed.' };
     }
   };
 
@@ -214,6 +258,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateProfileName,
         resetPassword,
         updatePassword,
+        verifyResetCode,
       }}
     >
       {children}

@@ -4,6 +4,34 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    },
+    {
+      "source": "/p/:slug",
+      "destination": "/api/article?slug=:slug"
+    },
+    {
+      "source": "/article/:slug",
+      "destination": "/api/article?slug=:slug"
+    },
+    {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "query",
+          "key": "article",
+          "value": "(?<article>.*)"
+        },
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(facebookexternalhit|twitterbot|whatsapp|telegrambot|slackbot|linkedinbot|discordbot|applebot|googlebot).*"
+        }
+      ],
+      "destination": "/api/article?article=$article"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

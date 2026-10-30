@@ -1,13 +1,14 @@
 import React from 'react';
 import { Article, getAllArticles } from '../data/artData';
 import { ArtGraphic } from './ArtGraphics';
-import { Search, ArrowUpRight, Sparkles, X } from 'lucide-react';
+import { Sparkles, X, ArrowUpRight } from 'lucide-react';
 
 interface SearchResultsSectionProps {
   searchQuery: string;
   selectedCategory: string;
   onSelectArticle: (article: Article) => void;
   onClearSearch: () => void;
+  articles?: Article[];
 }
 
 export const SearchResultsSection: React.FC<SearchResultsSectionProps> = ({
@@ -15,15 +16,16 @@ export const SearchResultsSection: React.FC<SearchResultsSectionProps> = ({
   selectedCategory,
   onSelectArticle,
   onClearSearch,
+  articles,
 }) => {
-  // Master list of all articles
-  const allArticles: Article[] = getAllArticles();
+  const pool: Article[] = articles && articles.length > 0 ? articles : getAllArticles();
 
-  // Filtering logic
-  const filtered = allArticles.filter((item) => {
+  // Filtering logic across all database articles
+  const filtered = pool.filter((item) => {
     const matchesCategory =
       selectedCategory === 'ALL' ||
-      item.section === selectedCategory;
+      item.category?.toUpperCase() === selectedCategory.toUpperCase() ||
+      item.section?.toUpperCase() === selectedCategory.toUpperCase();
 
     const q = searchQuery.trim().toLowerCase();
     const matchesQuery =
@@ -31,7 +33,8 @@ export const SearchResultsSection: React.FC<SearchResultsSectionProps> = ({
       item.title.toLowerCase().includes(q) ||
       item.excerpt.toLowerCase().includes(q) ||
       item.category.toLowerCase().includes(q) ||
-      (item.author && item.author.toLowerCase().includes(q));
+      (item.author && item.author.toLowerCase().includes(q)) ||
+      (item.tags && item.tags.some((t) => t.toLowerCase().includes(q)));
 
     return matchesCategory && matchesQuery;
   });
@@ -52,50 +55,63 @@ export const SearchResultsSection: React.FC<SearchResultsSectionProps> = ({
 
         <button
           onClick={onClearSearch}
-          className="font-mono-meta text-xs text-stone-400 hover:text-white flex items-center gap-1 transition-colors bg-[#222222] px-3 py-1.5 rounded-xs"
+          className="font-mono-meta text-xs text-stone-400 hover:text-white flex items-center gap-1 transition-colors bg-[#222222] px-3 py-1.5 rounded-xs cursor-pointer"
         >
           <X className="w-3.5 h-3.5" /> CLEAR SEARCH
         </button>
       </div>
 
-      {/* Results grid */}
       {filtered.length === 0 ? (
-        <div className="bg-[#181818] border border-[#282828] p-10 text-center rounded-xs space-y-3">
-          <Search className="w-10 h-10 mx-auto stroke-1 text-stone-500" />
-          <p className="font-editorial text-lg text-white font-bold uppercase">NO MATCHING ARTICLES FOUND</p>
-          <p className="text-xs text-stone-400 font-sans-body max-w-md mx-auto">
-            We couldn't find any stories matching "{searchQuery}". Try checking your spelling or clearing category filters.
-          </p>
+        <div className="py-20 text-center text-stone-500 font-mono-meta text-sm space-y-2">
+          <p>NO ARCHIVE DISPATCHES MATCH YOUR SEARCH QUERY</p>
+          <p className="text-xs text-stone-600">Try adjusting your keywords or selecting "ALL" categories.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filtered.map((item) => (
             <div
               key={item.id}
               onClick={() => onSelectArticle(item)}
-              className="group cursor-pointer bg-[#181818] border border-[#282828] hover:border-stone-400 p-4 rounded-xs flex flex-col justify-between transition-all"
+              className="group cursor-pointer bg-[#181818] border border-[#282828] hover:border-[#E50914] p-5 rounded-xs flex flex-col justify-between transition-all shadow-lg"
             >
               <div>
-                <div className="w-full h-44 rounded-xs overflow-hidden mb-3 relative bg-[#121212]">
-                  <ArtGraphic type={item.imageKey} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                </div>
-                <div className="flex items-center justify-between gap-2 font-mono-meta text-[11px] text-stone-400 mb-2 min-w-0 w-full overflow-hidden">
-                  <span className="text-[#E50914] font-bold uppercase bg-[#222222] px-2 py-0.5 rounded-xs text-[10px] inline-block truncate shrink min-w-0">
+                <div className="w-full h-44 rounded-xs overflow-hidden mb-3 relative bg-[#111] border border-[#2A2A2A]">
+                  {item.cover_image_url || item.imageUrl ? (
+                    <img
+                      src={item.cover_image_url || item.imageUrl}
+                      alt={item.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/og-image.png';
+                      }}
+                    />
+                  ) : (
+                    <ArtGraphic type={item.imageKey} className="w-full h-full object-cover" />
+                  )}
+                  <span className="absolute top-2.5 left-2.5 bg-[#E50914] text-white text-[10px] font-mono-meta font-bold uppercase tracking-wider px-2 py-0.5 rounded-xs">
                     {item.category}
                   </span>
-                  <span className="shrink-0 text-[11px] text-stone-400 font-medium whitespace-nowrap ml-auto">{item.date}</span>
                 </div>
-                <h3 className="font-editorial text-sm sm:text-base font-bold text-white group-hover:text-[#E50914] transition-colors leading-snug line-clamp-2 mb-2">
+
+                <div className="flex items-center justify-between gap-2 font-mono-meta text-[11px] text-stone-500 mb-2">
+                  <span>{item.date}</span>
+                  <span>{item.readTime || '5 min read'}</span>
+                </div>
+
+                <h3 className="font-editorial text-base sm:text-lg font-bold text-white group-hover:text-[#E50914] leading-snug mb-2 transition-colors line-clamp-2">
                   {item.title}
                 </h3>
-                <p className="text-xs text-stone-400 font-sans-body line-clamp-3 mb-3">
+
+                <p className="text-xs text-stone-400 font-sans-body leading-relaxed line-clamp-3 mb-4">
                   {item.excerpt}
                 </p>
               </div>
 
-              <div className="flex items-center justify-between font-mono-meta text-[11px] text-stone-300 group-hover:text-[#E50914] pt-2 border-t border-[#222222]">
-                <span>READ STORY</span>
-                <ArrowUpRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              <div className="flex items-center justify-between font-mono-meta text-xs text-stone-400 pt-2 border-t border-[#252525]">
+                <span>{item.author || 'Chronicles Bureau'}</span>
+                <span className="flex items-center gap-1 text-[#E50914] font-bold group-hover:translate-x-1 transition-transform">
+                  READ <ArrowUpRight className="w-3.5 h-3.5" />
+                </span>
               </div>
             </div>
           ))}

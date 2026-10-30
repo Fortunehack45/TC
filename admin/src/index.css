@@ -1,0 +1,282 @@
+@import "tailwindcss";
+
+@layer utilities {
+  .font-masthead {
+    font-family: 'Cinzel', 'Playfair Display', Georgia, serif;
+  }
+  .font-editorial {
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+  .font-sans-body {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  }
+  .font-mono-meta {
+    font-family: 'IBM Plex Mono', monospace;
+  }
+}
+
+/* Signature Chronicles Crimson Selection (#E50914) */
+::selection {
+  background-color: #e50914 !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+::-moz-selection {
+  background-color: #e50914 !important;
+  color: #ffffff !important;
+}
+
+*::selection {
+  background-color: #e50914 !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+*::-moz-selection {
+  background-color: #e50914 !important;
+  color: #ffffff !important;
+}
+
+/* ==========================================================================
+   TIPTAP & PROSEMIRROR WYSIWYG EDITOR STYLES
+   ========================================================================== */
+.tiptap.ProseMirror {
+  outline: none !important;
+  min-height: 480px;
+  padding: 1.5rem;
+  color: #e5e5e5;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 1.05rem;
+  line-height: 1.8;
+}
+
+.tiptap.ProseMirror > * + * {
+  margin-top: 1rem;
+}
+
+/* Headings */
+.tiptap.ProseMirror h1 {
+  font-family: 'Playfair Display', Georgia, serif !important;
+  font-size: 2.25rem !important;
+  font-weight: 800 !important;
+  line-height: 1.25 !important;
+  color: #ffffff !important;
+  margin-top: 2rem !important;
+  margin-bottom: 0.75rem !important;
+  display: block !important;
+}
+
+.tiptap.ProseMirror h2 {
+  font-family: 'Playfair Display', Georgia, serif !important;
+  font-size: 1.75rem !important;
+  font-weight: 700 !important;
+  line-height: 1.3 !important;
+  color: #ffffff !important;
+  margin-top: 1.75rem !important;
+  margin-bottom: 0.5rem !important;
+  display: block !important;
+}
+
+.tiptap.ProseMirror h3 {
+  font-family: 'Playfair Display', Georgia, serif !important;
+  font-size: 1.35rem !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  color: #ffffff !important;
+  margin-top: 1.5rem !important;
+  margin-bottom: 0.5rem !important;
+  display: block !important;
+}
+
+/* Paragraphs */
+.tiptap.ProseMirror p {
+  line-height: 1.8 !important;
+  color: #d6d3d1 !important;
+  margin-bottom: 1rem !important;
+}
+
+/* Text formatting */
+.tiptap.ProseMirror strong,
+.tiptap.ProseMirror b {
+  font-weight: 800 !important;
+  color: #ffffff !important;
+}
+
+.tiptap.ProseMirror em,
+.tiptap.ProseMirror i {
+  font-style: italic !important;
+  color: #f5f5f4 !important;
+}
+
+.tiptap.ProseMirror u {
+  text-decoration: underline !important;
+  text-decoration-color: #e50914 !important;
+  text-decoration-thickness: 2px !important;
+  text-underline-offset: 3px !important;
+}
+
+.tiptap.ProseMirror s,
+.tiptap.ProseMirror strike,
+.tiptap.ProseMirror del {
+  text-decoration: line-through !important;
+  color: #a8a29e !important;
+}
+
+.tiptap.ProseMirror mark {
+  background-color: #fef08a !important;
+  color: #000000 !important;
+  padding: 0.1rem 0.3rem !important;
+  border-radius: 2px !important;
+}
+
+.tiptap.ProseMirror code {
+  font-family: 'IBM Plex Mono', monospace !important;
+  background-color: #242424 !important;
+  color: #f87171 !important;
+  padding: 0.2rem 0.45rem !important;
+  border-radius: 4px !important;
+  font-size: 0.875em !important;
+  border: 1px solid #383838 !important;
+}
+
+/* Lists */
+.tiptap.ProseMirror ul {
+  list-style-type: disc !important;
+  padding-left: 2rem !important;
+  margin: 1.25rem 0 !important;
+}
+
+.tiptap.ProseMirror ol {
+  list-style-type: decimal !important;
+  padding-left: 2rem !important;
+  margin: 1.25rem 0 !important;
+}
+
+.tiptap.ProseMirror li {
+  display: list-item !important;
+  margin-bottom: 0.5rem !important;
+  line-height: 1.7 !important;
+  color: #d6d3d1 !important;
+}
+
+.tiptap.ProseMirror li > p {
+  margin-bottom: 0.25rem !important;
+  display: inline !important;
+}
+
+/* Blockquote */
+.tiptap.ProseMirror blockquote {
+  border-left: 4px solid #e50914 !important;
+  background: rgba(229, 9, 20, 0.06) !important;
+  padding: 0.85rem 1.25rem !important;
+  margin: 1.5rem 0 !important;
+  font-style: italic !important;
+  color: #f5f5f4 !important;
+  border-radius: 0 4px 4px 0 !important;
+  font-family: 'Playfair Display', Georgia, serif !important;
+  font-size: 1.1rem !important;
+}
+
+.tiptap.ProseMirror blockquote p {
+  margin-bottom: 0 !important;
+}
+
+/* Horizontal Rule */
+.tiptap.ProseMirror hr {
+  border: none !important;
+  border-top: 1px solid #383838 !important;
+  margin: 2rem 0 !important;
+}
+
+/* Tables */
+.tiptap.ProseMirror table {
+  border-collapse: collapse !important;
+  table-layout: fixed !important;
+  width: 100% !important;
+  margin: 1.5rem 0 !important;
+  overflow: hidden !important;
+  border: 1px solid #333333 !important;
+}
+
+.tiptap.ProseMirror td,
+.tiptap.ProseMirror th {
+  min-width: 1em !important;
+  border: 1px solid #333333 !important;
+  padding: 8px 12px !important;
+  vertical-align: top !important;
+  box-sizing: border-box !important;
+  position: relative !important;
+}
+
+.tiptap.ProseMirror th {
+  font-weight: bold !important;
+  text-align: left !important;
+  background-color: #222222 !important;
+  color: #ffffff !important;
+}
+
+.tiptap.ProseMirror .selectedCell:after {
+  z-index: 2;
+  position: absolute;
+  content: "";
+  left: 0; right: 0; top: 0; bottom: 0;
+  background: rgba(229, 9, 20, 0.2);
+  pointer-events: none;
+}
+
+/* Links */
+.tiptap.ProseMirror a {
+  color: #e50914 !important;
+  text-decoration: underline !important;
+  cursor: pointer !important;
+  text-underline-offset: 3px !important;
+}
+
+/* Images & Media */
+.tiptap.ProseMirror img {
+  max-width: 100% !important;
+  height: auto !important;
+  border-radius: 4px !important;
+  margin: 1.5rem auto !important;
+  display: block !important;
+  border: 1px solid #333333 !important;
+}
+
+.tiptap.ProseMirror div[data-youtube-video] {
+  margin: 1.5rem 0 !important;
+  aspect-ratio: 16 / 9 !important;
+  width: 100% !important;
+  border-radius: 4px !important;
+  overflow: hidden !important;
+  border: 1px solid #333333 !important;
+}
+
+.tiptap.ProseMirror div[data-youtube-video] iframe {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Placeholder */
+.tiptap.ProseMirror p.is-editor-empty:first-child::before {
+  color: #666666 !important;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+
+/* Signature Chronicles Editorial Drop Cap (Big Crimson Red First Letter) */
+.drop-cap-red {
+  float: left !important;
+  font-family: 'Playfair Display', Georgia, serif !important;
+  font-size: 3.85rem !important;
+  line-height: 0.82 !important;
+  font-weight: 800 !important;
+  color: #e50914 !important;
+  margin-right: 0.65rem !important;
+  margin-top: 0.15rem !important;
+  margin-bottom: -0.1rem !important;
+  display: inline-block !important;
+}

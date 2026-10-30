@@ -40,6 +40,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
     { id: 'FINANCE', label: 'FINANCE' },
     { id: 'TECHNOLOGY', label: 'TECHNOLOGY' },
     { id: 'SCIENCE', label: 'SCIENCE' },
+    { id: 'EDUCATION', label: 'EDUCATION' },
     { id: 'LIFESTYLE', label: 'LIFESTYLE' },
     { id: 'FASHION', label: 'FASHION' },
     { id: 'CELEBRITY', label: 'CELEBRITY' },
@@ -72,7 +73,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
           <span className="text-stone-200 font-bold">HOME</span>
           <span className="text-stone-600">|</span>
           <span className="text-stone-400 truncate max-w-[180px] sm:max-w-none">
-            THE GLOBAL CHRONICLE • INTERNATIONAL EDITION
+            THE CHRONICLES • INTERNATIONAL EDITION
           </span>
         </div>
         <div className="flex items-center gap-3 shrink-0">
@@ -91,15 +92,17 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
 
       {/* Main Navigation Row */}
       <div className="max-w-[1600px] mx-auto px-3 sm:px-5 py-3 flex items-center justify-between gap-4">
-        {/* Left: C H R Red Logo Badge */}
+        {/* Left: Official CHR Red Logo Badge */}
         <button
           onClick={() => handleNavClick('HOME')}
           className="flex items-center focus:outline-none group shrink-0 min-h-[44px]"
-          title="The Global Chronicle Home"
+          title="The Chronicles Home"
         >
-          <div className="bg-[#E50914] text-white font-masthead font-extrabold text-base sm:text-lg tracking-widest px-3 py-1.5 flex items-center justify-center rounded-xs shadow-md group-hover:bg-[#C40711] transition-colors">
-            C H R
-          </div>
+          <img
+            src="/logo.png"
+            alt="The Chronicles"
+            className="h-8 sm:h-9 w-auto object-contain rounded-xs shadow-md group-hover:brightness-110 transition duration-200"
+          />
         </button>
 
         {/* Desktop Navigation Links */}
@@ -116,7 +119,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                     : 'text-stone-300 hover:text-white border-transparent'
                 }`}
               >
-                {item.label}
+                <span>{item.label}</span>
               </button>
             );
           })}

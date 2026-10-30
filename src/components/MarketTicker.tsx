@@ -3,14 +3,12 @@ import {
   TrendingUp,
   TrendingDown,
   Activity,
-  X,
   ArrowUpRight,
   ArrowDownRight,
   Pause,
   Play,
   Search,
   ChevronDown,
-  Sparkles,
 } from 'lucide-react';
 
 export interface MarketItem {
@@ -132,7 +130,6 @@ export const MarketTicker: React.FC = () => {
   const [selectedFilter, setSelectedFilter] = useState<'ALL' | 'INDEX' | 'STOCKS' | 'COMMODITY' | 'FOREX' | 'CRYPTO'>('ALL');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<string>('');
-  const [activeModalItem, setActiveModalItem] = useState<MarketItem | null>(null);
   const [isMarqueePaused, setIsMarqueePaused] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -340,17 +337,15 @@ export const MarketTicker: React.FC = () => {
               const isTickDown = item.lastTickDir === 'down';
 
               return (
-                <button
+                <div
                   key={`${item.id}-${idx}`}
-                  onClick={() => setActiveModalItem(item)}
-                  className={`flex items-center gap-2 px-2.5 py-1 rounded-xs transition-all duration-300 shrink-0 hover:bg-[#1C1C1C] cursor-pointer text-left border border-transparent hover:border-[#383838] ${
+                  className={`flex items-center gap-2 px-2.5 py-1 rounded-xs transition-all duration-300 shrink-0 select-none cursor-default text-left border border-transparent ${
                     isTickUp
                       ? 'bg-emerald-950/60 border-emerald-500/60'
                       : isTickDown
                       ? 'bg-rose-950/60 border-rose-500/60'
                       : ''
                   }`}
-                  title={`Click to view ${item.name} detailed profile`}
                 >
                   {/* Category Tag Mini Pill */}
                   <span className="text-[8.5px] px-1 py-0.2 bg-[#1F1F1F] text-stone-400 rounded-xs uppercase font-bold">
@@ -387,7 +382,7 @@ export const MarketTicker: React.FC = () => {
                       {item.changePercent.toFixed(2)}%
                     </span>
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>
@@ -401,7 +396,7 @@ export const MarketTicker: React.FC = () => {
             className="p-1 text-stone-400 hover:text-white hover:bg-[#1A1A1A] rounded-xs transition-colors min-h-[28px] min-w-[28px] flex items-center justify-center"
             title={isMarqueePaused ? 'Resume infinite ticker' : 'Pause infinite ticker'}
           >
-            {isMarqueePaused ? <Play className="w-3.5 h-3.5 text-emerald-400" /> : <Pause className="w-3.5 h-3.5" />}
+            {isMarqueePaused ? <Play className="w-3.5 h-3.5 text-[#E50914] fill-[#E50914]" /> : <Pause className="w-3.5 h-3.5 text-[#E50914]" />}
           </button>
 
           <span className="hidden md:inline text-[10px] text-stone-500 font-mono-meta">
@@ -410,107 +405,6 @@ export const MarketTicker: React.FC = () => {
         </div>
       </div>
 
-      {/* Interactive Asset Detail Modal */}
-      {activeModalItem && (
-        <div
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4"
-          onClick={() => setActiveModalItem(null)}
-        >
-          <div
-            className="bg-[#141414] border border-[#333333] rounded-xs shadow-2xl w-full max-w-md p-5 text-stone-200 space-y-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between border-b border-[#262626] pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="bg-[#E50914] text-white px-2 py-1 rounded-xs font-mono-meta font-extrabold text-[11px] uppercase tracking-wider">
-                  {activeModalItem.category}
-                </div>
-                <div>
-                  <h3 className="font-bold text-base text-white tracking-wide">{activeModalItem.name}</h3>
-                  <p className="text-xs font-mono-meta text-stone-400">{activeModalItem.symbol}</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setActiveModalItem(null)}
-                className="p-1 text-stone-400 hover:text-white hover:bg-[#222222] rounded-xs transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 font-mono-meta text-xs">
-              <div className="bg-[#1C1C1C] p-3.5 rounded-xs border border-[#2A2A2A]">
-                <span className="text-stone-400 text-[10px] block mb-1">SPOT PRICE</span>
-                <span className="text-lg font-bold text-white tabular-nums">
-                  {activeModalItem.prefix || ''}
-                  {activeModalItem.price.toLocaleString(undefined, {
-                    minimumFractionDigits: activeModalItem.decimals || 2,
-                  })}
-                </span>
-              </div>
-
-              <div className="bg-[#1C1C1C] p-3.5 rounded-xs border border-[#2A2A2A]">
-                <span className="text-stone-400 text-[10px] block mb-1">24H PERFORMANCE</span>
-                <div
-                  className={`text-base font-bold tabular-nums flex items-center gap-1 ${
-                    activeModalItem.change >= 0 ? 'text-emerald-400' : 'text-rose-400'
-                  }`}
-                >
-                  {activeModalItem.change >= 0 ? '+' : ''}
-                  {activeModalItem.change.toFixed(activeModalItem.decimals || 2)} (
-                  {activeModalItem.changePercent >= 0 ? '+' : ''}
-                  {activeModalItem.changePercent.toFixed(2)}%)
-                </div>
-              </div>
-
-              {activeModalItem.high24h && (
-                <div className="bg-[#1C1C1C] p-3.5 rounded-xs border border-[#2A2A2A]">
-                  <span className="text-stone-400 text-[10px] block mb-1">24H HIGH</span>
-                  <span className="text-sm font-semibold text-stone-200 tabular-nums">
-                    {activeModalItem.prefix || ''}
-                    {activeModalItem.high24h.toLocaleString(undefined, {
-                      minimumFractionDigits: activeModalItem.decimals || 2,
-                    })}
-                  </span>
-                </div>
-              )}
-
-              {activeModalItem.low24h && (
-                <div className="bg-[#1C1C1C] p-3.5 rounded-xs border border-[#2A2A2A]">
-                  <span className="text-stone-400 text-[10px] block mb-1">24H LOW</span>
-                  <span className="text-sm font-semibold text-stone-200 tabular-nums">
-                    {activeModalItem.prefix || ''}
-                    {activeModalItem.low24h.toLocaleString(undefined, {
-                      minimumFractionDigits: activeModalItem.decimals || 2,
-                    })}
-                  </span>
-                </div>
-              )}
-
-              {activeModalItem.volume && (
-                <div className="bg-[#1C1C1C] p-3 rounded-xs border border-[#2A2A2A] flex justify-between items-center">
-                  <span className="text-stone-400 text-[10px]">24H VOLUME</span>
-                  <span className="text-xs font-bold text-stone-100">{activeModalItem.volume}</span>
-                </div>
-              )}
-
-              {activeModalItem.marketCap && (
-                <div className="bg-[#1C1C1C] p-3 rounded-xs border border-[#2A2A2A] flex justify-between items-center">
-                  <span className="text-stone-400 text-[10px]">MARKET CAP</span>
-                  <span className="text-xs font-bold text-stone-100">{activeModalItem.marketCap}</span>
-                </div>
-              )}
-            </div>
-
-            <div className="text-[11px] text-stone-400 font-mono-meta flex items-center justify-between pt-2 border-t border-[#262626]">
-              <span className="flex items-center gap-1.5 text-stone-400">
-                <Sparkles className="w-3.5 h-3.5 text-[#E50914]" /> Live Financial Market Feed
-              </span>
-              <span className="text-stone-500">Auto-refreshing</span>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

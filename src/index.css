@@ -17,6 +17,52 @@
   }
 }
 
+/* Signature Chronicles Crimson Selection (#E50914) - Solid Brand Crimson Red */
+::selection {
+  background-color: #e50914 !important;
+  background-color: rgba(229, 9, 20, 0.99) !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+::-moz-selection {
+  background-color: #e50914 !important;
+  background-color: rgba(229, 9, 20, 0.99) !important;
+  color: #ffffff !important;
+}
+
+*::selection {
+  background-color: #e50914 !important;
+  background-color: rgba(229, 9, 20, 0.99) !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+*::-moz-selection {
+  background-color: #e50914 !important;
+  background-color: rgba(229, 9, 20, 0.99) !important;
+  color: #ffffff !important;
+}
+
+html::selection,
+body::selection,
+div::selection,
+span::selection,
+p::selection,
+h1::selection,
+h2::selection,
+h3::selection,
+h4::selection,
+h5::selection,
+h6::selection,
+article::selection,
+section::selection {
+  background-color: #e50914 !important;
+  background-color: rgba(229, 9, 20, 0.99) !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
 /* Custom scrollbar for dark editorial theme */
 ::-webkit-scrollbar {
   width: 6px;
@@ -55,3 +101,175 @@
   animation-play-state: paused;
 }
 
+
+
+/* ==========================================================================
+   ARTICLE PROSE & TYPOGRAPHY STYLES
+   ========================================================================== */
+.prose h1, .article-prose h1 {
+  font-family: 'Playfair Display', Georgia, serif !important;
+  font-size: 2.25rem !important;
+  font-weight: 800 !important;
+  line-height: 1.25 !important;
+  color: #ffffff !important;
+  margin-top: 2rem !important;
+  margin-bottom: 0.75rem !important;
+  display: block !important;
+}
+
+.prose h2, .article-prose h2 {
+  font-family: 'Playfair Display', Georgia, serif !important;
+  font-size: 1.75rem !important;
+  font-weight: 700 !important;
+  line-height: 1.3 !important;
+  color: #ffffff !important;
+  margin-top: 1.75rem !important;
+  margin-bottom: 0.5rem !important;
+  display: block !important;
+}
+
+.prose h3, .article-prose h3 {
+  font-family: 'Playfair Display', Georgia, serif !important;
+  font-size: 1.35rem !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  color: #ffffff !important;
+  margin-top: 1.5rem !important;
+  margin-bottom: 0.5rem !important;
+  display: block !important;
+}
+
+.prose p, .article-prose p {
+  line-height: 1.8 !important;
+  color: #d6d3d1 !important;
+  margin-bottom: 1.25rem !important;
+}
+
+.prose strong, .article-prose strong,
+.prose b, .article-prose b {
+  font-weight: 800 !important;
+  color: #ffffff !important;
+}
+
+.prose em, .article-prose em,
+.prose i, .article-prose i {
+  font-style: italic !important;
+  color: #f5f5f4 !important;
+}
+
+.prose u, .article-prose u {
+  text-decoration: underline !important;
+  text-decoration-color: #e50914 !important;
+  text-decoration-thickness: 2px !important;
+  text-underline-offset: 3px !important;
+}
+
+.prose s, .article-prose s,
+.prose strike, .article-prose strike,
+.prose del, .article-prose del {
+  text-decoration: line-through !important;
+  color: #a8a29e !important;
+}
+
+.prose code, .article-prose code {
+  font-family: 'IBM Plex Mono', monospace !important;
+  background-color: #242424 !important;
+  color: #f87171 !important;
+  padding: 0.2rem 0.45rem !important;
+  border-radius: 4px !important;
+  font-size: 0.875em !important;
+  border: 1px solid #383838 !important;
+}
+
+.prose ul, .article-prose ul {
+  list-style-type: disc !important;
+  padding-left: 2rem !important;
+  margin: 1.25rem 0 !important;
+}
+
+.prose ol, .article-prose ol {
+  list-style-type: decimal !important;
+  padding-left: 2rem !important;
+  margin: 1.25rem 0 !important;
+}
+
+.prose li, .article-prose li {
+  display: list-item !important;
+  margin-bottom: 0.5rem !important;
+  line-height: 1.7 !important;
+  color: #d6d3d1 !important;
+}
+
+.prose blockquote, .article-prose blockquote {
+  border-left: 4px solid #e50914 !important;
+  background: rgba(229, 9, 20, 0.06) !important;
+  padding: 0.85rem 1.25rem !important;
+  margin: 1.5rem 0 !important;
+  font-style: italic !important;
+  color: #f5f5f4 !important;
+  border-radius: 0 4px 4px 0 !important;
+  font-family: 'Playfair Display', Georgia, serif !important;
+}
+
+.prose table, .article-prose table {
+  border-collapse: collapse !important;
+  width: 100% !important;
+  margin: 1.5rem 0 !important;
+  border: 1px solid #333333 !important;
+}
+
+.prose td, .article-prose td,
+.prose th, .article-prose th {
+  border: 1px solid #333333 !important;
+  padding: 8px 12px !important;
+}
+
+.prose th, .article-prose th {
+  background-color: #222222 !important;
+  color: #ffffff !important;
+  font-weight: bold !important;
+}
+
+
+/* Signature Chronicles Editorial Drop Cap (Big Crimson Red First Letter) */
+.drop-cap-red {
+  float: left !important;
+  font-family: 'Playfair Display', Georgia, serif !important;
+  font-size: 3.85rem !important;
+  line-height: 0.82 !important;
+  font-weight: 800 !important;
+  color: #e50914 !important;
+  margin-right: 0.65rem !important;
+  margin-top: 0.15rem !important;
+  margin-bottom: -0.1rem !important;
+  display: inline-block !important;
+}
+
+/* Breaking News Smooth Slide Animations */
+@keyframes slideInRight {
+  0% {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeInFast {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeInFast 0.35s ease-out forwards;
+}

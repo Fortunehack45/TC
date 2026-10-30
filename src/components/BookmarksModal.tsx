@@ -8,6 +8,7 @@ interface BookmarksModalProps {
   bookmarkedIds: string[];
   onToggleBookmark: (id: string) => void;
   onSelectArticle: (article: Article) => void;
+  articles?: Article[];
 }
 
 export const BookmarksModal: React.FC<BookmarksModalProps> = ({
@@ -16,11 +17,12 @@ export const BookmarksModal: React.FC<BookmarksModalProps> = ({
   bookmarkedIds,
   onToggleBookmark,
   onSelectArticle,
+  articles,
 }) => {
   if (!isOpen) return null;
 
-  const allArticles: Article[] = getAllArticles();
-  const savedArticles = allArticles.filter((item) => bookmarkedIds.includes(item.id));
+  const pool: Article[] = articles && articles.length > 0 ? articles : getAllArticles();
+  const savedArticles = pool.filter((item) => bookmarkedIds.includes(item.id));
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex justify-end">
@@ -34,7 +36,7 @@ export const BookmarksModal: React.FC<BookmarksModalProps> = ({
             <Bookmark className="w-4 h-4 text-[#E50914] fill-[#E50914]" />
             <span className="font-bold text-white uppercase tracking-wider">SAVED READING LIST ({savedArticles.length})</span>
           </div>
-          <button onClick={onClose} className="text-stone-400 hover:text-white p-1">
+          <button onClick={onClose} className="text-stone-400 hover:text-white p-1 cursor-pointer">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -55,19 +57,31 @@ export const BookmarksModal: React.FC<BookmarksModalProps> = ({
                     onSelectArticle(item);
                     onClose();
                   }}
-                  className="cursor-pointer flex-1"
+                  className="cursor-pointer flex-1 flex items-start gap-3"
                 >
-                  <span className="text-[10px] font-mono-meta text-[#E50914] font-bold uppercase">
-                    {item.section} • {item.date}
-                  </span>
-                  <h4 className="font-editorial text-sm font-bold text-white group-hover:text-[#E50914] transition-colors leading-snug">
-                    {item.title}
-                  </h4>
+                  {(item.cover_image_url || item.imageUrl) && (
+                    <img
+                      src={item.cover_image_url || item.imageUrl}
+                      alt={item.title}
+                      className="w-14 h-12 object-cover rounded-xs border border-[#333] shrink-0"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/og-image.png';
+                      }}
+                    />
+                  )}
+                  <div>
+                    <span className="text-[10px] font-mono-meta text-[#E50914] font-bold uppercase block">
+                      {item.category || item.section} • {item.date}
+                    </span>
+                    <h4 className="font-editorial text-sm font-bold text-white group-hover:text-[#E50914] transition-colors leading-snug line-clamp-2">
+                      {item.title}
+                    </h4>
+                  </div>
                 </div>
 
                 <button
                   onClick={() => onToggleBookmark(item.id)}
-                  className="text-stone-500 hover:text-[#E50914] p-1 shrink-0"
+                  className="text-stone-500 hover:text-[#E50914] p-1.5 shrink-0 cursor-pointer"
                   title="Remove from saved list"
                 >
                   <Trash2 className="w-4 h-4" />

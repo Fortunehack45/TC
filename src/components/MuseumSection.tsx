@@ -1,5 +1,5 @@
 import React from 'react';
-import { FINANCE_TECH_ARTICLES, Article } from '../data/artData';
+import { Article } from '../data/artData';
 import { ArtGraphic } from './ArtGraphics';
 import { ArrowUpRight, Bookmark } from 'lucide-react';
 
@@ -7,13 +7,19 @@ interface MuseumSectionProps {
   onSelectArticle: (article: Article) => void;
   onToggleBookmark: (id: string) => void;
   bookmarkedIds: string[];
+  articles?: Article[];
 }
 
 export const MuseumSection: React.FC<MuseumSectionProps> = ({
   onSelectArticle,
   onToggleBookmark,
   bookmarkedIds,
+  articles = [],
 }) => {
+  const displayItems = articles.slice(0, 3);
+
+  if (displayItems.length === 0) return null;
+
   return (
     <section id="FINANCE" className="w-full bg-[#121212] py-12 px-3 sm:px-5 max-w-[1600px] mx-auto border-b border-[#222222]">
       {/* Section Header */}
@@ -25,7 +31,7 @@ export const MuseumSection: React.FC<MuseumSectionProps> = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {FINANCE_TECH_ARTICLES.map((item) => {
+        {displayItems.map((item) => {
           const isBookmarked = bookmarkedIds.includes(item.id);
 
           return (
@@ -35,14 +41,25 @@ export const MuseumSection: React.FC<MuseumSectionProps> = ({
               className="group cursor-pointer bg-[#181818] border border-[#282828] hover:border-stone-500 p-5 rounded-xs flex flex-col justify-between transition-all"
             >
               <div>
-                <div className="w-full h-48 rounded-xs overflow-hidden mb-4 relative">
-                  <ArtGraphic type={item.imageKey} className="w-full h-full object-cover" />
+                <div className="w-full h-48 rounded-xs overflow-hidden mb-4 relative bg-[#111]">
+                  {item.cover_image_url || item.imageUrl ? (
+                    <img
+                      src={item.cover_image_url || item.imageUrl}
+                      alt={item.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/og-image.png';
+                      }}
+                    />
+                  ) : (
+                    <ArtGraphic type={item.imageKey} className="w-full h-full object-cover" />
+                  )}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       onToggleBookmark(item.id);
                     }}
-                    className="absolute top-3 right-3 bg-black/70 text-stone-300 hover:text-[#E50914] p-2 rounded-xs backdrop-blur-sm"
+                    className="absolute top-3 right-3 bg-black/70 text-stone-300 hover:text-[#E50914] p-2 rounded-xs backdrop-blur-sm cursor-pointer"
                   >
                     <Bookmark className={`w-3.5 h-3.5 ${isBookmarked ? 'fill-[#E50914] text-[#E50914]' : ''}`} />
                   </button>

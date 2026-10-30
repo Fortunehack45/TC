@@ -11,14 +11,14 @@ export const Footer: React.FC<FooterProps> = ({ onSelectSection }) => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10 pb-12 border-b border-[#222222] text-left">
           {/* Logo Badge */}
           <div className="flex flex-col items-start text-left">
-            <div 
+            <img 
+              src="/logo.png"
+              alt="The Chronicles"
               onClick={() => onSelectSection('HOME')}
-              className="inline-flex bg-[#E50914] text-white font-masthead font-extrabold text-lg tracking-widest px-3 py-1.5 rounded-xs shadow cursor-pointer mb-4"
-            >
-              C H R
-            </div>
+              className="h-9 w-auto object-contain cursor-pointer mb-4 hover:brightness-110 transition duration-200"
+            />
             <p className="font-editorial text-xs text-stone-400 max-w-xs leading-relaxed text-left">
-              The Global Chronicle is an international digital news organization providing independent journalism across world politics, global finance, technology, science, lifestyle, fashion, celebrity culture, and sports.
+              The Chronicles is an international digital news organization providing independent journalism across world politics, global finance, technology, science, lifestyle, fashion, celebrity culture, and sports.
             </p>
           </div>
 
@@ -58,6 +58,14 @@ export const Footer: React.FC<FooterProps> = ({ onSelectSection }) => {
                   className="text-left w-full hover:text-[#E50914] transition-colors block"
                 >
                   SCIENCE & INNOVATION
+                </button>
+              </li>
+              <li>
+                <button 
+                  onClick={() => onSelectSection('EDUCATION')} 
+                  className="text-left w-full hover:text-[#E50914] transition-colors block"
+                >
+                  EDUCATION & ACADEMIA
                 </button>
               </li>
             </ul>
@@ -110,8 +118,8 @@ export const Footer: React.FC<FooterProps> = ({ onSelectSection }) => {
               CONTACT & BUREAUS
             </h4>
             <div className="space-y-2 font-mono-meta text-xs text-stone-400 text-left w-full">
-              <p className="hover:text-white transition-colors cursor-pointer text-left">CHRONICLE@GLOBAL.COM</p>
-              <p className="hover:text-white transition-colors cursor-pointer text-left">+44 20 7946 0912</p>
+              <p className="hover:text-white transition-colors cursor-pointer text-left">CHRONICLE@THECHRONICLES.NEWS</p>
+              <a href="tel:+2348138223605" className="hover:text-white transition-colors cursor-pointer text-left block">+234 813 822 3605</a>
               <p className="text-[11px] text-stone-500 pt-2 text-left leading-normal">
                 LONDON • NEW YORK • GENEVA • TOKYO • PARIS
               </p>
@@ -121,7 +129,7 @@ export const Footer: React.FC<FooterProps> = ({ onSelectSection }) => {
 
         {/* Bottom Bar */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-[11px] font-mono-meta text-stone-500 gap-4">
-          <p>© {new Date().getFullYear()} THE GLOBAL CHRONICLE. ALL RIGHTS RESERVED.</p>
+          <p>© {new Date().getFullYear()} THE CHRONICLES. ALL RIGHTS RESERVED.</p>
           <div className="flex flex-wrap items-center gap-6">
             <span className="hover:text-stone-300 cursor-pointer">PRIVACY POLICY</span>
             <span className="hover:text-stone-300 cursor-pointer">TERMS OF SERVICE</span>

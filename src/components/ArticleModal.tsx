@@ -2,16 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { Article, getRelatedArticles } from '../data/artData';
 import { ArtGraphic } from './ArtGraphics';
 import { CommentsSection } from './CommentsSection';
-import { ArrowLeft, Bookmark, Share2, Type, Clock, Calendar, User, Check, Play, Heart, ArrowUpRight, ChevronRight, Home } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { toggleArticleLike, getArticleInteractionState, getArticleLikesCount, recordArticleView } from '../lib/supabase';
+import { ArrowLeft, Bookmark, Share2, Type, Clock, Calendar, User, Check, Play, Heart, ChevronRight, Home, Tag, Video } from 'lucide-react';
+import { ShareModal } from './ShareModal';
 
 interface ArticleModalProps {
-  article: Article | null;
+  article: (Article & { content_html?: string; cover_image_url?: string; video_url?: string; tags?: string[] }) | null;
   onClose: () => void;
   onToggleBookmark: (id: string) => void;
   isBookmarked: boolean;
   onPlayPodcast?: (article: Article) => void;
   onSelectRelatedArticle?: (article: Article) => void;
   onNavigateToSection?: (section: string) => void;
+  onOpenAuth?: () => void;
 }
 
 export const ArticleModal: React.FC<ArticleModalProps> = ({
@@ -22,39 +26,65 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
   onPlayPodcast,
   onSelectRelatedArticle,
   onNavigateToSection,
+  onOpenAuth,
 }) => {
+  const { user } = useAuth();
   const [fontSize, setFontSize] = useState<'normal' | 'large' | 'xlarge'>('normal');
   const [copied, setCopied] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
-  // Article Like state persisted in localStorage
-  const [articleLikes, setArticleLikes] = useState<number>(128);
+  // Real Article Like state
+  const [articleLikes, setArticleLikes] = useState<number>(0);
   const [isArticleLiked, setIsArticleLiked] = useState<boolean>(false);
 
   useEffect(() => {
     if (article) {
       window.scrollTo(0, 0);
-      try {
-        const savedLike = localStorage.getItem(`tan_article_liked_${article.id}`);
-        setIsArticleLiked(savedLike === 'true');
-        setArticleLikes(savedLike === 'true' ? 129 : 128);
-      } catch {
-        // Fallback
+
+      // Record real reading view in Supabase (once per browser session per article)
+      const viewKey = `tc_viewed_${article.id}`;
+      if (!sessionStorage.getItem(viewKey)) {
+        sessionStorage.setItem(viewKey, '1');
+        recordArticleView(article.id);
+      }
+
+      // Fetch actual real likes count from Supabase tc_likes
+      getArticleLikesCount(article.id).then((count) => {
+        setArticleLikes(count);
+      });
+
+      // Check interaction state in Supabase
+      if (user) {
+        getArticleInteractionState(article.id, user.id).then((state) => {
+          setIsArticleLiked(state.isLiked);
+        });
+      } else {
+        try {
+          const savedLike = localStorage.getItem(`tan_article_liked_${article.id}`);
+          setIsArticleLiked(savedLike === 'true');
+        } catch {}
       }
     }
-  }, [article]);
+  }, [article, user?.id]);
 
   if (!article) return null;
 
-  const relatedArticles = getRelatedArticles(article);
+  const relatedArticles = getRelatedArticles(article as Article);
 
-  const handleToggleArticleLike = () => {
+  const handleToggleArticleLike = async () => {
+    if (!user) {
+      onOpenAuth?.();
+      return;
+    }
+
     const nextState = !isArticleLiked;
     setIsArticleLiked(nextState);
-    setArticleLikes((prev) => (nextState ? prev + 1 : prev - 1));
+    setArticleLikes((prev) => (nextState ? prev + 1 : Math.max(0, prev - 1)));
+
     try {
-      localStorage.setItem(`tan_article_liked_${article.id}`, nextState ? 'true' : 'false');
-    } catch {
-      // Ignore
+      await toggleArticleLike(article.id, user.id, isArticleLiked);
+    } catch (err) {
+      console.warn('Failed to toggle like in Supabase:', err);
     }
   };
 
@@ -64,94 +94,72 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
       setTimeout(() => setCopied(false), 2000);
     };
 
-    const fallbackCopy = () => {
-      try {
-        const textArea = document.createElement('textarea');
-        textArea.value = text;
-        textArea.style.position = 'fixed';
-        textArea.style.left = '-999999px';
-        textArea.style.top = '-999999px';
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-      } catch {
-        // Ignore
-      }
-      triggerSuccess();
-    };
-
-    try {
-      if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard
-          .writeText(text)
-          .then(() => triggerSuccess())
-          .catch(() => fallbackCopy());
-      } else {
-        fallbackCopy();
-      }
-    } catch {
-      fallbackCopy();
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(text).then(triggerSuccess).catch(() => {
+        fallbackCopy(text);
+      });
+    } else {
+      fallbackCopy(text);
     }
   };
 
+  const fallbackCopy = (text: string) => {
+    try {
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      document.execCommand('copy');
+      textArea.remove();
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
+  };
+
   const handleShare = () => {
-    const url = window.location.href;
-    if (navigator.share) {
-      navigator
-        .share({
-          title: article.title,
-          text: article.excerpt || article.title,
-          url,
-        })
-        .catch(() => {
-          copyToClipboard(url);
-        });
-    } else {
-      copyToClipboard(url);
-    }
+    setIsShareModalOpen(true);
   };
 
   const getFontClass = () => {
     switch (fontSize) {
       case 'large':
-        return 'text-base sm:text-lg leading-relaxed';
+        return 'text-lg sm:text-xl leading-relaxed sm:leading-loose';
       case 'xlarge':
-        return 'text-lg sm:text-xl leading-loose';
+        return 'text-xl sm:text-2xl leading-loose';
       default:
-        return 'text-sm sm:text-base leading-relaxed';
+        return 'text-base sm:text-lg leading-relaxed';
     }
   };
 
   return (
-    <div className="w-full bg-[#121212] text-stone-200 py-4 sm:py-6 antialiased">
-      {/* Sub-Navigation Action Bar */}
-      <div className="bg-[#181818] border-y border-[#282828] px-3 sm:px-6 py-2.5 w-full mb-6">
-        <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-4">
-          {/* Simple Clean BACK Button */}
+    <div className="w-full bg-[#121212] text-stone-200">
+      {/* Top Secondary Action Bar */}
+      <div className="bg-[#141414] border-b border-[#252525] py-2.5 px-3 sm:px-6 mb-6">
+        <div className="max-w-[1200px] mx-auto flex items-center justify-between">
           <button
             onClick={onClose}
-            className="flex items-center gap-2 bg-[#222222] hover:bg-[#E50914] text-white px-3.5 py-2 rounded-xs font-mono-meta text-xs font-bold transition-colors shrink-0 min-h-[40px]"
+            className="flex items-center gap-2 text-xs font-mono-meta tracking-wider uppercase text-stone-400 hover:text-white transition-colors bg-[#1E1E1E] hover:bg-[#282828] px-3.5 py-1.5 rounded-xs border border-[#2E2E2E] cursor-pointer"
           >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="uppercase tracking-wider">BACK</span>
+            <ArrowLeft className="w-4 h-4 text-[#E50914]" />
+            <span>BACK</span>
           </button>
 
-          {/* Reader Controls: Like, Font size, Bookmark, Share */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            {/* Article Like Button */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Like button */}
             <button
               onClick={handleToggleArticleLike}
-              className={`p-2 rounded-xs transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center font-mono-meta text-xs font-bold gap-1.5 ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xs text-xs font-mono-meta font-bold transition-colors ${
                 isArticleLiked
-                  ? 'bg-[#E50914] text-white'
-                  : 'bg-[#222222] hover:bg-[#2A2A2A] text-stone-300 hover:text-white'
+                  ? 'bg-[#E50914] text-white shadow-md'
+                  : 'bg-[#222222] text-stone-300 hover:text-white'
               }`}
               title={isArticleLiked ? 'Unlike Article' : 'Like Article'}
             >
               <Heart className={`w-4 h-4 ${isArticleLiked ? 'fill-white' : ''}`} />
-              <span className="hidden sm:inline">{articleLikes}</span>
+              <span>{articleLikes}</span>
             </button>
 
             {/* Font size toggle */}
@@ -159,7 +167,7 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
               <Type className="w-3.5 h-3.5 text-stone-400 hidden sm:inline ml-1" />
               <button
                 onClick={() => setFontSize('normal')}
-                className={`px-2 py-1 text-xs font-mono-meta font-bold rounded-xs min-h-[32px] ${
+                className={`px-2 py-1 text-xs font-mono-meta font-bold rounded-xs ${
                   fontSize === 'normal' ? 'bg-[#E50914] text-white' : 'text-stone-400 hover:text-white'
                 }`}
               >
@@ -167,7 +175,7 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
               </button>
               <button
                 onClick={() => setFontSize('large')}
-                className={`px-2 py-1 text-xs font-mono-meta font-bold rounded-xs min-h-[32px] ${
+                className={`px-2 py-1 text-xs font-mono-meta font-bold rounded-xs ${
                   fontSize === 'large' ? 'bg-[#E50914] text-white' : 'text-stone-400 hover:text-white'
                 }`}
               >
@@ -175,7 +183,7 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
               </button>
               <button
                 onClick={() => setFontSize('xlarge')}
-                className={`px-2 py-1 text-xs font-mono-meta font-bold rounded-xs min-h-[32px] ${
+                className={`px-2 py-1 text-xs font-mono-meta font-bold rounded-xs ${
                   fontSize === 'xlarge' ? 'bg-[#E50914] text-white' : 'text-stone-400 hover:text-white'
                 }`}
               >
@@ -186,7 +194,7 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
             {/* Bookmark button */}
             <button
               onClick={() => onToggleBookmark(article.id)}
-              className="p-2 bg-[#222222] hover:bg-[#2A2A2A] text-stone-300 hover:text-[#E50914] rounded-xs transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
+              className="p-2 bg-[#222222] hover:bg-[#2A2A2A] text-stone-300 hover:text-[#E50914] rounded-xs transition-colors flex items-center justify-center"
               title={isBookmarked ? 'Saved to Bookmarks' : 'Save Article'}
             >
               <Bookmark className={`w-4 h-4 ${isBookmarked ? 'fill-[#E50914] text-[#E50914]' : ''}`} />
@@ -195,7 +203,7 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
             {/* Share button */}
             <button
               onClick={handleShare}
-              className="p-2 bg-[#222222] hover:bg-[#2A2A2A] text-stone-300 hover:text-white rounded-xs transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
+              className="p-2 bg-[#222222] hover:bg-[#2A2A2A] text-stone-300 hover:text-white rounded-xs transition-colors flex items-center justify-center"
               title="Share Article Link"
             >
               {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4" />}
@@ -248,36 +256,47 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
           )}
           {article.author && (
             <span className="flex items-center gap-1">
-              <User className="w-3.5 h-3.5 text-stone-400" /> {article.author}
+              <User className="w-3.5 h-3.5 text-stone-500" /> {article.author}
             </span>
           )}
           {article.readTime && (
             <span className="flex items-center gap-1">
-              <Clock className="w-3.5 h-3.5 text-stone-400" /> {article.readTime}
+              <Clock className="w-3.5 h-3.5 text-stone-500" /> {article.readTime}
             </span>
           )}
         </div>
 
-        {/* Main Headline */}
-        <h1 className="font-editorial text-2xl sm:text-4xl md:text-5xl font-extrabold text-white uppercase tracking-tight leading-tight mb-6">
+        {/* Headline */}
+        <h1 className="font-editorial text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white leading-tight sm:leading-tight tracking-tight mb-6">
           {article.title}
         </h1>
 
-        {/* Standfirst / Excerpt */}
+        {/* Subtitle / Excerpt */}
         {article.excerpt && (
-          <p className="font-editorial italic text-lg sm:text-2xl text-stone-300 pb-8 mb-8 border-b border-[#282828] leading-relaxed">
-            "{article.excerpt}"
+          <p className="font-editorial text-lg sm:text-2xl text-stone-300 italic border-l-4 border-[#E50914] pl-4 py-1 mb-8 leading-relaxed font-normal">
+            {article.excerpt}
           </p>
         )}
 
-        {/* Featured Artwork Banner */}
-        {article.imageKey && (
+        {/* Cover Artwork or Image */}
+        {article.cover_image_url ? (
+          <div className="w-full h-64 sm:h-96 md:h-[480px] rounded-xs overflow-hidden border border-[#282828] mb-10 relative group shadow-2xl">
+            <img
+              src={article.cover_image_url || article.imageUrl}
+              alt={article.title}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/og-image.png';
+              }}
+            />
+          </div>
+        ) : article.imageKey ? (
           <div className="w-full h-64 sm:h-96 md:h-[480px] rounded-xs overflow-hidden border border-[#282828] mb-10 relative group shadow-2xl">
             <ArtGraphic type={article.imageKey} className="w-full h-full object-cover" />
             {article.section === 'PODCASTS' && onPlayPodcast && (
               <div className="absolute inset-0 bg-black/40 flex items-center justify-center p-4">
                 <button
-                  onClick={() => onPlayPodcast(article)}
+                  onClick={() => onPlayPodcast(article as Article)}
                   className="bg-[#E50914] hover:bg-[#C40711] text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-2 font-mono-meta text-xs sm:text-sm font-bold transition-transform hover:scale-105"
                 >
                   <Play className="w-5 h-5 fill-white ml-0.5" /> PLAY FULL AUDIO EPISODE
@@ -285,11 +304,34 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
               </div>
             )}
           </div>
+        ) : null}
+
+        {/* Video Embed if Present */}
+        {article.video_url && (
+          <div className="w-full aspect-video rounded-xs overflow-hidden border border-[#282828] mb-10 shadow-2xl bg-black">
+            {article.video_url.includes('youtube.com') || article.video_url.includes('youtu.be') ? (
+              <iframe
+                src={article.video_url.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')}
+                title={article.title}
+                className="w-full h-full"
+                allowFullScreen
+              />
+            ) : (
+              <video controls className="w-full h-full" src={article.video_url}>
+                Your browser does not support HTML5 video.
+              </video>
+            )}
+          </div>
         )}
 
-        {/* Body Text */}
+        {/* Body Text (Renders Rich HTML or paragraphs) */}
         <div className={`font-sans-body text-stone-300 space-y-6 ${getFontClass()}`}>
-          {article.fullContent ? (
+          {article.content_html ? (
+            <div
+              className="prose prose-invert max-w-none article-prose prose-headings:font-editorial prose-headings:text-white prose-p:leading-relaxed prose-a:text-[#E50914] prose-blockquote:border-l-4 prose-blockquote:border-[#E50914] prose-blockquote:font-editorial prose-blockquote:italic prose-table:border prose-table:border-[#333] prose-th:bg-[#222] prose-th:p-2 prose-td:p-2 prose-td:border-t prose-td:border-[#333]"
+              dangerouslySetInnerHTML={{ __html: article.content_html }}
+            />
+          ) : article.fullContent ? (
             article.fullContent.split('\n\n').map((paragraph, index) => (
               <p
                 key={index}
@@ -306,20 +348,37 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
             <>
               <p className="first-letter:text-5xl sm:first-letter:text-6xl first-letter:font-editorial first-letter:font-bold first-letter:float-left first-letter:mr-3 first-letter:mt-1 first-letter:text-[#E50914]">
                 {article.excerpt ||
-                  'The Global Chronicle provides comprehensive coverage of international news developments.'}
+                  'The Chronicles provides comprehensive coverage of international news developments.'}
               </p>
               <p>
                 From global summits and market shifts to breakthrough genetic research and haute couture presentations, our international team of correspondents delivers authoritative analysis.
               </p>
               <blockquote className="border-y border-[#333333] py-6 my-8 font-editorial italic text-stone-100 text-xl sm:text-2xl text-center leading-relaxed">
-                "Independent journalism illuminates truth across geopolitical, economic, and cultural frontiers."
+                &ldquo;Independent journalism illuminates truth across geopolitical, economic, and cultural frontiers.&rdquo;
               </blockquote>
               <p>
-                Subscribers to The Global Chronicle receive unlimited access to complete digital archives, audio dispatches, and daily editorial dispatches from London, New York, Geneva, Tokyo, and Paris.
+                Subscribers to The Chronicles receive unlimited access to complete digital archives, audio dispatches, and daily editorial dispatches from London, New York, Geneva, Tokyo, and Paris.
               </p>
             </>
           )}
         </div>
+
+        {/* Tag Chips */}
+        {article.tags && article.tags.length > 0 && (
+          <div className="mt-8 pt-6 border-t border-[#262626] flex items-center flex-wrap gap-2">
+            <span className="font-mono-meta text-xs text-stone-500 uppercase flex items-center gap-1">
+              <Tag className="w-3.5 h-3.5" /> TAGS:
+            </span>
+            {article.tags.map((tag) => (
+              <span
+                key={tag}
+                className="bg-[#1C1C1C] border border-[#2D2D2D] text-stone-300 px-2.5 py-1 text-xs font-mono-meta rounded-xs"
+              >
+                #{tag}
+              </span>
+            ))}
+          </div>
+        )}
 
         {/* Interactive Reader Discussion & Forum */}
         <CommentsSection
@@ -332,71 +391,50 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
           onToggleBookmark={() => onToggleBookmark(article.id)}
           onShare={handleShare}
           copiedShareLink={copied}
+          onOpenAuth={onOpenAuth}
         />
 
         {/* Related Articles Section */}
-        <section className="mt-14 pt-10 border-t border-[#282828]">
-          <div className="flex items-center justify-between mb-6 pb-2 border-b border-[#282828]">
-            <h3 className="font-masthead text-xl sm:text-2xl font-bold uppercase tracking-wider text-white">
-              RELATED ARTICLES
-            </h3>
-            <span className="font-mono-meta text-xs text-stone-400">RECOMMENDED READING</span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {relatedArticles.map((rel) => (
-              <div
-                key={rel.id}
-                onClick={() => {
-                  if (onSelectRelatedArticle) {
-                    onSelectRelatedArticle(rel);
-                  }
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-                className="group cursor-pointer bg-[#181818] border border-[#282828] hover:border-stone-500 p-4 rounded-xs flex flex-col justify-between transition-all"
-              >
-                <div>
-                  <div className="w-full h-40 rounded-xs overflow-hidden mb-3 relative">
-                    <ArtGraphic type={rel.imageKey} className="w-full h-full object-cover" />
+        {relatedArticles.length > 0 && (
+          <section className="mt-14 pt-10 border-t border-[#282828]">
+            <div className="flex items-center justify-between mb-6 pb-2 border-b border-[#282828]">
+              <h3 className="font-masthead text-xl sm:text-2xl font-bold uppercase tracking-wider text-white">
+                RELATED DISPATCHES
+              </h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {relatedArticles.map((rel) => (
+                <div
+                  key={rel.id}
+                  onClick={() => onSelectRelatedArticle?.(rel)}
+                  className="group bg-[#161616] border border-[#262626] p-4 cursor-pointer hover:border-[#E50914] transition-colors flex flex-col justify-between"
+                >
+                  <div>
+                    <span className="text-[10px] font-mono-meta bg-[#E50914] text-white px-2 py-0.5 rounded-xs font-bold uppercase tracking-wider mb-2 inline-block">
+                      {rel.category}
+                    </span>
+                    <h4 className="font-editorial text-base font-bold text-white group-hover:underline line-clamp-2 mb-2">
+                      {rel.title}
+                    </h4>
+                    <p className="text-xs text-stone-400 line-clamp-2 font-sans-body mb-3">
+                      {rel.excerpt}
+                    </p>
                   </div>
-                  <div className="flex items-center justify-between gap-2 font-mono-meta text-[11px] text-stone-400 mb-2 min-w-0 w-full overflow-hidden">
-                    <span className="text-[#E50914] font-bold uppercase text-[10px] inline-block truncate shrink min-w-0">{rel.category}</span>
-                    <span className="shrink-0 text-[11px] text-stone-400 font-medium whitespace-nowrap ml-auto">{rel.date}</span>
+                  <div className="text-[11px] font-mono-meta text-stone-500 pt-2 border-t border-[#222]">
+                    {rel.readTime || '5 min read'} &bull; {rel.author}
                   </div>
-                  <h4 className="font-editorial text-sm font-bold text-white group-hover:text-[#E50914] transition-colors leading-snug line-clamp-2 mb-2">
-                    {rel.title}
-                  </h4>
-                  <p className="text-xs text-stone-400 font-sans-body line-clamp-2 mb-3">
-                    {rel.excerpt}
-                  </p>
                 </div>
-
-                <div className="flex items-center gap-1 font-mono-meta text-[11px] text-stone-300 group-hover:text-[#E50914] pt-2 border-t border-[#222222]">
-                  <span>READ STORY</span>
-                  <ArrowUpRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Article Footer Navigation */}
-        <div className="mt-12 pt-8 border-t border-[#282828] flex flex-col sm:flex-row items-center justify-between gap-4 font-mono-meta text-xs text-stone-400">
-          <div className="flex items-center gap-2">
-            <span>FILED UNDER:</span>
-            <span className="text-white font-bold">{article.section}</span>
-            <span>•</span>
-            <span className="text-stone-300">{article.category}</span>
-          </div>
-
-          <button
-            onClick={onClose}
-            className="w-full sm:w-auto bg-[#E50914] hover:bg-[#C40711] text-white px-6 py-3 rounded-xs font-mono-meta font-bold transition-colors text-center min-h-[44px] uppercase tracking-wider"
-          >
-            ← BACK
-          </button>
-        </div>
+              ))}
+            </div>
+          </section>
+        )}
       </article>
+
+      <ShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        article={article}
+      />
     </div>
   );
 };

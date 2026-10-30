@@ -4,40 +4,226 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { HeaderNav } from './components/HeaderNav';
 import { HeroSection } from './components/HeroSection';
+import { HeadlinesSection } from './components/HeadlinesSection';
 import { BooksSection } from './components/BooksSection';
-import { PodcastsSection } from './components/PodcastsSection';
 import { MuseumSection } from './components/MuseumSection';
+import { SportsSection } from './components/SportsSection';
 import { ColumnsSection } from './components/ColumnsSection';
 import { SearchResultsSection } from './components/SearchResultsSection';
+import { CategoryPage } from './components/CategoryPage';
+import { AuthModal } from './components/AuthModal';
 import { Footer } from './components/Footer';
 import { ArticleModal } from './components/ArticleModal';
 import { PodcastPlayer } from './components/PodcastPlayer';
 import { BookmarksModal } from './components/BookmarksModal';
-import { Article } from './data/artData';
+import { Article, mapDBArticleToArticle, setLoadedArticles } from './data/artData';
+import { toggleArticleBookmark, supabase } from './lib/supabase';
 
-export default function App() {
-  const [activeSection, setActiveSection] = useState('HOME');
-  const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
+function MainApp() {
+  const { user } = useAuth();
+
+  // Read initial section from URL (?section= or ?category=) or sessionStorage
+  const getInitialSection = (): string => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const s = params.get('section') || params.get('category');
+      if (s) return s.toUpperCase();
+      const saved = sessionStorage.getItem('tc_active_section');
+      if (saved) return saved.toUpperCase();
+    } catch {}
+    return 'HOME';
+  };
+
+  const [activeSection, setActiveSection] = useState<string>(getInitialSection);
+  const [selectedArticle, setSelectedArticle] = useState<any | null>(null);
   const [activePodcast, setActivePodcast] = useState<Article | null>(null);
   const [isPlayingPodcast, setIsPlayingPodcast] = useState(false);
   const [isBookmarksOpen, setIsBookmarksOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
-  // In-Page Inline Search State (100% Non-Floating!)
+  // Live Database Articles (100% directly loaded from Supabase tc_articles)
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [isLoadingArticles, setIsLoadingArticles] = useState(true);
+
+  // In-Page Inline Search State
   const [isSearchInlineOpen, setIsSearchInlineOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
-  
-  // Bookmarks stored in localStorage
+
+  // Bookmarks stored in localStorage and synced with Supabase
   const [bookmarkedIds, setBookmarkedIds] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem('tan_bookmarks');
-      return saved ? JSON.parse(saved) : ['hero-1', 'book-1'];
+      return saved ? JSON.parse(saved) : [];
     } catch {
-      return ['hero-1', 'book-1'];
+      return [];
     }
   });
+
+  // Helper to synchronize URL query parameters with active state
+  const syncUrlState = (section: string, article: any | null) => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (section && section !== 'HOME') {
+        params.set('section', section.toLowerCase());
+      } else {
+        params.delete('section');
+        params.delete('category');
+      }
+
+      if (article) {
+        const slugOrId = article.slug || article.id;
+        params.set('article', slugOrId);
+      } else {
+        params.delete('article');
+      }
+
+      const q = params.toString();
+      const newUrl = q ? `${window.location.pathname}?${q}` : window.location.pathname;
+      window.history.replaceState({ section, articleId: article?.id }, '', newUrl);
+    } catch {}
+  };
+
+  // Load all published articles directly from Supabase tc_articles
+  const loadDatabaseArticles = async () => {
+    setIsLoadingArticles(true);
+    try {
+      const { data, error } = await supabase
+        .from('tc_articles')
+        .select('*')
+        .eq('status', 'published')
+        .order('published_at', { ascending: false });
+
+      if (!error && data) {
+        const mapped = data.map(mapDBArticleToArticle);
+        setArticles(mapped);
+        setLoadedArticles(mapped);
+      }
+    } catch (err) {
+      console.warn('Failed to load articles from Supabase:', err);
+    } finally {
+      setIsLoadingArticles(false);
+    }
+  };
+
+  useEffect(() => {
+    loadDatabaseArticles();
+  }, []);
+
+  // Check for ?article= in URL on initial mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const articleParam = params.get('article');
+    if (articleParam) {
+      supabase
+        .from('tc_articles')
+        .select('*')
+        .or(`slug.eq.${articleParam},id.eq.${articleParam}`)
+        .limit(1)
+        .then(({ data, error }) => {
+          if (data && data.length > 0 && !error) {
+            setSelectedArticle(mapDBArticleToArticle(data[0]));
+          }
+        });
+    }
+  }, []);
+
+  // Synchronize browser history and popstate (Back / Forward buttons)
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const secParam = params.get('section') || params.get('category');
+      const targetSec = secParam ? secParam.toUpperCase() : 'HOME';
+      setActiveSection(targetSec);
+
+      const articleParam = params.get('article');
+      if (articleParam) {
+        const found = articles.find((a) => a.id === articleParam || a.slug === articleParam);
+        if (found) {
+          setSelectedArticle(found);
+        } else {
+          supabase
+            .from('tc_articles')
+            .select('*')
+            .or(`slug.eq.${articleParam},id.eq.${articleParam}`)
+            .limit(1)
+            .then(({ data, error }) => {
+              if (data && data[0] && !error) {
+                setSelectedArticle(mapDBArticleToArticle(data[0]));
+              }
+            });
+        }
+      } else {
+        setSelectedArticle(null);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [articles]);
+
+  // Update browser URL and Dynamic Open Graph & Twitter Cards when article or section changes
+  useEffect(() => {
+    const setMeta = (attr: string, key: string, content: string) => {
+      let el = document.querySelector(`meta[${attr}="${key}"]`);
+      if (!el) {
+        el = document.createElement('meta');
+        el.setAttribute(attr, key);
+        document.head.appendChild(el);
+      }
+      el.setAttribute('content', content);
+    };
+
+    // Keep URL search params synchronized
+    syncUrlState(activeSection, selectedArticle);
+
+    if (selectedArticle) {
+      document.title = `${selectedArticle.title} - The Chronicles`;
+      const previewImg = selectedArticle.cover_image_url || selectedArticle.imageUrl || `${window.location.origin}/og-image.png`;
+      const desc = selectedArticle.subtitle || selectedArticle.excerpt || 'Authoritative global reporting from The Chronicles.';
+
+      setMeta('property', 'og:title', `${selectedArticle.title} - The Chronicles`);
+      setMeta('property', 'og:description', desc);
+      setMeta('property', 'og:image', previewImg);
+      setMeta('property', 'og:url', window.location.href);
+      setMeta('name', 'twitter:title', `${selectedArticle.title} - The Chronicles`);
+      setMeta('name', 'twitter:description', desc);
+      setMeta('name', 'twitter:image', previewImg);
+    } else {
+      const sectionTitle = activeSection !== 'HOME'
+        ? `${activeSection} - The Chronicles`
+        : 'The Chronicles - World News, Finance, Tech & Culture';
+
+      document.title = sectionTitle;
+      const siteImg = `${window.location.origin}/og-image.png`;
+      setMeta('property', 'og:title', sectionTitle);
+      setMeta('property', 'og:description', 'A full-spectrum digital news publication covering world politics, global finance, technology, science, lifestyle, fashion, celebrity, and sports.');
+      setMeta('property', 'og:image', siteImg);
+      setMeta('property', 'og:url', window.location.href);
+      setMeta('name', 'twitter:title', sectionTitle);
+      setMeta('name', 'twitter:description', 'A full-spectrum digital news publication covering world politics, global finance, technology, science, lifestyle, fashion, celebrity, and sports.');
+      setMeta('name', 'twitter:image', siteImg);
+    }
+  }, [selectedArticle, activeSection]);
+
+  // Sync bookmarks with Supabase for authenticated user
+  useEffect(() => {
+    if (user) {
+      supabase
+        .from('tc_bookmarks')
+        .select('article_id')
+        .eq('user_id', user.id)
+        .then(({ data }) => {
+          if (data && data.length > 0) {
+            const dbIds = data.map((b) => b.article_id);
+            setBookmarkedIds((prev) => Array.from(new Set([...prev, ...dbIds])));
+          }
+        });
+    }
+  }, [user]);
 
   useEffect(() => {
     try {
@@ -47,23 +233,46 @@ export default function App() {
     }
   }, [bookmarkedIds]);
 
-  const handleToggleBookmark = (id: string) => {
+  const handleToggleBookmark = async (id: string) => {
+    const isCurrentlySaved = bookmarkedIds.includes(id);
     setBookmarkedIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+      isCurrentlySaved ? prev.filter((item) => item !== id) : [...prev, id]
     );
-  };
 
-  const handleSelectSection = (section: string) => {
-    setActiveSection(section);
-    setSelectedArticle(null); // Return to main sections view when clicking section tabs
-    if (section === 'HOME') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else {
-      const el = document.getElementById(section);
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth' });
+    if (user) {
+      try {
+        await toggleArticleBookmark(id, user.id, isCurrentlySaved);
+      } catch (err) {
+        console.warn('Could not sync bookmark with Supabase:', err);
       }
     }
+  };
+
+  const CATEGORY_KEYS = [
+    'WORLD', 'POLITICS', 'FINANCE', 'TECHNOLOGY', 'SCIENCE', 'EDUCATION',
+    'LIFESTYLE', 'FASHION', 'CELEBRITY', 'SPORT', 'BOOKS', 'PODCASTS'
+  ];
+
+  const handleSelectSection = (section: string) => {
+    const target = section.toUpperCase();
+    setActiveSection(target);
+    setSelectedArticle(null);
+    try {
+      sessionStorage.setItem('tc_active_section', target);
+    } catch {}
+    syncUrlState(target, null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleSelectArticle = (art: any) => {
+    setSelectedArticle(art);
+    syncUrlState(activeSection, art);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleCloseArticle = () => {
+    setSelectedArticle(null);
+    syncUrlState(activeSection, null);
   };
 
   const handlePlayEpisode = (article: Article) => {
@@ -81,9 +290,11 @@ export default function App() {
     setIsSearchInlineOpen(false);
   };
 
+  const isCategoryView = CATEGORY_KEYS.includes(activeSection);
+
   return (
-    <div className="w-full min-h-screen bg-[#121212] text-stone-200 font-sans-body selection:bg-[#E50914] selection:text-white flex flex-col justify-between">
-      {/* Full-bleed Header Navigation (ALWAYS VISIBLE at the very top!) */}
+    <div className="w-full min-h-screen bg-[#121212] text-stone-200 font-sans-body flex flex-col justify-between">
+      {/* Full-bleed Header Navigation */}
       <HeaderNav
         activeSection={activeSection}
         onSelectSection={handleSelectSection}
@@ -97,71 +308,94 @@ export default function App() {
         onCategoryChange={setSelectedCategory}
         isSearchInlineOpen={isSearchInlineOpen}
         onToggleInlineSearch={() => setIsSearchInlineOpen(!isSearchInlineOpen)}
+        onOpenAuth={() => setIsAuthModalOpen(true)}
       />
 
-      {/* Main Application Area directly under main site header */}
+      {/* Main Application Content Area */}
       <main className="w-full flex-grow pb-16">
         {selectedArticle ? (
-          /* Dedicated In-Page Article View (Header stays 100% visible at the top!) */
+          /* Dedicated In-Page Article View */
           <ArticleModal
             article={selectedArticle}
-            onClose={() => setSelectedArticle(null)}
+            onClose={handleCloseArticle}
             onToggleBookmark={handleToggleBookmark}
             isBookmarked={bookmarkedIds.includes(selectedArticle.id)}
             onPlayPodcast={(art) => handlePlayEpisode(art)}
-            onSelectRelatedArticle={(art) => setSelectedArticle(art)}
+            onSelectRelatedArticle={(art) => handleSelectArticle(art)}
             onNavigateToSection={(sec) => {
-              setSelectedArticle(null);
+              handleCloseArticle();
               handleSelectSection(sec);
             }}
+            onOpenAuth={() => setIsAuthModalOpen(true)}
           />
         ) : (searchQuery.trim() !== '' || (isSearchInlineOpen && selectedCategory !== 'ALL')) ? (
           /* Inline Search Results Section */
           <SearchResultsSection
             searchQuery={searchQuery}
             selectedCategory={selectedCategory}
-            onSelectArticle={(art) => setSelectedArticle(art)}
+            onSelectArticle={(art) => handleSelectArticle(art)}
             onClearSearch={handleClearSearch}
+            articles={articles}
+          />
+        ) : isCategoryView ? (
+          /* Dedicated High-End Category Page (World, Politics, Finance, Tech, Science, Sport News, etc.) */
+          <CategoryPage
+            category={activeSection}
+            onSelectArticle={(art) => handleSelectArticle(art)}
+            onToggleBookmark={handleToggleBookmark}
+            bookmarkedIds={bookmarkedIds}
+            onBackToHome={() => handleSelectSection('HOME')}
+            onOpenAuth={() => setIsAuthModalOpen(true)}
+            onNavigateToSection={(sec) => handleSelectSection(sec)}
           />
         ) : (
-          /* Main Newspaper Broadsheet Sections */
+          /* Main Newspaper Broadsheet Front Page */
           <>
             {/* Hero Section */}
             <HeroSection
-              onSelectArticle={(art) => setSelectedArticle(art as Article)}
+              onSelectArticle={(art) => handleSelectArticle(art as Article)}
+              onToggleBookmark={handleToggleBookmark}
+              bookmarkedIds={bookmarkedIds}
+              articles={articles}
+            />
+
+            {/* Daily Headlines Section (12 Headlines Per Day Across Required Categories) */}
+            <HeadlinesSection
+              articles={articles}
+              onSelectArticle={(art) => handleSelectArticle(art as Article)}
               onToggleBookmark={handleToggleBookmark}
               bookmarkedIds={bookmarkedIds}
             />
 
-            {/* Section 1: BOOKS */}
+            {/* Section 1: WORLD & POLITICS */}
             <BooksSection
-              onSelectArticle={(art) => setSelectedArticle(art)}
+              onSelectArticle={(art) => handleSelectArticle(art)}
               onToggleBookmark={handleToggleBookmark}
               bookmarkedIds={bookmarkedIds}
+              articles={articles.filter((a) => a.category === 'WORLD' || a.category === 'POLITICS')}
             />
 
-            {/* Section 2: PODCASTS */}
-            <PodcastsSection
-              onSelectArticle={(art) => setSelectedArticle(art)}
-              onPlayEpisode={handlePlayEpisode}
-              activeEpisodeId={activePodcast?.id}
-              isPlaying={isPlayingPodcast}
-              onToggleBookmark={handleToggleBookmark}
-              bookmarkedIds={bookmarkedIds}
-            />
-
-            {/* Section 3: MUSEUM */}
+            {/* Section 2: FINANCE & TECHNOLOGY */}
             <MuseumSection
-              onSelectArticle={(art) => setSelectedArticle(art)}
+              onSelectArticle={(art) => handleSelectArticle(art)}
               onToggleBookmark={handleToggleBookmark}
               bookmarkedIds={bookmarkedIds}
+              articles={articles.filter((a) => a.category === 'FINANCE' || a.category === 'TECHNOLOGY')}
             />
 
-            {/* Section 4: COLUMNS */}
+            {/* Section 3: SPORTS & ATHLETIC CULTURE */}
+            <SportsSection
+              onSelectArticle={(art) => handleSelectArticle(art)}
+              onNavigateToCategory={() => handleSelectSection('SPORT')}
+              articles={articles.filter((a) => a.category === 'SPORT')}
+            />
+
+            {/* Section 4: SCIENCE, LIFESTYLE & CULTURE */}
             <ColumnsSection
-              onSelectArticle={(art) => setSelectedArticle(art)}
+              onSelectArticle={(art) => handleSelectArticle(art)}
               onToggleBookmark={handleToggleBookmark}
               bookmarkedIds={bookmarkedIds}
+              articles={articles.filter((a) => ['SCIENCE', 'LIFESTYLE', 'FASHION', 'EDUCATION', 'CELEBRITY', 'BOOKS'].includes(a.category))}
             />
           </>
         )}
@@ -176,7 +410,8 @@ export default function App() {
         onClose={() => setIsBookmarksOpen(false)}
         bookmarkedIds={bookmarkedIds}
         onToggleBookmark={handleToggleBookmark}
-        onSelectArticle={(art) => setSelectedArticle(art)}
+        onSelectArticle={(art) => handleSelectArticle(art)}
+        articles={articles}
       />
 
       {/* Sticky Bottom Podcast Player */}
@@ -189,6 +424,20 @@ export default function App() {
         isPlaying={isPlayingPodcast}
         setIsPlaying={setIsPlayingPodcast}
       />
+
+      {/* Sign In & Sign Up Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+      />
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <MainApp />
+    </AuthProvider>
   );
 }

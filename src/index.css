@@ -3,6 +3,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 html {
+  overflow-y: scroll;
   scrollbar-gutter: stable;
 }
 

@@ -49,7 +49,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         {/* Left/Center Main Feature Card: Real Photographic Broadsheet Lead */}
         <div 
           onClick={() => onSelectArticle(leadArticle)}
-          className="lg:col-span-8 group cursor-pointer bg-[#181818] border border-[#282828] rounded-xs p-5 sm:p-8 flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:border-white/40 shadow-2xl min-h-[380px] sm:min-h-[480px] lg:min-h-[540px]"
+          className="lg:col-span-8 group cursor-pointer bg-[#181818] border border-[#282828] rounded-xs p-5 sm:p-8 flex flex-col justify-between relative overflow-hidden transition-colors duration-200 hover:border-white/40 min-h-[380px] sm:min-h-[480px] lg:min-h-[540px]"
         >
           {/* Real Photography Background or Video Thumbnail with Editorial Vignette */}
           {getPostPreviewImage(leadArticle) !== '/og-image.png' ? (

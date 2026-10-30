@@ -100,23 +100,23 @@ export const HeadlinesSection: React.FC<HeadlinesSectionProps> = ({
 
   return (
     <section className="w-full bg-[#121212] py-3 sm:py-5 px-2 sm:px-4 md:px-5 max-w-[98%] 2xl:max-w-[1920px] mx-auto border-b border-[#222222]">
-      {/* Red Rectangle Card: Strictly Locked Dimensions, Zero Expansion, Zero Layout Shift */}
+      {/* Red Card: Strictly Locked Dimensions, Zero Expansion, Zero Breathing, Simple Solid Red */}
       <div
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
-        className="w-full h-[260px] sm:h-[280px] md:h-[295px] max-h-[260px] sm:max-h-[280px] md:max-h-[295px] flex flex-col justify-between bg-gradient-to-r from-[#D30713] via-[#E50914] to-[#B3060F] text-white rounded-xs p-4 sm:p-6 md:p-7 shadow-xl relative overflow-hidden border border-red-500/30 select-none"
+        className="w-full h-[265px] min-h-[265px] max-h-[265px] sm:h-[275px] sm:min-h-[275px] sm:max-h-[275px] flex flex-col justify-between bg-[#E50914] text-white rounded-xs p-4 sm:p-5 shadow-md relative overflow-hidden border border-black/15 select-none"
       >
-        {/* Card Header: Clean Title Pill, Category, Bookmark (Shrink-0 to protect card height) */}
-        <div className="flex items-center justify-between pb-2.5 sm:pb-3 border-b border-white/20 relative z-10 text-xs font-mono-meta shrink-0">
+        {/* Card Header: Locked Fixed Height, Clean Title Pill, Category, Bookmark */}
+        <div className="h-9 min-h-[36px] max-h-[36px] flex items-center justify-between pb-2 border-b border-white/20 relative z-10 text-xs font-mono-meta shrink-0">
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             <span className="bg-white text-[#E50914] px-2.5 py-0.5 rounded-xs font-black uppercase tracking-wider text-[11px] shadow-xs flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#E50914]" />
+              <span className="w-2 h-2 rounded-full bg-[#E50914] shrink-0" />
               DAILY HEADLINES
             </span>
 
-            <span className="hidden sm:inline text-white/50">•</span>
+            <span className="hidden sm:inline text-white/60">•</span>
 
-            <span className="inline-block bg-black/30 border border-white/20 text-white px-2 py-0.5 rounded-xs font-mono-meta text-[10px] font-bold uppercase tracking-wider">
+            <span className="inline-block bg-black/25 border border-white/20 text-white px-2 py-0.5 rounded-xs font-mono-meta text-[10px] font-bold uppercase tracking-wider">
               {currentHeadline.category}
             </span>
           </div>
@@ -133,38 +133,42 @@ export const HeadlinesSection: React.FC<HeadlinesSectionProps> = ({
           </button>
         </div>
 
-        {/* Center Headline Content: Dedicated Stable Height Box, Strictly Line Clamped */}
+        {/* Center Headline Content: Strictly Locked Fixed Height Box (Never changes length or breadth) */}
         <div
           key={currentHeadline.id}
           onClick={() => onSelectArticle(currentHeadline)}
-          className="animate-slide-in-right py-2 sm:py-2.5 cursor-pointer group relative z-10 flex-1 flex flex-col justify-center overflow-hidden"
+          className="animate-fade-in h-[145px] min-h-[145px] max-h-[145px] cursor-pointer group relative z-10 flex flex-col justify-center overflow-hidden shrink-0"
         >
-          {/* Headline Title: Strictly line-clamp-2 so posts never add to card length */}
-          <h2 className="font-editorial text-lg sm:text-2xl md:text-3xl font-bold text-white group-hover:text-stone-100 transition-colors leading-snug sm:leading-tight drop-shadow-sm max-w-5xl line-clamp-2">
-            {currentHeadline.title}
-          </h2>
+          {/* Headline Title: Strictly fixed height box & line-clamp-2 so posts never add to card length */}
+          <div className="h-[56px] min-h-[56px] max-h-[56px] flex items-center overflow-hidden">
+            <h2 className="font-editorial text-lg sm:text-2xl font-bold text-white group-hover:text-stone-100 transition-colors leading-snug line-clamp-2 w-full">
+              {currentHeadline.title}
+            </h2>
+          </div>
 
-          {/* Excerpt: Strictly line-clamp-2 so it never expands or pushes the card */}
-          <p className="font-editorial text-xs sm:text-sm text-white/90 line-clamp-2 leading-relaxed mt-1 sm:mt-1.5 max-w-4xl">
-            {currentHeadline.excerpt ||
-              (currentHeadline as any).subtitle ||
-              'Authoritative dispatch on priority developments reported directly from our international news desk.'}
-          </p>
+          {/* Excerpt: Strictly fixed height box & line-clamp-2 so it never expands or pushes the card */}
+          <div className="h-[40px] min-h-[40px] max-h-[40px] flex items-center overflow-hidden mt-1">
+            <p className="font-editorial text-xs sm:text-sm text-white/90 line-clamp-2 leading-snug w-full">
+              {currentHeadline.excerpt ||
+                (currentHeadline as any).subtitle ||
+                'Authoritative dispatch on priority developments reported directly from our international news desk.'}
+            </p>
+          </div>
 
-          {/* Dispatch Metadata */}
-          <div className="flex items-center gap-2 font-mono-meta text-[11px] text-white/80 mt-1.5 sm:mt-2 shrink-0">
-            <span className="font-semibold text-white">{currentHeadline.author || 'Chronicles Bureau'}</span>
+          {/* Dispatch Metadata: Strictly locked height */}
+          <div className="h-[22px] min-h-[22px] max-h-[22px] flex items-center gap-2 font-mono-meta text-[11px] text-white/80 mt-1 shrink-0 overflow-hidden">
+            <span className="font-semibold text-white truncate max-w-[200px]">{currentHeadline.author || 'Chronicles Bureau'}</span>
             <span>•</span>
-            <span>{currentHeadline.lifecycle?.timeAgoFormatted || currentHeadline.date}</span>
+            <span className="shrink-0">{currentHeadline.lifecycle?.timeAgoFormatted || currentHeadline.date}</span>
             <span>•</span>
-            <span>{currentHeadline.readTime || '5 min read'}</span>
+            <span className="shrink-0">{currentHeadline.readTime || '5 min read'}</span>
           </div>
         </div>
 
-        {/* Card Footer: Slide Dots and Navigation Controls (Shrink-0 to protect card height) */}
-        <div className="pt-2.5 sm:pt-3 border-t border-white/20 flex items-center justify-between relative z-10 shrink-0">
-          {/* 5 Continuous Slide Indicator Dots */}
-          <div className="flex items-center gap-1.5 sm:gap-2">
+        {/* Card Footer: Slide Dots and Navigation Controls (Strictly Locked Height, Uniform Dots, Zero Breadth Expansion) */}
+        <div className="h-9 min-h-[36px] max-h-[36px] pt-2 border-t border-white/20 flex items-center justify-between relative z-10 shrink-0">
+          {/* Continuous Slide Indicator Dots: Strict Fixed Width, Zero Breathing/Expansion */}
+          <div className="flex items-center gap-2">
             {headlinesList.map((_, idx) => (
               <button
                 key={idx}
@@ -172,10 +176,10 @@ export const HeadlinesSection: React.FC<HeadlinesSectionProps> = ({
                   e.stopPropagation();
                   setCurrentIndex(idx);
                 }}
-                className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                className={`w-2.5 h-2.5 rounded-full transition-opacity duration-200 cursor-pointer shrink-0 ${
                   idx === currentIndex
-                    ? 'w-7 sm:w-9 bg-white shadow-xs'
-                    : 'w-2 sm:w-2.5 bg-white/40 hover:bg-white/70'
+                    ? 'bg-white opacity-100'
+                    : 'bg-white opacity-35 hover:opacity-70'
                 }`}
                 title={`Go to headline ${idx + 1}`}
               />
@@ -186,22 +190,22 @@ export const HeadlinesSection: React.FC<HeadlinesSectionProps> = ({
           <div className="flex items-center gap-1.5 sm:gap-2">
             <button
               onClick={handlePrev}
-              className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/20 hover:bg-black/40 flex items-center justify-center text-white transition-colors cursor-pointer"
+              className="w-7 h-7 rounded-full bg-black/20 hover:bg-black/40 flex items-center justify-center text-white transition-colors cursor-pointer"
               title="Previous headline"
             >
-              <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+              <ChevronLeft className="w-4 h-4" />
             </button>
             <button
               onClick={handleNext}
-              className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/20 hover:bg-black/40 flex items-center justify-center text-white transition-colors cursor-pointer"
+              className="w-7 h-7 rounded-full bg-black/20 hover:bg-black/40 flex items-center justify-center text-white transition-colors cursor-pointer"
               title="Next headline"
             >
-              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
+              <ChevronRight className="w-4 h-4" />
             </button>
 
             <button
               onClick={() => onSelectArticle(currentHeadline)}
-              className="ml-2 font-mono-meta text-[11px] font-bold uppercase tracking-wider text-white hover:underline flex items-center gap-1 cursor-pointer bg-black/20 hover:bg-black/35 px-2.5 py-1.5 rounded-xs transition-colors"
+              className="ml-2 font-mono-meta text-[11px] font-bold uppercase tracking-wider text-white hover:underline flex items-center gap-1 cursor-pointer bg-black/20 hover:bg-black/35 px-2.5 py-1 rounded-xs transition-colors"
             >
               <span>READ</span>
               <ArrowUpRight className="w-3.5 h-3.5" />

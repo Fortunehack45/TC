@@ -351,7 +351,7 @@ export const WordEditor: React.FC<WordEditorProps> = ({
       </div>
 
       {feedback && (
-        <div className="max-w-[1500px] mx-auto px-4 sm:px-8 mt-4">
+        <div className="w-full max-w-[98%] 2xl:max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 mt-4">
           <div
             className={`p-3 text-xs font-mono-meta flex items-center gap-2 border ${
               feedback.type === 'success'
@@ -365,7 +365,7 @@ export const WordEditor: React.FC<WordEditorProps> = ({
         </div>
       )}
 
-      <div className="max-w-[1500px] mx-auto px-4 sm:px-8 mt-6">
+      <div className="w-full max-w-[98%] 2xl:max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 mt-6">
         {/* Mobile View Switcher (Visible on <1024px screens) */}
         <div className="lg:hidden flex items-center bg-[#181818] border border-[#2E2E2E] p-1 rounded-xs mb-5">
           <button

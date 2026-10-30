@@ -177,10 +177,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           ? window.location.origin
           : 'https://tc-dusky.vercel.app';
 
+      // Dispatch password reset email
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
         redirectTo: redirectUrl,
       });
       if (error) return { error: error.message };
+
+      // Also dispatch 6-digit OTP code to guarantee the subscriber can verify in-modal
+      // even if email links are misconfigured in dashboard or blocked by mail client
+      try {
+        await supabase.auth.signInWithOtp({
+          email: email.trim(),
+          options: {
+            shouldCreateUser: false,
+            emailRedirectTo: redirectUrl,
+          },
+        });
+      } catch {}
+
       return {};
     } catch (err: any) {
       return { error: err.message || 'Failed to dispatch password recovery email.' };

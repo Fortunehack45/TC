@@ -285,7 +285,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminEmail, onSi
   return (
     <div className="w-full min-h-screen bg-[#101010] text-stone-200 font-sans-body pb-24">
       {/* Top Admin Bar */}
-      <header className="sticky top-0 z-40 bg-[#161616] border-b border-[#252525] px-4 sm:px-8 py-3.5 flex items-center justify-between shadow-xl">
+      <header className="sticky top-0 z-40 bg-[#161616] border-b border-[#252525] px-2 sm:px-4 md:px-6 py-3.5 flex items-center justify-between shadow-xl">
         <div className="flex items-center gap-3">
           <img
             src="/logo.png"
@@ -384,7 +384,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminEmail, onSi
         </div>
       </header>
 
-      <main className="max-w-[1600px] mx-auto px-4 sm:px-8 mt-6">
+      <main className="w-full max-w-[98%] 2xl:max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 mt-6">
         {/* Executive Real-Time Metric Overview Cards */}
         <div className="grid grid-cols-2 md:grid-cols-6 gap-3 sm:gap-4 mb-8">
           <div className="bg-[#181818] border border-[#262626] p-4 rounded-xs">

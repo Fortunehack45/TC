@@ -101,10 +101,16 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
 
     setLoading(true);
     try {
+      const redirectUrl =
+        typeof window !== 'undefined' && window.location.origin && !window.location.origin.includes('localhost')
+          ? window.location.origin
+          : 'https://tc-xc8d.vercel.app';
+
       const { error } = await supabase.auth.signInWithOtp({
         email: cleanEmail,
         options: {
           shouldCreateUser: true,
+          emailRedirectTo: redirectUrl,
         },
       });
 

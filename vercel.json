@@ -8,42 +8,27 @@
       "destination": "/api/$1"
     },
     {
-      "source": "/p/:slug",
-      "has": [
-        {
-          "type": "header",
-          "key": "user-agent",
-          "value": ".*(facebookexternalhit|twitterbot|whatsapp|telegrambot|slackbot|linkedinbot|discordbot|applebot|googlebot|meta-externalagent|crawler|preview).*"
-        }
-      ],
-      "destination": "/api/article?slug=:slug"
+      "source": "/p/:slug*",
+      "destination": "/api/article?slug=:slug*"
     },
     {
-      "source": "/article/:slug",
-      "has": [
-        {
-          "type": "header",
-          "key": "user-agent",
-          "value": ".*(facebookexternalhit|twitterbot|whatsapp|telegrambot|slackbot|linkedinbot|discordbot|applebot|googlebot|meta-externalagent|crawler|preview).*"
-        }
-      ],
-      "destination": "/api/article?slug=:slug"
+      "source": "/article/:slug*",
+      "destination": "/api/article?slug=:slug*"
     },
     {
-      "source": "/(.*)",
+      "source": "/",
       "has": [
         {
           "type": "query",
-          "key": "article",
-          "value": "(?<article>.*)"
+          "key": "article"
         },
         {
           "type": "header",
           "key": "user-agent",
-          "value": ".*(facebookexternalhit|twitterbot|whatsapp|telegrambot|slackbot|linkedinbot|discordbot|applebot|googlebot|meta-externalagent|crawler|preview).*"
+          "value": "(?i).*(bot|crawler|spider|facebook|twitter|whatsapp|telegram|slack|discord|linkedin|applebot|preview|embed|meta|fetch|curl|wget).*"
         }
       ],
-      "destination": "/api/article?article=$article"
+      "destination": "/api/article"
     },
     {
       "source": "/(.*)",

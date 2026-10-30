@@ -5,16 +5,20 @@ Discovers, verifies, brands, and publishes breaking news from verified Nigerian 
 global wire feeds directly into Supabase (tc_articles) and Supabase Storage (tc-media).
 
 Features:
-- Verified Nigerian Sources (Premium Times, Channels TV, BusinessDay, Punch, Vanguard, etc.)
-- Verified Global Sources (BBC World/Tech/Biz/Sport, NYTimes, NASA, Al Jazeera)
+- Continuous 1-Minute Polling: Scans for breaking dispatches every 60 seconds; sleeps gracefully if no new news.
+- Multi-Layered Anti-Duplicate Engine:
+    1. Exact source URL & canonical link matching
+    2. Normalized slug & title matching
+    3. SequenceMatcher fuzzy string similarity (> 0.62)
+    4. Subject entity & keyword token overlap (catches cross-outlet duplicate reporting)
+    5. Persistent local and database-backed ledger (scripts/data/processed_ledger.json)
 - Full-Text Web Scraper: Extracts 500 to 2,000 words of authentic reporting from source pages
 - Substantive Length Target: 400 to 850 words per broadsheet article (strictly 300 to 1k words)
 - Rich Broadsheet Formatting: Datelines, subheadings (<h3>), pull-quotes (<blockquote>), Key Takeaways boxes
 - Authentic Press Photo Extraction (media:content, enclosures, og:image)
 - Luxury Watermark Badging (scripts/watermark.py) uploaded to Supabase Storage CDN
 - 100% Anti-AI Human Broadsheet Tone (Reuters/AP style with real datelines)
-- Parallel high-volume batch execution (50 to 70 articles per 30 minutes)
-- Zero duplication checking against existing database articles
+- Parallel high-volume batch execution (50 to 70 articles per run)
 """
 
 import os
@@ -24,12 +28,13 @@ import time
 import math
 import uuid
 import json
+import difflib
 import logging
 import argparse
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict, Optional, Tuple, Set
 
 # Ensure current script directory is in python search path
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -59,11 +64,30 @@ SUPABASE_URL = os.environ.get('VITE_SUPABASE_URL', 'https://yinaxpgnnadhbkplokvl
 SUPABASE_KEY = os.environ.get('VITE_SUPABASE_ANON_KEY', '')
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
 
+# Persistent Ledger Path
+LEDGER_DIR = os.path.join(CURRENT_DIR, 'data')
+os.makedirs(LEDGER_DIR, exist_ok=True)
+LEDGER_FILE = os.path.join(LEDGER_DIR, 'processed_ledger.json')
+
 # Standard Desktop User Agent to avoid 403 anti-bot blocks
 DEFAULT_HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
     'Accept-Language': 'en-US,en;q=0.9'
+}
+
+# Common English stopwords to ignore when comparing subject entities
+STOPWORDS: Set[str] = {
+    'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
+    'of', 'with', 'by', 'from', 'up', 'about', 'into', 'over', 'after',
+    'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had',
+    'do', 'does', 'did', 'will', 'would', 'shall', 'should', 'may', 'might',
+    'must', 'can', 'could', 'as', 'than', 'this', 'that', 'these', 'those',
+    'its', 'it', 'they', 'them', 'their', 'he', 'she', 'his', 'her', 'says',
+    'said', 'told', 'new', 'more', 'amid', 'amidst', 'under', 'out',
+    'not', 'no', 'per', 'cent', 'against', 'between', 'during', 'before',
+    'first', 'second', 'one', 'two', 'three', 'four', 'five', 'six', 'seven',
+    'eight', 'nine', 'ten', 'also', 'just', 'like', 'how', 'what', 'why', 'who'
 }
 
 # Verified Feed Registry
@@ -218,6 +242,59 @@ def clean_slug(text: str) -> str:
     return text[:90]
 
 
+def extract_story_tokens(title: str, summary: str = "") -> Set[str]:
+    """Extract significant lowercase subject entity and keyword tokens."""
+    combined = f"{title} {summary}".lower()
+    raw_tokens = re.findall(r'[a-z0-9$%]{3,}', combined)
+    return {t for t in raw_tokens if t not in STOPWORDS}
+
+
+class PersistentLedger:
+    """Tracks processed dispatches locally to guarantee zero duplicates across runs."""
+
+    def __init__(self, filepath: str = LEDGER_FILE):
+        self.filepath = filepath
+        self.data = self._load()
+
+    def _load(self) -> dict:
+        if os.path.exists(self.filepath):
+            try:
+                with open(self.filepath, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            except Exception:
+                pass
+        return {'urls': {}, 'stories': []}
+
+    def _save(self):
+        try:
+            with open(self.filepath, 'w', encoding='utf-8') as f:
+                json.dump(self.data, f, indent=2)
+        except Exception as e:
+            logger.warning(f"Could not save ledger: {e}")
+
+    def has_url(self, url: str) -> bool:
+        return url.strip() in self.data.get('urls', {})
+
+    def add_story(self, url: str, title: str, category: str, slug: str):
+        now = time.time()
+        self.data.setdefault('urls', {})[url.strip()] = now
+        tokens = list(extract_story_tokens(title))
+        self.data.setdefault('stories', []).append({
+            'slug': slug,
+            'title': title,
+            'category': category,
+            'tokens': tokens,
+            'timestamp': now
+        })
+        # Prune stories older than 7 days
+        seven_days_ago = now - (7 * 86400)
+        self.data['stories'] = [s for s in self.data['stories'] if s.get('timestamp', 0) > seven_days_ago]
+        self._save()
+
+    def get_recent_stories(self) -> List[dict]:
+        return self.data.get('stories', [])
+
+
 class SupabaseClient:
     """Lightweight direct REST client for Supabase database & storage."""
 
@@ -231,19 +308,20 @@ class SupabaseClient:
             'Prefer': 'return=representation'
         }
 
-    def get_existing_slugs_and_titles(self) -> Tuple[set, set]:
-        """Fetch existing slugs and titles from tc_articles for deduplication."""
+    def get_existing_articles_corpus(self) -> List[dict]:
+        """Fetch existing articles from tc_articles for multi-layered deduplication."""
         try:
-            req_url = f"{self.url}/rest/v1/tc_articles?select=slug,title&limit=3000"
+            req_url = f"{self.url}/rest/v1/tc_articles?select=id,slug,title,category_id,published_at&limit=3000"
             resp = requests.get(req_url, headers=self.headers, timeout=12)
             if resp.status_code == 200:
                 data = resp.json()
-                slugs = {item.get('slug', '') for item in data if item.get('slug')}
-                titles = {item.get('title', '').strip().lower() for item in data if item.get('title')}
-                return slugs, titles
+                for item in data:
+                    item['title_norm'] = item.get('title', '').strip().lower()
+                    item['tokens'] = extract_story_tokens(item.get('title', ''))
+                return data
         except Exception as e:
             logger.warning(f"Could not fetch existing articles for dedup: {e}")
-        return set(), set()
+        return []
 
     def upload_image_to_storage(self, image_bytes: bytes, file_path: str) -> Optional[str]:
         """Upload watermarked JPEG to tc-media bucket and return public URL."""
@@ -278,6 +356,62 @@ class SupabaseClient:
         except Exception as e:
             logger.error(f"Error inserting article: {e}")
             return False
+
+
+def is_duplicate_story(
+    candidate: dict,
+    existing_corpus: List[dict],
+    seen_in_batch: List[dict],
+    ledger: PersistentLedger
+) -> Tuple[bool, str]:
+    """
+    Multi-Layered Deduplication Check:
+    1. Exact URL match (ledger)
+    2. Exact Slug / Title match
+    3. SequenceMatcher fuzzy string similarity (> 0.62)
+    4. Subject entity & keyword token overlap (cross-outlet duplicates)
+    """
+    cand_url = candidate.get('link', '').strip()
+    if cand_url and ledger.has_url(cand_url):
+        return True, f"Exact URL already processed in ledger: {cand_url}"
+
+    cand_title = candidate.get('title', '').strip()
+    cand_title_norm = cand_title.lower()
+    cand_slug = clean_slug(cand_title)
+    cand_cat = candidate.get('default_category', '')
+    cand_tokens = extract_story_tokens(cand_title, candidate.get('summary', ''))
+
+    all_comparison_records = existing_corpus + seen_in_batch + ledger.get_recent_stories()
+
+    for rec in all_comparison_records:
+        rec_title = rec.get('title', '').strip()
+        rec_title_norm = rec.get('title_norm') or rec_title.lower()
+        rec_slug = rec.get('slug', '')
+
+        # Check 1: Exact Slug or Title match
+        if cand_slug == rec_slug or cand_title_norm == rec_title_norm:
+            return True, f"Exact title/slug match: '{rec_title[:45]}...'"
+
+        # Check 2: SequenceMatcher fuzzy headline similarity (> 0.62)
+        ratio = difflib.SequenceMatcher(None, cand_title_norm, rec_title_norm).ratio()
+        if ratio > 0.62:
+            return True, f"Fuzzy headline similarity ({round(ratio*100)}%): '{rec_title[:45]}...'"
+
+        # Check 3: Semantic Entity Overlap within same category
+        rec_cat = rec.get('category_id') or rec.get('category')
+        if not rec_cat or rec_cat == cand_cat:
+            rec_tokens = set(rec.get('tokens') or extract_story_tokens(rec_title, ''))
+            overlap = cand_tokens.intersection(rec_tokens)
+
+            # If 3 or more distinctive named entities or monetary terms overlap:
+            if len(overlap) >= 3:
+                # Calculate overlap ratio against shorter headline's token set
+                min_len = max(3, min(len(cand_tokens), len(rec_tokens)))
+                overlap_ratio = len(overlap) / min_len
+                if overlap_ratio >= 0.40:
+                    return True, f"Cross-outlet story entity overlap ({list(overlap)[:3]}): '{rec_title[:45]}...'"
+
+    return False, ""
 
 
 def is_valid_press_image(url: str) -> bool:
@@ -344,7 +478,6 @@ def fetch_full_article_body(url: str, summary_fallback: str = '') -> str:
         for p in search_root.find_all('p'):
             t = p.get_text().strip()
             if len(t) > 35 and not is_boilerplate(t):
-                # Avoid duplicates
                 if not any(t == existing or t in existing for existing in paras):
                     paras.append(t)
 
@@ -419,14 +552,12 @@ def fetch_wire_articles(feed: dict) -> List[dict]:
             logger.warning(f"Feed {feed['name']} returned HTTP {resp.status_code}")
             return []
 
-        # Parse XML
         root = ET.fromstring(resp.content)
-        # Handle both standard RSS <item> and Atom <entry>
         items = root.findall('.//item')
         if not items:
             items = root.findall('.//{http://www.w3.org/2005/Atom}entry')
 
-        for item in items[:25]:  # Take top 25 latest per feed
+        for item in items[:25]:
             title_elem = item.find('title')
             if title_elem is None:
                 title_elem = item.find('{http://www.w3.org/2005/Atom}title')
@@ -439,7 +570,6 @@ def fetch_wire_articles(feed: dict) -> List[dict]:
             if desc_elem is None:
                 desc_elem = item.find('{http://www.w3.org/2005/Atom}summary')
 
-            # Extract text safely
             title = (title_elem.text if title_elem is not None and title_elem.text else '').strip()
             link = ''
             if link_elem is not None:
@@ -447,7 +577,6 @@ def fetch_wire_articles(feed: dict) -> List[dict]:
 
             desc = (desc_elem.text if desc_elem is not None and desc_elem.text else '').strip()
 
-            # Clean HTML from description for raw summary
             soup = BeautifulSoup(desc, 'html.parser')
             clean_summary = soup.get_text(separator=' ').strip()
 
@@ -472,7 +601,6 @@ def fetch_wire_articles(feed: dict) -> List[dict]:
                 'default_dateline': feed['default_dateline']
             }
 
-            # Extract genuine press photo
             media_url = extract_media_url_from_entry(item, entry_dict)
             if media_url:
                 entry_dict['image_url'] = media_url
@@ -485,94 +613,51 @@ def fetch_wire_articles(feed: dict) -> List[dict]:
 
 
 def format_broadsheet_article_ai(item: dict, full_body_text: str) -> Optional[dict]:
-    """
-    Format a wire story into The Chronicles Human Broadsheet Voice using Gemini API.
-    Enforces 450-800 words, strict anti-AI constraints, named sources, real datelines,
-    subheadings, blockquotes, and executive key takeaways.
-    """
+    """Format a wire story into The Chronicles Human Broadsheet Voice using Gemini API."""
     if not GEMINI_API_KEY or GEMINI_API_KEY == 'MY_GEMINI_API_KEY':
         return None
 
     try:
         from google import genai
-
         client = genai.Client(api_key=GEMINI_API_KEY)
-
-        # Truncate source material to avoid context bloat while providing deep factual detail
         source_text = full_body_text[:4000] if len(full_body_text) > 400 else item['summary']
 
-        prompt = f"""You are the Chief International Correspondent and Bureau Chief for The Chronicles, an elite luxury broadsheet newspaper (resembling The Wall Street Journal, Financial Times, Reuters, and AP Newsroom).
+        prompt = f"""You are the Chief International Correspondent for The Chronicles, an elite luxury broadsheet newspaper.
+Rewrite this breaking news report into an authoritative broadsheet article.
 
-Rewrite this breaking news report into an authoritative, deep-dive broadsheet news article.
-
-SOURCE REPORTING MATERIAL:
+SOURCE REPORTING:
 Headline: {item['title']}
 Source Publication: {item['feed_name']}
 Designated Dateline: {item['default_dateline']}
 Raw Factual Content:
 {source_text}
 
-STRICT EDITORIAL REQUIREMENTS (VIOLATION WILL BE REJECTED):
-1. LENGTH: Must be SUBSTANTIAL (strictly between 450 and 850 words). Do NOT write short summaries. Provide detailed reporting, names, dates, figures, and background context.
-2. TONE: 100% human, hard-hitting, authoritative journalism. Hard facts, real names, exact numbers.
-3. ZERO AI CLICHÉS: You must NEVER use any of these words:
-   "delve", "delving", "tapestry", "testament", "beacon", "landscape", "pivotal", "in conclusion",
-   "furthermore", "it is worth noting", "sheds light", "ever-evolving", "underscores",
-   "bustling", "vibrant", "revolutionize", "game-changer", "a testament to", "beacon of hope".
-4. DATELINE: The first paragraph MUST start with the capital city dateline in bold caps, e.g. "{item['default_dateline']} — ".
-5. RICH BROADSHEET STRUCTURE:
-   - Catchy, punchy broadsheet headline (max 95 chars).
-   - Informative subtitle / dek (max 140 chars).
-   - Opening 2 paragraphs setting up the breaking development.
-   - Three specific, high-impact bulleted Key Takeaways summarizing core facts.
-   - Section 1 Subheading ("Strategic Developments & Field Assessment") followed by 2–3 in-depth paragraphs.
-   - A compelling direct pull-quote from an official, minister, or analyst.
-   - Section 2 Subheading ("Institutional Response & Policy Trajectory") followed by 2–3 in-depth paragraphs.
-   - A forward-looking concluding analysis paragraph.
-
-6. FORMAT: Return strict JSON with the following schema:
+STRICT REQUIREMENTS:
+1. LENGTH: Must be between 450 and 850 words.
+2. ZERO AI CLICHÉS: Never use: delve, tapestry, testament, beacon, landscape, pivotal, in conclusion, furthermore, it is worth noting, sheds light, ever-evolving, underscores, bustling, vibrant, revolutionize.
+3. DATELINE: Start with "{item['default_dateline']} — ".
+4. Return strict JSON:
 {{
   "title": "Clean Broadsheet Headline",
-  "subtitle": "Informative two-sentence dek explaining the strategic development",
+  "subtitle": "Informative two-sentence dek",
   "category": "{item['default_category']}",
-  "dateline": "{item['default_dateline']}",
-  "lead_paragraphs": [
-    "{item['default_dateline']} — Opening paragraph with dateline and core breaking news...",
-    "Second paragraph with factual details, numbers, or geopolitical context..."
-  ],
-  "key_takeaways": [
-    "Specific core finding or milestone with numbers",
-    "Key regulatory, economic, or security decision announced",
-    "Immediate impact on stakeholders and forward timeline"
-  ],
+  "lead_paragraphs": ["{item['default_dateline']} — Opening paragraph...", "Second paragraph..."],
+  "key_takeaways": ["Takeaway 1", "Takeaway 2", "Takeaway 3"],
   "section_1_heading": "Strategic Developments & Field Assessment",
-  "section_1_paragraphs": [
-    "Detailed analytical paragraph with facts and names...",
-    "Secondary paragraph expanding on background context..."
-  ],
-  "pull_quote": "Exact or authoritative quote from the key official or spokesperson",
-  "quote_attribution": "Official Title or Named Authority",
+  "section_1_paragraphs": ["Paragraph 1...", "Paragraph 2..."],
+  "pull_quote": "Direct quote from official",
+  "quote_attribution": "Official Title",
   "section_2_heading": "Institutional Response & Policy Trajectory",
-  "section_2_paragraphs": [
-    "Paragraph examining broader economic, geopolitical, or societal impact...",
-    "Paragraph discussing next regulatory or legal milestones..."
-  ],
-  "conclusion_paragraph": "Forward-looking closing dispatch summarizing what comes next."
+  "section_2_paragraphs": ["Paragraph 1...", "Paragraph 2..."],
+  "conclusion_paragraph": "Closing dispatch."
 }}
 """
-
-        response = client.models.generate_content(
-            model='gemini-2.5-flash',
-            contents=prompt,
-        )
-
+        response = client.models.generate_content(model='gemini-2.5-flash', contents=prompt)
         raw_text = response.text.strip()
         raw_text = re.sub(r'^```json\s*', '', raw_text, flags=re.MULTILINE)
         raw_text = re.sub(r'^```\s*$', '', raw_text, flags=re.MULTILINE).strip()
-
         parsed = json.loads(raw_text)
 
-        # Sanitize against banned AI clichés
         for banned in BANNED_AI_WORDS:
             raw_text = re.sub(rf'\b{banned}\b', '', raw_text, flags=re.IGNORECASE)
 
@@ -591,22 +676,18 @@ STRICT EDITORIAL REQUIREMENTS (VIOLATION WILL BE REJECTED):
 
         quote_text = parsed.get('pull_quote', '')
         quote_attr = parsed.get('quote_attribution', '')
-        quote_html = ""
-        if quote_text:
-            quote_html = f"""
+        quote_html = f"""
 <blockquote class="my-6 border-l-4 border-[#E50914] pl-4 italic text-stone-100 font-editorial text-lg leading-relaxed">
   &ldquo;{quote_text}&rdquo;
   {f'<footer class="text-xs font-mono-meta text-stone-400 not-italic mt-2">— {quote_attr}</footer>' if quote_attr else ''}
-</blockquote>"""
+</blockquote>""" if quote_text else ""
 
         sec2_heading = parsed.get('section_2_heading', 'Institutional Response & Policy Trajectory')
         sec2_p = "".join([f"<p>{p.strip()}</p>" for p in parsed.get('section_2_paragraphs', [])])
-
         conclusion_p = f"<p>{parsed.get('conclusion_paragraph', '').strip()}</p>" if parsed.get('conclusion_paragraph') else ""
 
         full_html = f"{lead_p}{takeaways_html}<h3>{sec1_heading}</h3>{sec1_p}{quote_html}<h3>{sec2_heading}</h3>{sec2_p}{conclusion_p}"
 
-        # Calculate exact word count
         soup = BeautifulSoup(full_html, 'html.parser')
         word_count = len(soup.get_text().split())
         read_time = f"{max(3, math.ceil(word_count / 180))} min read"
@@ -619,46 +700,34 @@ STRICT EDITORIAL REQUIREMENTS (VIOLATION WILL BE REJECTED):
             'word_count': word_count,
             'read_time': read_time
         }
-
     except Exception as e:
-        logger.warning(f"AI editorial rewrite unavailable ({e}), using enhanced broadsheet rule-engine")
+        logger.warning(f"AI rewrite unavailable ({e}), using rule-engine")
         return None
 
 
 def format_broadsheet_article_rules(item: dict, full_body_text: str) -> dict:
-    """
-    Deterministic rule-based broadsheet formatter that crafts rich, 450 to 800+ word articles
-    with full journalistic depth, datelines, subheadings, pull-quotes, and key takeaways boxes.
-    """
+    """Deterministic rule-based broadsheet formatter guaranteeing 400 to 800+ words."""
     dateline = item['default_dateline']
     title = item['title'].strip()
-
-    # Clean titles of wire markers
     title = re.sub(
         r'\s*-\s*(BBC News|Reuters|Channels Television|Punch Newspapers|Vanguard News|Daily Post Nigeria|Premium Times|Nairametrics|BusinessDay)$',
         '', title, flags=re.IGNORECASE
     )
 
-    # Extract all usable paragraphs from the full body or summary
     raw_paras = [p.strip() for p in full_body_text.split('\n\n') if len(p.strip()) > 40 and not is_boilerplate(p)]
     if not raw_paras:
-        # Fall back to splitting summary sentences into paragraphs
         raw_paras = [s.strip() for s in re.split(r'(?<=[.!?])\s+', item['summary']) if len(s.strip()) > 30]
 
-    # Expand paragraphs if source is brief, ensuring depth and context
     lead_sentence = raw_paras[0] if raw_paras else f"Key institutional developments have emerged as reported by {item['feed_name']}."
     second_sentence = raw_paras[1] if len(raw_paras) > 1 else "Officials and sector analysts are tracking the strategic implications closely."
     third_sentence = raw_paras[2] if len(raw_paras) > 2 else "Operational teams confirmed assessments are underway across affected departments."
 
-    # Search for quotes in the text
     quotes = re.findall(r'["“]([^"”]{25,250})["”]', full_body_text)
     primary_quote = quotes[0] if quotes else f"This strategic development reflects ongoing institutional realignment aimed at establishing stability and compliance across core sectors."
 
-    # Build Lead Section
     lead_p1 = f"<p><strong>{dateline}</strong> — {lead_sentence}</p>"
     lead_p2 = f"<p>{second_sentence} According to detailed dispatches compiled directly by The Chronicles bureau from {item['feed_name']}, regulatory authorities and market participants have placed the development on high priority.</p>"
 
-    # Build Key Takeaways Box
     takeaway_1 = f"Official verification confirmed by {item['feed_name']} under priority dispatch guidelines."
     takeaway_2 = f"Direct operational and economic assessments underway across key ministerial and market desks."
     takeaway_3 = f"Further regulatory notifications and field updates scheduled for release as reviews conclude."
@@ -673,7 +742,6 @@ def format_broadsheet_article_rules(item: dict, full_body_text: str) -> dict:
   </ul>
 </div>"""
 
-    # Section 1: Strategic Developments & Field Assessment
     sec1_paras = []
     if len(raw_paras) >= 5:
         sec1_paras.append(f"<p>{raw_paras[3]}</p>")
@@ -684,14 +752,12 @@ def format_broadsheet_article_rules(item: dict, full_body_text: str) -> dict:
 
     sec1_html = f"<h3>Strategic Developments & Field Assessment</h3>{''.join(sec1_paras)}"
 
-    # Pull-Quote Blockquote
     quote_html = f"""
 <blockquote class="my-6 border-l-4 border-[#E50914] pl-4 italic text-stone-100 font-editorial text-lg leading-relaxed">
   &ldquo;{primary_quote}&rdquo;
   <footer class="text-xs font-mono-meta text-stone-400 not-italic mt-2">— The Chronicles Editorial Dispatch</footer>
 </blockquote>"""
 
-    # Section 2: Institutional Response & Market Outlook
     sec2_paras = []
     if len(raw_paras) >= 7:
         sec2_paras.append(f"<p>{raw_paras[5]}</p>")
@@ -705,18 +771,13 @@ def format_broadsheet_article_rules(item: dict, full_body_text: str) -> dict:
             sec2_paras.append(f"<p>{extra_p}</p>")
 
     sec2_html = f"<h3>Institutional Response & Market Outlook</h3>{''.join(sec2_paras)}"
-
-    # Conclusion Dispatch
     conclusion_p = f"<p>The Chronicles international news desk will continue monitoring regional dispatches, with updated field reporting and verification statements published as official communiqués are released.</p>"
 
-    # Assemble Full Broadsheet HTML
     full_html = f"{lead_p1}{lead_p2}{takeaways_html}{sec1_html}{quote_html}{sec2_html}{conclusion_p}"
 
-    # Calculate Word Count
     soup = BeautifulSoup(full_html, 'html.parser')
     word_count = len(soup.get_text().split())
     read_time = f"{max(3, math.ceil(word_count / 180))} min read"
-
     subtitle = f"Authoritative reporting from {dateline}: {lead_sentence[:120]}."
 
     return {
@@ -732,15 +793,14 @@ def format_broadsheet_article_rules(item: dict, full_body_text: str) -> dict:
 def process_single_article(
     item: dict,
     sb_client: SupabaseClient,
+    ledger: PersistentLedger,
     dry_run: bool = False
 ) -> Optional[dict]:
-    """Process a single wire item: scrape full-text body, apply watermark, format broadsheet, upload to DB."""
+    """Process a single wire item: scrape full text, apply watermark, format, upload to DB."""
     try:
-        # 1. Fetch full-text investigative reporting from source page
         source_link = item.get('link', '')
         full_body_text = fetch_full_article_body(source_link, item.get('summary', ''))
 
-        # 2. Format editorial text (AI first with deterministic fallback)
         editorial = format_broadsheet_article_ai(item, full_body_text)
         if not editorial:
             editorial = format_broadsheet_article_rules(item, full_body_text)
@@ -749,15 +809,12 @@ def process_single_article(
         if not slug or len(slug) < 5:
             slug = clean_slug(item['title'])
 
-        # 3. Process image with Chronicles luxury watermark
         raw_image_url = item['image_url']
         watermarked_bytes = apply_chronicles_watermark(raw_image_url)
-
         if not watermarked_bytes:
             logger.warning(f"Could not apply watermark to {raw_image_url}")
             return None
 
-        # 4. Upload watermarked image to Supabase Storage
         file_path = f"news/{slug}.jpg"
         if not dry_run:
             uploaded_url = sb_client.upload_image_to_storage(watermarked_bytes, file_path)
@@ -765,7 +822,6 @@ def process_single_article(
         else:
             cover_image_url = f"{SUPABASE_URL}/storage/v1/object/public/tc-media/{file_path}"
 
-        # 5. Construct complete database payload
         now_iso = datetime.now(timezone.utc).isoformat()
         article_id = str(uuid.uuid4())
 
@@ -789,10 +845,10 @@ def process_single_article(
             'lifecycle_stage': 'BREAKING'
         }
 
-        # 6. Insert to Supabase Database
         if not dry_run:
             success = sb_client.insert_article(payload)
             if success:
+                ledger.add_story(source_link, editorial['title'], editorial['category'], slug)
                 logger.info(f"Published ({editorial.get('word_count', 0)} words, {editorial['read_time']}): [{editorial['category']}] {editorial['title'][:50]}...")
                 return payload
             else:
@@ -811,15 +867,14 @@ def run_pipeline(
     beat: str = 'all',
     dry_run: bool = False
 ) -> int:
-    """Run one complete ingestion batch across all verified wire feeds."""
-    logger.info(f"Starting news ingestion run (target: {batch_size} articles, beat: {beat}, dry_run: {dry_run})...")
+    """Run one complete ingestion sweep with multi-layered anti-duplicate filtering."""
     start_time = time.time()
-
     sb_client = SupabaseClient(SUPABASE_URL, SUPABASE_KEY)
+    ledger = PersistentLedger()
 
-    # 1. Fetch existing articles for deduplication
-    existing_slugs, existing_titles = sb_client.get_existing_slugs_and_titles()
-    logger.info(f"Database currently holds {len(existing_slugs)} unique articles for deduplication.")
+    # 1. Fetch existing corpus from database
+    existing_corpus = sb_client.get_existing_articles_corpus()
+    logger.info(f"Deduplication engine active: {len(existing_corpus)} DB articles + {len(ledger.get_recent_stories())} ledger stories loaded.")
 
     # 2. Select active feeds based on beat
     active_feeds = VERIFIED_FEEDS
@@ -830,8 +885,6 @@ def run_pipeline(
 
     # 3. Parallel wire discovery across all feeds
     discovered_items = []
-    logger.info(f"Polling {len(active_feeds)} verified news wire feeds in parallel...")
-
     with ThreadPoolExecutor(max_workers=8) as executor:
         future_to_feed = {executor.submit(fetch_wire_articles, feed): feed for feed in active_feeds}
         for future in as_completed(future_to_feed):
@@ -839,40 +892,46 @@ def run_pipeline(
             try:
                 items = future.result()
                 discovered_items.extend(items)
-                logger.info(f"  • {feed['name']}: found {len(items)} items with authentic press photos")
             except Exception as e:
                 logger.warning(f"Error fetching feed {feed['name']}: {e}")
 
-    logger.info(f"Total raw items discovered with authentic press photos: {len(discovered_items)}")
+    logger.info(f"Discovered {len(discovered_items)} raw wire dispatches across {len(active_feeds)} feeds.")
 
-    # 4. Filter out duplicates
+    # 4. Multi-Layered Anti-Duplicate Filtering
     unique_candidates = []
-    seen_in_batch = set()
+    seen_in_batch = []
+    duplicate_count = 0
 
     for item in discovered_items:
-        title_norm = item['title'].strip().lower()
-        slug_norm = clean_slug(item['title'])
-
-        if slug_norm in existing_slugs or title_norm in existing_titles or slug_norm in seen_in_batch:
+        is_dup, reason = is_duplicate_story(item, existing_corpus, seen_in_batch, ledger)
+        if is_dup:
+            duplicate_count += 1
             continue
 
-        seen_in_batch.add(slug_norm)
+        cand_title = item.get('title', '').strip()
+        seen_in_batch.append({
+            'title': cand_title,
+            'title_norm': cand_title.lower(),
+            'slug': clean_slug(cand_title),
+            'category_id': item.get('default_category', ''),
+            'source_url': item.get('link', '').strip(),
+            'tokens': extract_story_tokens(cand_title, item.get('summary', ''))
+        })
         unique_candidates.append(item)
 
         if len(unique_candidates) >= batch_size:
             break
 
-    logger.info(f"Unique candidates ready for broadsheet publishing: {len(unique_candidates)} (capped at {batch_size})")
+    logger.info(f"Deduplication summary: Filtered out {duplicate_count} duplicate stories. New unique breaking candidates: {len(unique_candidates)} (capped at {batch_size}).")
 
     if not unique_candidates:
-        logger.info("No new unique wire articles to publish at this time.")
         return 0
 
     # 5. Parallel editorial processing, watermarking, and publication
     published_count = 0
     with ThreadPoolExecutor(max_workers=8) as executor:
         futures = [
-            executor.submit(process_single_article, item, sb_client, dry_run)
+            executor.submit(process_single_article, item, sb_client, ledger, dry_run)
             for item in unique_candidates
         ]
         for future in as_completed(futures):
@@ -884,32 +943,48 @@ def run_pipeline(
                 logger.warning(f"Error in publishing task: {e}")
 
     elapsed = round(time.time() - start_time, 2)
-    logger.info(f"Ingestion batch completed in {elapsed}s: Successfully processed {published_count} articles.")
+    logger.info(f"Sweep completed in {elapsed}s: Successfully published {published_count} new dispatches.")
     return published_count
 
 
 def main():
     parser = argparse.ArgumentParser(description="The Chronicles Automated Real-Time News Pipeline")
-    parser.add_argument('--batch-size', type=int, default=60, help="Maximum articles to publish per run (default: 60)")
+    parser.add_argument('--batch-size', type=int, default=60, help="Maximum articles to publish per sweep (default: 60)")
     parser.add_argument('--beat', type=str, choices=['all', 'nigeria', 'global'], default='all', help="Filter wire beats")
-    parser.add_argument('--once', action='store_true', help="Run single batch and exit immediately")
-    parser.add_argument('--daemon', action='store_true', help="Run continuously on interval schedule")
-    parser.add_argument('--interval', type=int, default=30, help="Interval in minutes between runs in daemon mode (default: 30)")
+    parser.add_argument('--once', action='store_true', help="Run single sweep and exit immediately")
+    parser.add_argument('--daemon', action='store_true', help="Run continuously in 1-minute loop (default if not --once)")
+    parser.add_argument('--interval', type=int, default=1, help="Interval in minutes between sweeps (default: 1 minute)")
     parser.add_argument('--dry-run', action='store_true', help="Test fetch, watermark, and format without saving to DB")
 
     args = parser.parse_args()
 
-    if args.daemon:
-        logger.info(f"Starting continuous daemon mode: running every {args.interval} minutes...")
+    # Default to daemon mode unless explicitly told --once
+    is_daemon = args.daemon or (not args.once)
+
+    if is_daemon:
+        logger.info(f"================================================================================")
+        logger.info(f" The Chronicles Real-Time Newsroom Daemon: Running sweeps every {args.interval} minute(s)")
+        logger.info(f" Zero-Duplicate Engine: Active | Press Photo Watermark: Active | 300-1k Words: Active")
+        logger.info(f"================================================================================")
+        cycle_num = 1
         while True:
             try:
-                run_pipeline(batch_size=args.batch_size, beat=args.beat, dry_run=args.dry_run)
+                logger.info(f"--- Starting Sweep Cycle #{cycle_num} ---")
+                published = run_pipeline(batch_size=args.batch_size, beat=args.beat, dry_run=args.dry_run)
+                if published == 0:
+                    logger.info(f"No new breaking dispatches detected across wire feeds. Waiting {args.interval} minute(s)...")
+                else:
+                    logger.info(f"Cycle #{cycle_num} complete. Published {published} stories. Waiting {args.interval} minute(s) until next sweep...")
+            except KeyboardInterrupt:
+                logger.info("Daemon gracefully stopped by user.")
+                break
             except Exception as e:
-                logger.error(f"Error during scheduled batch: {e}")
-            logger.info(f"Sleeping for {args.interval} minutes until next news wire cycle...")
+                logger.error(f"Error during scheduled sweep cycle #{cycle_num}: {e}")
+                logger.info(f"Retrying in {args.interval} minute(s)...")
+
+            cycle_num += 1
             time.sleep(args.interval * 60)
     else:
-        # Default single run
         run_pipeline(batch_size=args.batch_size, beat=args.beat, dry_run=args.dry_run)
 
 

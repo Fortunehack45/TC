@@ -10,3 +10,5 @@ coverage/
 admin/.vercel
 __pycache__/
 *.py[cod]
+scripts/data/*.json
+

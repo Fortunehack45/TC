@@ -27,38 +27,93 @@ function sanitizeEditorialHtml(rawHtml: string): string {
   html = html.replace(/[\uFFFD\u0092\u0091]/g, "'");
   html = html.replace(/[\u0093\u0094]/g, '"');
 
-  // 2. Fix headings: remove markdown hashes and AI labels (e.g. <h3>## Title</h3> or <h3>Section Heading: Title</h3>)
+  // 2. Strip raw wire scheduling junk (e.g. Who: Liverpool vs Arsenal What: ... When: ... Where: ... How to follow: ...)
+  html = html.replace(/<p><span class="drop-cap-red">[A-Za-z]<\/span>ho:\s*Liverpool vs Arsenal What:[\s\S]*?Humiliated by/gi, '<p><span class="drop-cap-red">H</span>umiliated by');
+  html = html.replace(/<p>\s*(?:Who|What|When|Where|How to follow):\s*[^<]+(?:(?:Who|What|When|Where|How to follow):[^<]+)*<\/p>/gi, '');
+  html = html.replace(/\b(?:Who|What|When|Where|How to follow):\s*[^<.\n]+\b/gi, '');
+
+  // 3. Fix headings: remove markdown hashes and AI labels (e.g. <h3>## Title</h3> or <h3>Section Heading: Title</h3>)
   html = html.replace(/<h3([^>]*)>\s*(?:#{1,4}\s*|(?:Section\s+Heading|Chapter\s+\d+|Section\s+\d+|Part\s+\d+|Heading):\s*)+/gi, '<h3$1>');
 
-  // 3. Fix broken blockquote wrappers and stray tags
+  // 4. Unwrap any existing figures or duplicate blockquotes to avoid nested cascade borders
+  html = html.replace(/<\/?figure\b[^>]*>/gi, '');
+  while (/<blockquote\b[^>]*>\s*<blockquote\b[^>]*>/i.test(html)) {
+    html = html.replace(/<blockquote\b[^>]*>\s*<blockquote\b[^>]*>/gi, '<blockquote>');
+  }
+  while (/<\/blockquote>\s*<\/blockquote>/i.test(html)) {
+    html = html.replace(/<\/blockquote>\s*<\/blockquote>/gi, '</blockquote>');
+  }
+
+  // 5. Fix broken blockquote wrappers and stray tags
   html = html.replace(/<\/p>\s*<p>\s*<\/blockquote>/gi, '</p></blockquote>');
   html = html.replace(/<p>\s*<\/blockquote>/gi, '</blockquote>');
   html = html.replace(/<\/blockquote>\s*<p>\s*<\/blockquote>/gi, '</blockquote>');
   html = html.replace(/<\/blockquote>\s*<p>(?=\s*<(?:h[1-6]|div|figure|blockquote|table)|$)/gi, '</blockquote>');
 
-  // 4. Standardize blockquotes into professional broadsheet pullquotes
-  html = html.replace(/<blockquote\b[^>]*>([\s\S]*?)<\/blockquote>/gi, (_, bqInner) => {
+  // 6. Standardize blockquotes into exactly ONE clean broadsheet pullquote with correct speaker attribution
+  html = html.replace(/([\s\S]{0,450})<blockquote\b[^>]*>([\s\S]*?)<\/blockquote>/gi, (match, beforeContext, bqInner) => {
     let inner = bqInner;
     let speaker = '';
-    const footerMatch = inner.match(/<footer[^>]*>\s*(?:&mdash;|—|-)?\s*([\s\S]*?)<\/footer>/i);
+
+    // First check inside the quote for footer or figcaption
+    const footerMatch = inner.match(/<(?:footer|figcaption)[^>]*>\s*(?:<span[^>]*><\/span>)?\s*(?:&mdash;|—|-)?\s*([\s\S]*?)<\/(?:footer|figcaption)>/i);
     if (footerMatch) {
       const rawSpk = footerMatch[1].replace(/<[^>]+>/g, '').trim().replace(/^['"-— \t\r\n]+|['"-— \t\r\n]+$/g, '');
       if (!/desk|affairs|statutory|disclosure|editorial/i.test(rawSpk)) {
         speaker = rawSpk;
       }
-      inner = inner.replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '');
+      inner = inner.replace(/<(?:footer|figcaption)[^>]*>[\s\S]*?<\/(?:footer|figcaption)>/gi, '');
     }
+
+    // If speaker is still empty, extract from the preceding text context
+    if (!speaker && beforeContext) {
+      const spkRoleMatch = beforeContext.match(/([A-Z][a-zA-Z\s.\'-]{2,35})\s*\(([^)]+)\)\s*:/);
+      if (spkRoleMatch) {
+        const name = spkRoleMatch[1].trim();
+        const role = spkRoleMatch[2].trim();
+        if (!/desk|affairs|statutory|disclosure|editorial|section|part|chapter/i.test(name)) {
+          speaker = `${name}, ${role}`;
+        }
+      } else {
+        const spkSaidMatch = beforeContext.match(/([A-Z][a-zA-Z\s.\'-]{2,35})\s*,\s*([^<.,\n]+?)\s*,\s*(?:said|stated|remarked|declared|noted|explained|added)\b/i);
+        if (spkSaidMatch) {
+          const name = spkSaidMatch[1].trim();
+          const role = spkSaidMatch[2].trim();
+          if (!/desk|affairs|statutory|disclosure|editorial/i.test(name)) {
+            speaker = `${name}, ${role}`;
+          }
+        } else {
+          const verbMatch = beforeContext.match(/(?:said|stated|remarked|declared|noted|warned|explained)\s+([A-Z][a-zA-Z\s.\'-]{2,35})(?:\s*,\s*([^<.,\n]+))?/i);
+          if (verbMatch) {
+            const name = verbMatch[1].trim();
+            const role = verbMatch[2] ? verbMatch[2].trim() : '';
+            if (!/desk|affairs|statutory|disclosure|editorial/i.test(name)) {
+              speaker = role ? `${name}, ${role}` : name;
+            }
+          } else {
+            const colonMatch = beforeContext.match(/([A-Z][a-zA-Z\s.\'-]{2,30})\s*:\s*["“']/);
+            if (colonMatch) {
+              const name = colonMatch[1].trim();
+              if (!/desk|affairs|statutory|disclosure|editorial|section|part|chapter|who|what|when|where|note/i.test(name)) {
+                speaker = name;
+              }
+            }
+          }
+        }
+      }
+    }
+
     let quoteText = inner.replace(/<\/?(?:p|blockquote)[^>]*>/gi, '').trim();
     quoteText = quoteText.replace(/^(?:&ldquo;|“|"|'|‘|\s)+|(?:&rdquo;|”|"|'|’|\s)+$/g, '').trim();
     quoteText = quoteText.replace(/[,;]\.([”"’'])/g, '.$1').replace(/\.[,;]([”"’'])/g, '.$1');
     quoteText = quoteText.replace(/([.,;!?])[.,;!?]+/g, '$1');
     if (quoteText && !/[.!?]$/.test(quoteText)) quoteText += '.';
-    if (!quoteText) return '';
+    if (!quoteText) return beforeContext;
 
     const figCap = speaker
       ? `<figcaption class="mt-3.5 text-xs font-mono-meta text-stone-400 not-italic uppercase tracking-wider flex items-center gap-2"><span class="w-5 h-0.5 bg-[#E50914] inline-block shrink-0"></span><span>${speaker}</span></figcaption>`
       : '';
-    return `<figure class="my-8 py-5 px-6 border-l-4 border-[#E50914] bg-[#161616]/80 rounded-r-xs shadow-md"><blockquote class="font-editorial italic text-stone-100 text-lg sm:text-xl leading-relaxed">&ldquo;${quoteText}&rdquo;</blockquote>${figCap}</figure>`;
+    return `${beforeContext}<figure class="my-8 py-5 px-6 border-l-4 border-[#E50914] bg-[#161616]/90 rounded-r-xs shadow-md"><blockquote class="font-editorial italic text-stone-100 text-lg sm:text-xl leading-relaxed border-none pl-0 m-0">&ldquo;${quoteText}&rdquo;</blockquote>${figCap}</figure>`;
   });
 
   // 5. Convert ASCII and Markdown tables into responsive broadsheet tables
@@ -384,8 +439,8 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
         </nav>
       </div>
 
-      {/* Main In-Page Article Body (Centered Broadsheet Reading Measure) */}
-      <article className="w-full max-w-4xl 2xl:max-w-5xl mx-auto px-4 sm:px-6 md:px-8 py-6">
+      {/* Main In-Page Article Body (Broadsheet Reading Measure Closer to Edges) */}
+      <article className="w-full max-w-[96%] xl:max-w-[1440px] 2xl:max-w-[1600px] mx-auto px-2 sm:px-4 md:px-6 py-6">
         {/* Category kicker */}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs font-mono-meta text-stone-400 mb-4">
           <span className="bg-[#E50914] text-white px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-xs whitespace-nowrap">
@@ -473,7 +528,7 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
         <div className={`font-sans-body text-stone-300 space-y-6 ${getFontClass()}`}>
           {article.content_html ? (
             <div
-              className="prose prose-invert max-w-none article-prose prose-headings:font-editorial prose-headings:text-white prose-p:text-base sm:prose-p:text-lg prose-p:leading-[1.85] prose-p:text-stone-300 prose-a:text-[#E50914] prose-blockquote:border-l-4 prose-blockquote:border-[#E50914] prose-blockquote:font-editorial prose-blockquote:italic prose-h3:text-2xl sm:prose-h3:text-3xl prose-h3:border-b prose-h3:border-[#2A2A2A] prose-h3:pb-2 prose-h3:mt-10 prose-h3:mb-4 prose-table:border prose-table:border-[#333] prose-th:bg-[#222] prose-th:p-2 prose-td:p-2 prose-td:border-t prose-td:border-[#333]"
+              className="prose prose-invert max-w-none article-prose prose-headings:font-editorial prose-headings:text-white prose-p:text-base sm:prose-p:text-lg prose-p:leading-[1.85] prose-p:text-stone-300 prose-a:text-[#E50914] prose-blockquote:border-none prose-blockquote:pl-0 prose-blockquote:my-0 prose-blockquote:font-editorial prose-blockquote:italic prose-h3:text-2xl sm:prose-h3:text-3xl prose-h3:border-b prose-h3:border-[#2A2A2A] prose-h3:pb-2 prose-h3:mt-10 prose-h3:mb-4 prose-table:border prose-table:border-[#333] prose-th:bg-[#222] prose-th:p-2 prose-td:p-2 prose-td:border-t prose-td:border-[#333]"
               dangerouslySetInnerHTML={{ __html: sanitizeEditorialHtml(article.content_html) }}
             />
           ) : article.fullContent ? (

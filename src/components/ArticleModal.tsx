@@ -234,19 +234,23 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
             <span className="font-semibold">HOME</span>
           </button>
           <ChevronRight className="w-3.5 h-3.5 text-stone-600 shrink-0" />
-          <button
-            onClick={() => {
-              if (onNavigateToSection) {
-                onNavigateToSection(article.section);
-              } else {
-                onClose();
-              }
-            }}
-            className="text-stone-300 hover:text-[#E50914] font-bold uppercase transition-colors"
-          >
-            {article.section}
-          </button>
-          <ChevronRight className="w-3.5 h-3.5 text-stone-600 shrink-0" />
+          {article.section && article.section.toUpperCase() !== article.category.toUpperCase() && (
+            <>
+              <button
+                onClick={() => {
+                  if (onNavigateToSection) {
+                    onNavigateToSection(article.section);
+                  } else {
+                    onClose();
+                  }
+                }}
+                className="text-stone-300 hover:text-[#E50914] font-bold uppercase transition-colors"
+              >
+                {article.section}
+              </button>
+              <ChevronRight className="w-3.5 h-3.5 text-stone-600 shrink-0" />
+            </>
+          )}
           <span className="text-[#E50914] font-bold uppercase">{article.category}</span>
           <ChevronRight className="w-3.5 h-3.5 text-stone-600 shrink-0 hidden sm:inline" />
           <span className="text-stone-400 truncate max-w-xs sm:max-w-md hidden sm:inline">{article.title}</span>
@@ -258,7 +262,9 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
         {/* Category kicker */}
         <div className="flex flex-wrap items-center gap-3 text-xs font-mono-meta text-stone-400 mb-4">
           <span className="bg-[#E50914] text-white px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-xs">
-            {article.section} • {article.category}
+            {article.section && article.section.toUpperCase() !== article.category.toUpperCase()
+              ? `${article.section} • ${article.category}`
+              : article.category}
           </span>
           {article.date && (
             <span className="flex items-center gap-1">

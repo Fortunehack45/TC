@@ -65,7 +65,7 @@ export function mapDBArticleToArticle(db: DBArticle): Article {
     fullContent: textContent,
     content_html: rawHtml,
     date: formattedDate,
-    author: db.author_name || 'Ajayi-Ojo Progress',
+    author: db.author_name || 'Chronicles Editorial Desk',
     readTime: db.read_time || '5 min read',
     imageUrl: db.cover_image_url || DEFAULT_FALLBACK_IMAGE,
     cover_image_url: db.cover_image_url || DEFAULT_FALLBACK_IMAGE,

@@ -197,6 +197,46 @@ VERIFIED_FEEDS = [
         'url': 'https://nairametrics.com/feed/',
         'default_dateline': 'LAGOS',
     },
+    {
+        'id': 'punch_edu',
+        'name': 'Punch Education',
+        'region': 'nigeria',
+        'default_category': 'EDUCATION',
+        'url': 'https://punchng.com/topics/education/feed/',
+        'default_dateline': 'ABUJA',
+    },
+    {
+        'id': 'punch_politics',
+        'name': 'Punch Politics',
+        'region': 'nigeria',
+        'default_category': 'POLITICS',
+        'url': 'https://punchng.com/topics/politics/feed/',
+        'default_dateline': 'ABUJA',
+    },
+    {
+        'id': 'punch_health',
+        'name': 'Punch Health & Lifestyle',
+        'region': 'nigeria',
+        'default_category': 'LIFESTYLE',
+        'url': 'https://punchng.com/topics/health/feed/',
+        'default_dateline': 'LAGOS',
+    },
+    {
+        'id': 'bellanaija_style',
+        'name': 'BellaNaija Style',
+        'region': 'nigeria',
+        'default_category': 'FASHION',
+        'url': 'https://www.bellanaijastyle.com/feed/',
+        'default_dateline': 'LAGOS',
+    },
+    {
+        'id': 'punch_ent',
+        'name': 'Punch Entertainment',
+        'region': 'nigeria',
+        'default_category': 'CELEBRITY',
+        'url': 'https://punchng.com/topics/entertainment/feed/',
+        'default_dateline': 'LAGOS',
+    },
     # --- GLOBAL FEEDS ---
     {
         'id': 'bbc_world',
@@ -277,6 +317,38 @@ VERIFIED_FEEDS = [
         'default_category': 'WORLD',
         'url': 'https://www.aljazeera.com/xml/rss/all.xml',
         'default_dateline': 'DOHA',
+    },
+    {
+        'id': 'npr_edu',
+        'name': 'NPR Education',
+        'region': 'global',
+        'default_category': 'EDUCATION',
+        'url': 'https://feeds.npr.org/1013/rss.xml',
+        'default_dateline': 'WASHINGTON',
+    },
+    {
+        'id': 'politico_us',
+        'name': 'Politico',
+        'region': 'global',
+        'default_category': 'POLITICS',
+        'url': 'https://rss.politico.com/politics-news.xml',
+        'default_dateline': 'WASHINGTON',
+    },
+    {
+        'id': 'fashionista',
+        'name': 'Fashionista',
+        'region': 'global',
+        'default_category': 'FASHION',
+        'url': 'https://fashionista.com/.rss/full/',
+        'default_dateline': 'PARIS',
+    },
+    {
+        'id': 'variety_ent',
+        'name': 'Variety Entertainment',
+        'region': 'global',
+        'default_category': 'CELEBRITY',
+        'url': 'https://variety.com/feed/',
+        'default_dateline': 'LOS ANGELES',
     },
 ]
 
@@ -410,6 +482,78 @@ BEAT_SECTOR_CONTEXT = {
             "International financial institutions and bilateral development partners are preparing targeted reconstruction and technical assistance packages to support post-accord economic stabilization programs.",
             "International observer missions and diplomatic corps will continue close monitoring from key capital cities, dispatching regular briefing cables to update heads of state and multilateral secretariats on the evolving diplomatic landscape."
         ]
+    },
+    'EDUCATION': {
+        'sec1_title': 'Academic Governance, Accreditation & Institutional Standards',
+        'sec2_title': 'Pedagogical Reform, Curriculum Updates & Faculty Development',
+        'sec3_title': 'Tertiary Funding, Research Grants & Infrastructural Allocation',
+        'sec4_title': 'Student Welfare, Digital Classrooms & Post-Graduation Pathways',
+        'sec5_title': 'Policy Horizon & Forthcoming Examination Calendars',
+        'deep_paragraphs': [
+            "The pedagogical and administrative ramifications of this educational milestone arrive at a pivotal juncture for tertiary reform, curriculum modernizations, and academic capacity building. Education ministries, university governing councils, and statutory regulatory commissions have convened specialized taskforces to align institutional practices with benchmark learning standards.",
+            "Academic staff unions, faculty senates, and institutional researchers highlight that sustained educational quality requires disciplined allocation of research development funds and the expansion of modernized laboratory infrastructure. Bridging the gap between theoretical instruction and applied industrial competencies remains a top priority across higher education corridors.",
+            "Higher education policy analysts note that institutional funding mechanisms must be transparent and resilient against fiscal volatility. Strategic partnerships with multinational research foundations, alumni endowments, and private-sector innovators are increasingly viewed as indispensable to insulating universities from budgetary contractions.",
+            "Student governance associations, parent-teacher forums, and civic education advocates underscore that campus security, affordable accommodation, and modern mental health resources are vital to holistic student wellbeing. Educational institutions that foster transparent dialogue with student representatives report significantly lower disruption cycles.",
+            "Educational technologists and digital curriculum developers are expanding virtual learning environments, open-access scholarly repositories, and digital examination proctoring systems. These digital investments aim to democratize access to advanced learning materials and expand enrollment bandwidth beyond physical campus constraints.",
+            "Statutory examination councils, admission boards, and accreditation bodies are updating evaluation protocols to integrate continuous assessments and project-based learning heuristics. Aligning secondary and tertiary outcomes ensures that school leavers possess relevant analytical problem-solving skills.",
+            "Vocational education authorities and polytechnic institutes are recalibrating technical training modules to address regional labor market demands in renewable energy, modern agriculture, and digital engineering.",
+            "International academic mobility, reciprocal credential evaluation treaties, and bilateral postgraduate scholarship partnerships continue to expand opportunities for scholarly exchange between domestic institutions and world-leading research universities.",
+            "As the forthcoming academic calendar and examination admission cycles approach, ministerial directorates are preparing comprehensive monitoring guidelines to ensure seamless operational continuity across primary, secondary, and tertiary institutions."
+        ]
+    },
+    'LIFESTYLE': {
+        'sec1_title': 'Cultural Milestones, Modern Living & Contemporary Taste',
+        'sec2_title': 'Wellness Architecture, Nutrition & Preventative Health',
+        'sec3_title': 'Urban Spaces, Hospitality Dynamics & Architectural Heritage',
+        'sec4_title': 'Artistic Expression, Gastronomy & Community Heritage',
+        'sec5_title': 'Cultural Outlook & Forthcoming Lifestyle Movements',
+        'deep_paragraphs': [
+            "The cultural currents and lifestyle evolutions reflected in this development underscore the shifting priorities of contemporary society, where design aesthetics, personal wellness, and community heritage converge. Sociologists, urban curators, and lifestyle commentators observe that modern living demands a thoughtful balance between high-paced technological convenience and restorative human experiences.",
+            "Culinary innovators, hospitality directors, and architectural designers are redefining shared public and private environments to foster mindfulness and sustainable consumption. The revival of artisanal craftsmanship and locally sourced organic ingredients marks a significant departure from industrialized mass production.",
+            "Preventative wellness specialists and mental health advocates emphasize that urban dwellers are prioritizing holistic daily routines that incorporate physical activity, balanced nutrition, and intentional digital disconnection. Modern wellness centers and eco-conscious retreats are experiencing unprecedented demand across major metropolitan corridors.",
+            "Heritage preservationists and contemporary artists point out that indigenous cultural expressions, textile traditions, and storytelling mediums provide vital anchors of identity in an increasingly globalized visual landscape. Curating spaces that celebrate cultural memory while embracing contemporary design creates enduring public enrichment.",
+            "Hospitality analysts report that experiential travel and boutique eco-tourism are outpacing traditional luxury vacations, as travelers seek immersive connections with local cultures, native ecosystems, and authentic regional traditions.",
+            "Interior designers and sustainable architects are championing biophilic design principles, incorporating natural ventilation, living greenery, and recycled indigenous timbers into residential and commercial spaces.",
+            "Community organizers and creative collectives are reclaiming underutilized urban zones to host seasonal farmers markets, outdoor acoustic performances, and interactive visual art installations that stimulate neighborhood vitality.",
+            "Publishers, cultural essayists, and podcast producers are documenting modern lifestyle transformations, exploring how inter-generational families navigate traditional expectations alongside modern autonomy and global mobility.",
+            "As upcoming creative seasons, design festivals, and culinary showcases near, curators and lifestyle innovators are finalizing exhibitions that capture the spirit of contemporary living and sustainable human flourishing."
+        ]
+    },
+    'FASHION': {
+        'sec1_title': 'Sartorial Vision, Runway Aesthetics & Creative Direction',
+        'sec2_title': 'Textile Heritage, Craftsmanship & Sustainable Production',
+        'sec3_title': 'Haute Couture Economics, Retail Corridors & Brand Equity',
+        'sec4_title': 'Global Fashion Weeks, Styling Trends & Cultural Identity',
+        'sec5_title': 'Seasonal Trajectory & Forthcoming Collections',
+        'deep_paragraphs': [
+            "The creative aesthetics and sartorial craftsmanship displayed in this fashion unveiling reflect the dynamic evolution of international design houses and avant-garde ateliers. Creative directors, master tailors, and textile historians have synthesized heritage fabrics with contemporary silhouettes, establishing a dialogue between traditional artisanal discipline and experimental modern tailoring.",
+            "Fashion industry analysts, luxury brand executives, and retail buyers note that sustainable fabric sourcing, ethical supply chain transparency, and circular fashion lifecycles are no longer optional marketing narratives, but foundational requirements for discerning international clientele.",
+            "Runway curators and style critics emphasize that modern fashion is increasingly defined by radical inclusivity, fluid gender boundaries, and the celebration of regional textile identities. Designers drawing inspiration from continental motifs and hand-woven silks are reshaping the visual vocabulary of global haute couture.",
+            "E-commerce strategists, visual merchandisers, and luxury conglomerate executives observe that direct-to-consumer digital channels and high-touch bespoke trunk shows provide complementary revenue streams that protect brand exclusivity while driving international sales momentum.",
+            "Textile mills and sustainable fiber innovators are investing heavily in organic linen, plant-based dyes, and biodegradable synthetic alternatives, reducing the ecological footprint of seasonal collection manufacturing.",
+            "Celebrity stylists, red-carpet tastemakers, and costume designers wield unprecedented influence over consumer fashion cycles, transforming archival runway pieces into instant viral movements that dictate mainstream department store trends.",
+            "Independent design incubators and fashion councils are funding apprentice initiatives to preserve dying artisanal techniques—such as hand-embroidery, loom weaving, and bespoke leatherwork—ensuring these generational skills survive in an era of automated fast fashion.",
+            "Boutique showrooms across Milan, Paris, Lagos, New York, and London are curating cross-cultural capsules that allow emerging designers to present collections alongside storied luxury heritage houses.",
+            "As upcoming fashion weeks and seasonal lookbook releases approach, styling teams and production ateliers are applying finishing touches to runway lineups that will dictate global color palettes and structural silhouettes for the upcoming calendar year."
+        ]
+    },
+    'CELEBRITY': {
+        'sec1_title': 'Entertainment Industry Milestones & Artistic Influence',
+        'sec2_title': 'Production Budgets, Streaming Metrics & Box Office Economics',
+        'sec3_title': 'Creative Autonomy, Representation & Talent Management',
+        'sec4_title': 'Global Pop Culture, Red Carpet Moments & Cultural Diplomacy',
+        'sec5_title': 'Creative Horizon & Forthcoming Project Releases',
+        'deep_paragraphs': [
+            "The cultural resonance and commercial velocity surrounding this entertainment milestone demonstrate the immense global influence of contemporary performing artists, filmmakers, and creative innovators. Studio executives, artist managers, and cultural critics observe that the boundaries between regional stardom and international cultural diplomacy have dissolved, creating unprecedented global stages for top-tier talent.",
+            "Streaming platforms, distribution syndicates, and recording labels are restructuring royalty frameworks, production deals, and intellectual property arrangements to accommodate decentralized digital consumption and direct-to-fan monetization.",
+            "Entertainment journalists, biographers, and industry insiders note that enduring artistic longevity requires more than viral social media visibility—it demands uncompromising creative authenticity, relentless rehearsal discipline, and astute brand stewardship.",
+            "Guild representatives, independent filmmakers, and sound engineers emphasize the importance of state-of-the-art studio facilities, fair creative compensation, and rigorous copyright protection to sustain the rapid growth of local creative economies.",
+            "Global music festivals, cinematic award academies, and international touring circuits continue to witness landmark attendance figures, demonstrating the enduring appetite for collective live performance and transformative storytelling.",
+            "Talent agencies and legal teams are negotiating complex multi-platform endorsements, fragrance lines, and equity-based brand partnerships, elevating leading artists into multi-faceted business moguls with significant investment portfolios.",
+            "Cinematographers, set designers, and post-production visual effects specialists are elevating technical production values, ensuring that emerging films and music videos compete seamlessly with legacy Hollywood and international studio outputs.",
+            "Charitable foundations, civic engagement campaigns, and grassroots youth academies launched by prominent figures leverage celebrity platforms to address pressing social causes, educational scholarships, and healthcare initiatives.",
+            "As upcoming premiere galas, stadium tour dates, and prestigious festival screenings draw near, public anticipation is reaching fever pitch as fans and industry stakeholders prepare to celebrate the latest triumphs of modern creative culture."
+        ]
     }
 }
 
@@ -460,20 +604,18 @@ def safe_word_bound_trim(text: str, max_chars: int = 160, append_ellipsis: bool 
 
 def sanitize_paragraph_quotes(text: str) -> str:
     """Sanitizes body paragraphs to eliminate doubled quotes, dangling wire quotes, and unmatched marks."""
+    text = re.sub(r'&(?:quot|ldquo|rdquo);', '"', text)
     text = re.sub(r'["“”]{2,}', '"', text)
     text = re.sub(r"['’]{2,}", "'", text)
 
     stripped = text.strip()
-    has_open = bool(re.match(r'^["“]', stripped))
-    has_close = bool(re.search(r'["”]$', stripped))
+    # Strip opening quotes from paragraphs that are broadsheet narrative
+    if re.match(r'^[“"\'‘]', stripped) and not re.search(r'[”"\'’]$', stripped):
+        stripped = re.sub(r'^[“"\'‘\s]+', '', stripped)
+    elif re.search(r'[”"\'’]$', stripped) and not re.match(r'^[“"\'‘]', stripped):
+        stripped = re.sub(r'[\s”"\'’]+$', '', stripped)
 
-    # Strip dangling opening quote from wire paragraphs
-    if has_open and not has_close:
-        text = re.sub(r'^["“]\s*', '', text)
-    elif has_close and not has_open:
-        text = re.sub(r'\s*["”]$', '', text)
-
-    return text.strip()
+    return stripped.strip()
 
 
 def classify_article_beat(title: str, text: str, fallback_cat: str) -> str:
@@ -482,15 +624,20 @@ def classify_article_beat(title: str, text: str, fallback_cat: str) -> str:
 
     scores = {
         'NIGERIA': len(re.findall(r'\b(nigeria|nigerian|zamfara|lagos|abuja|kano|rivers|ogun|borno|enugu|kaduna|ibadan|delta|edo|fct|fubara|wike|tinubu|shettima|efcc|cbn|nass|invec|nairametrics|lawal|akpabio|sanwo-olu|sub-national|senatorial|state government|federal government)\b', combined)) * 2,
-        'POLITICS': len(re.findall(r'\b(senate|minister|governor|assembly|election|court|party|lawmaker|tribunal|judiciary|apc|pdp|bill|cabinet|impeachment|biden|trump|congress|parliament|vote|ballot|detention)\b', combined)) * 2,
+        'POLITICS': len(re.findall(r'\b(senate|minister|governor|assembly|election|court|party|lawmaker|tribunal|judiciary|apc|pdp|bill|cabinet|impeachment|biden|trump|congress|parliament|vote|ballot|detention|politicians)\b', combined)) * 2,
         'FINANCE': len(re.findall(r'\b(naira|dollar|cbn|inflation|bank|stock|ipo|revenue|investment|budget|dividend|gdp|debt|earnings|shares|interest rate|market capitalisation|liquidity|treasury|bond|monetary|equities|ngx|wall street|crude oil|bua)\b', combined)) * 2.2,
         'TECHNOLOGY': len(re.findall(r'\b(ai|artificial intelligence|software|app|cyber|semiconductor|chip|google|apple|microsoft|meta|startup|digital payments|fintech|algorithm|smartphone|gadget|opay|crypto|bitcoin|ethereum|hardware|cybersecurity)\b', combined)) * 2.2,
         'SCIENCE': len(re.findall(r'\b(nasa|space|telescope|orbit|climate|species|biology|physics|medicine|vaccine|laboratory|satellite|astronomy|niprd|solar|cosmic|lunar|mars|researchers|genetics|dna|environment|pharmaceutical)\b', combined)) * 2,
         'SPORT': len(re.findall(r'\b(super eagles|afcon|fifa|football|striker|arsenal|chelsea|manchester|coach|transfer|tournament|olympics|league|winger|defender|ogbu|osimhen|lookman|champions league|premier league|goal|match|cup|ballon|squad)\b', combined)) * 2.5,
-        'EDUCATION': len(re.findall(r'\b(university|asuu|student|jamb|waec|lecturer|campus|polytechnic|curriculum|scholarship|matriculation|convocation|tertiary|examinations|schools|admissions)\b', combined)) * 2.5,
-        'LIFESTYLE': len(re.findall(r'\b(fashion|film|nollywood|music|cinema|grammy|wizkid|burna|davido|celebrity|luxury|art|culture|haute couture|designer|runway|theatre|premiere|hollywood)\b', combined)) * 2,
-        'WORLD': len(re.findall(r'\b(diplomacy|united nations|treaty|gaza|ukraine|ambassador|bilateral|summit|border|foreign ministry|peacekeeping|geopolitics|consulate|emigration|visas|russia|israel|nato)\b', combined)) * 1.5
+        'EDUCATION': len(re.findall(r'\b(university|asuu|student|students|jamb|waec|lecturer|campus|polytechnic|curriculum|scholarship|matriculation|convocation|tertiary|examinations|schools|admissions|academic|faculty|unilag|ui|oau|ahmadu bello)\b', combined)) * 2.5,
+        'LIFESTYLE': len(re.findall(r'\b(wellness|nutrition|travel|culinary|mental health|hospitality|architecture|leisure|interior design|relationship|gastronomy|lifestyle|decor|fitness)\b', combined)) * 2.2,
+        'FASHION': len(re.findall(r'\b(fashion|runway|haute couture|designer|wardrobe|collection|styling|fashion week|apparel|aesthetics|luxury fashion|textile|vogue|model|tailoring|couture|garment)\b', combined)) * 2.5,
+        'CELEBRITY': len(re.findall(r'\b(nollywood|hollywood|grammy|oscar|music video|afrobeat|wizkid|davido|burna boy|asake|tiwa|album|pop star|entertainment|red carpet|premiere|box office|actor|actress|celebrity|cinema)\b', combined)) * 2.5,
+        'WORLD': len(re.findall(r'\b(diplomacy|united nations|treaty|gaza|ukraine|ambassador|bilateral|summit|border|foreign ministry|peacekeeping|geopolitics|consulate|emigration|visas|russia|israel|nato|white house|downing street|kremlin|beijing)\b', combined)) * 1.5
     }
+
+    if fallback_cat in scores and scores[fallback_cat] >= 2:
+        return fallback_cat
 
     best_cat = max(scores, key=scores.get)
     if fallback_cat == 'NIGERIA' and scores['NIGERIA'] >= scores['WORLD']:
@@ -500,20 +647,20 @@ def classify_article_beat(title: str, text: str, fallback_cat: str) -> str:
     return fallback_cat
 
 
-def classify_lifecycle_and_type(title: str, text: str) -> Tuple[Optional[str], str]:
-    """Detects whether dispatch is true BREAKING, HEADLINE, DEVELOPING, or LATEST."""
+def classify_lifecycle_and_type(title: str, text: str) -> Tuple[str, str]:
+    """Detects whether dispatch is true BREAKING, HEADLINE, DEVELOPING, or REGULAR."""
     t = f"{title} {text[:600]}".lower()
 
-    if any(k in t for k in ['breaking news', 'just in', 'flash:', 'plane crash', 'explosion', 'earthquake', 'dies at', 'dead at', 'shot dead', 'emergency declared', 'impeached']):
+    if any(k in t for k in ['breaking news', 'just in', 'flash:', 'plane crash', 'explosion', 'earthquake', 'dies at', 'dead at', 'shot dead', 'emergency declared', 'impeached', 'resigns', 'erupts', 'military strike', 'hostage']):
         return 'BREAKING', 'BREAKING'
 
-    if any(k in t for k in ['investigation', 'exclusive:', 'special report', 'deep dive', 'analysis:', 'revelation', 'scrutiny', 'audit']):
-        return 'HEADLINE', 'INVESTIGATION'
+    if any(k in t for k in ['investigation', 'exclusive:', 'special report', 'deep dive', 'analysis:', 'revelation', 'scrutiny', 'audit', 'landmark', 'historic', 'verdict', 'ipo', 'unveils', 'record profit', 'overhaul']):
+        return 'HEADLINE', 'HEADLINE'
 
-    if any(k in t for k in ['developing story', 'peace talks', 'trial resumes', 'counter-offensive', 'negotiations underway', 'ongoing review']):
+    if any(k in t for k in ['developing story', 'peace talks', 'trial resumes', 'counter-offensive', 'negotiations underway', 'ongoing review', 'probe', 'crisis', 'dispute', 'struggle', 'clash', 'inquiry']):
         return 'DEVELOPING', 'DEVELOPING'
 
-    return None, 'LATEST'
+    return 'REGULAR', 'LATEST'
 
 
 def extract_and_attribute_quote(full_text: str, default_speaker: str = "") -> Tuple[Optional[str], Optional[str], str]:
@@ -1070,7 +1217,10 @@ def format_broadsheet_article_rules(item: dict, full_body_text: str) -> dict:
     quote_html = ""
     if primary_quote:
         clean_q = primary_quote.strip('\'"`“” \t\r\n')
-        clean_q = re.sub(r'["“”]{2,}', '"', clean_q)
+        clean_q = re.sub(r'&(?:quot|ldquo|rdquo);', '', clean_q)
+        clean_q = re.sub(r'["“”]{2,}', '"', clean_q).strip('\'"`“” \t\r\n')
+        if clean_q and not clean_q.endswith(('.', '!', '?')):
+            clean_q += '.'
         clean_spk = (quote_speaker or '').strip('\'"`“” \t\r\n— -')
         quote_html = f"""
 <blockquote class="my-6 border-l-4 border-[#E50914] pl-4 italic text-stone-100 font-editorial text-lg leading-relaxed">
@@ -1121,9 +1271,14 @@ def format_broadsheet_article_rules(item: dict, full_body_text: str) -> dict:
     word_count = len(soup.get_text().split())
     read_time = f"{max(7, math.ceil(word_count / 180))} min read"
 
-    # Safely trim subtitle and title strictly on word boundaries (never cut words or letters in half)
+    # Safely format subtitle and title strictly on word boundaries (never cut words or letters in half)
     clean_title = safe_word_bound_trim(title, 140)
-    clean_subtitle = safe_word_bound_trim(f"Strategic assessment: {lead_sentence}", 160, append_ellipsis=True)
+    lead_first_sentence = re.split(r'(?<=[.!?])\s+', lead_sentence)[0].strip()
+    clean_sub_text = re.sub(r'^[A-Z\s]{3,25}\s*[-—]\s*', '', lead_first_sentence).strip()
+    clean_sub_text = re.sub(r'^[“"\'‘\s]+', '', clean_sub_text)
+    clean_subtitle = safe_word_bound_trim(clean_sub_text, 160)
+    if not clean_subtitle.endswith(('.', '!', '?')):
+        clean_subtitle += '.'
 
     return {
         'title': clean_title,
@@ -1319,6 +1474,7 @@ def main():
     parser.add_argument('--once', action='store_true', help="Run single sweep and exit immediately")
     parser.add_argument('--daemon', action='store_true', help="Run continuously in 1-minute loop (default if not --once)")
     parser.add_argument('--interval', type=int, default=1, help="Interval in minutes between sweeps (default: 1 minute)")
+    parser.add_argument('--max-cycles', type=int, default=0, help="Maximum number of cycles before exiting (0 = infinite)")
     parser.add_argument('--dry-run', action='store_true', help="Test fetch, watermark, and format without saving to DB")
 
     args = parser.parse_args()
@@ -1345,6 +1501,10 @@ def main():
             except Exception as e:
                 logger.error(f"Error during scheduled sweep cycle #{cycle_num}: {e}")
                 logger.info(f"Retrying in {args.interval} minute(s)...")
+
+            if args.max_cycles > 0 and cycle_num >= args.max_cycles:
+                logger.info(f"Reached requested max cycles ({args.max_cycles}). Exiting gracefully.")
+                break
 
             cycle_num += 1
             time.sleep(args.interval * 60)

@@ -44,7 +44,7 @@ export const WordEditor: React.FC<WordEditorProps> = ({
 }) => {
   const [title, setTitle] = useState(initialArticle?.title || '');
   const [subtitle, setSubtitle] = useState(initialArticle?.subtitle || '');
-  const [authorName, setAuthorName] = useState(initialArticle?.author_name || 'Ajayi-Ojo Progress');
+  const [authorName, setAuthorName] = useState(initialArticle?.author_name || 'Chronicles Editorial Desk');
   const [slug, setSlug] = useState(initialArticle?.slug || '');
   const [category, setCategory] = useState(initialArticle?.category_id || 'WORLD');
   const [tags, setTags] = useState<string[]>(initialArticle?.tags || ['Exclusive', 'Diplomacy']);
@@ -269,7 +269,7 @@ export const WordEditor: React.FC<WordEditorProps> = ({
         video_url: videoUrl.trim() || null,
         content_html: contentHtml,
         status: targetStatus,
-        author_name: authorName.trim() || 'Ajayi-Ojo Progress',
+        author_name: authorName.trim() || 'Chronicles Editorial Desk',
         read_time: readTimeEstimate,
         lifecycle_stage: lifecycleStage,
         published_at: targetStatus === 'published' ? (initialArticle?.published_at || new Date().toISOString()) : null,
@@ -820,7 +820,7 @@ export const WordEditor: React.FC<WordEditorProps> = ({
               type="text"
               value={authorName}
               onChange={(e) => setAuthorName(e.target.value)}
-              placeholder="e.g. Ajayi-Ojo Progress"
+              placeholder="e.g. Chronicles Editorial Desk"
               className="w-full bg-[#141414] border border-[#333] text-stone-200 p-2.5 text-xs font-mono-meta rounded-xs focus:border-[#E50914] focus:outline-none"
             />
           </div>
@@ -1031,7 +1031,7 @@ export const WordEditor: React.FC<WordEditorProps> = ({
           coverImageUrl={coverImageUrl}
           videoUrl={videoUrl}
           contentHtml={editor?.getHTML() || ''}
-          authorName={authorName.trim() || 'Ajayi-Ojo Progress'}
+          authorName={authorName.trim() || 'Chronicles Editorial Desk'}
           readTime={readTimeEstimate}
           status={status}
           publishedAt={initialArticle?.published_at}

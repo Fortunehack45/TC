@@ -203,7 +203,10 @@ def upgrade_single_article(art: dict) -> Tuple[dict, int]:
     quote_html = ""
     if quote_text:
         clean_q = quote_text.strip('\'"`“” \t\r\n')
-        clean_q = re.sub(r'["“”]{2,}', '"', clean_q)
+        clean_q = re.sub(r'&(?:quot|ldquo|rdquo);', '', clean_q)
+        clean_q = re.sub(r'["“”]{2,}', '', clean_q).strip('\'"`“” \t\r\n')
+        if clean_q and not clean_q.endswith(('.', '!', '?')):
+            clean_q += '.'
         clean_spk = speaker.strip('\'"`“” \t\r\n— -')
         quote_html = f"""
 <blockquote class="my-6 border-l-4 border-[#E50914] pl-4 italic text-stone-100 font-editorial text-lg leading-relaxed">
@@ -254,8 +257,13 @@ def upgrade_single_article(art: dict) -> Tuple[dict, int]:
     word_count = len(final_soup.get_text().split())
     read_time = f"{max(7, math.ceil(word_count / 180))} min read"
 
-    # Safely trim subtitle strictly on word boundaries (never cut words or letters in half)
-    clean_subtitle = safe_word_bound_trim(f"Strategic assessment: {lead_sentence}", 160, append_ellipsis=True)
+    # Safely format subtitle strictly on word boundaries (never cut words or letters in half)
+    lead_first_sentence = re.split(r'(?<=[.!?])\s+', lead_sentence)[0].strip()
+    clean_sub_text = re.sub(r'^[A-Z\s]{3,25}\s*[-—]\s*', '', lead_first_sentence).strip()
+    clean_sub_text = re.sub(r'^[“"\'‘\s]+', '', clean_sub_text)
+    clean_subtitle = safe_word_bound_trim(clean_sub_text, 160)
+    if not clean_subtitle.endswith(('.', '!', '?')):
+        clean_subtitle += '.'
 
     update_payload = {
         'title': title,

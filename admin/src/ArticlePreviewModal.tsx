@@ -194,7 +194,7 @@ export const ArticlePreviewModal: React.FC<ArticlePreviewModalProps> = ({
             <Calendar className="w-3.5 h-3.5 text-[#E50914]" /> {formattedDate}
           </span>
           <span className="flex items-center gap-1">
-            <User className="w-3.5 h-3.5 text-stone-500" /> {authorName || 'Ajayi-Ojo Progress'}
+            <User className="w-3.5 h-3.5 text-stone-500" /> {authorName || 'Chronicles Editorial Desk'}
           </span>
           <span className="flex items-center gap-1">
             <Clock className="w-3.5 h-3.5 text-stone-500" /> {estimatedReadTime}

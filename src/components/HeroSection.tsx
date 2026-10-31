@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ArtGraphic } from './ArtGraphics';
-import { ArrowUpRight, Bookmark, Eye, ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
+import { ArrowUpRight, Bookmark, Eye } from 'lucide-react';
 import { getPostPreviewImage } from '../lib/imageHelper';
 import { formatProgressiveTimestamp } from '../lib/lifecycle';
 
@@ -17,7 +17,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   bookmarkedIds,
   articles,
 }) => {
-  const [activeIndex, setActiveIndex] = useState(0);
+  const [slideIndex, setSlideIndex] = useState(0);
+  const [enableTransition, setEnableTransition] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
   const touchStartXRef = useRef<number | null>(null);
 
@@ -76,29 +77,42 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   const heroPool = articles.slice(0, 5);
   const totalSlides = heroPool.length;
 
-  // Auto-slide every 5 seconds unless hovered/paused
+  // Infinite Forward Loop Extended Array: [0, 1, 2, 3, 4, 0]
+  // Appending the first article clone at the end allows continuous forward sliding without any backward rewind
+  const extendedPool = totalSlides > 1 ? [...heroPool, heroPool[0]] : heroPool;
+
+  // Real active index modulo the total unique slides
+  const activeIndex = totalSlides > 0 ? slideIndex % totalSlides : 0;
+
+  // 5-second automatic forward sliding ticker
   useEffect(() => {
     if (isPaused || totalSlides <= 1) return;
-    const interval = setInterval(() => {
-      setActiveIndex((prev) => (prev + 1) % totalSlides);
+    const timer = setInterval(() => {
+      setEnableTransition(true);
+      setSlideIndex((prev) => prev + 1);
     }, 5000);
-    return () => clearInterval(interval);
+    return () => clearInterval(timer);
   }, [isPaused, totalSlides]);
 
-  const activeArticle = heroPool[activeIndex] || heroPool[0];
-
-  // Right column displays the dispatches from the pool
-  const sideArticles = heroPool;
-
-  const handlePrevSlide = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setActiveIndex((prev) => (prev - 1 + totalSlides) % totalSlides);
+  // When transition ends on the clone (totalSlides), seamlessly snap back to index 0 with no animation
+  const handleTransitionEnd = () => {
+    if (slideIndex === totalSlides) {
+      setEnableTransition(false);
+      setSlideIndex(0);
+    }
   };
 
-  const handleNextSlide = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setActiveIndex((prev) => (prev + 1) % totalSlides);
-  };
+  // Re-enable transition on next tick after a seamless zero-animation jump
+  useEffect(() => {
+    if (!enableTransition) {
+      const raf = requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setEnableTransition(true);
+        });
+      });
+      return () => cancelAnimationFrame(raf);
+    }
+  }, [enableTransition]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartXRef.current = e.touches[0].clientX;
@@ -108,13 +122,20 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     if (touchStartXRef.current === null) return;
     const deltaX = e.changedTouches[0].clientX - touchStartXRef.current;
     if (deltaX > 40) {
-      // Swiped right -> prev slide
-      setActiveIndex((prev) => (prev - 1 + totalSlides) % totalSlides);
+      // Swiped right -> forward to previous or loop
+      setEnableTransition(true);
+      setSlideIndex((prev) => (prev > 0 ? prev - 1 : totalSlides - 1));
     } else if (deltaX < -40) {
-      // Swiped left -> next slide
-      setActiveIndex((prev) => (prev + 1) % totalSlides);
+      // Swiped left -> forward to next
+      setEnableTransition(true);
+      setSlideIndex((prev) => prev + 1);
     }
     touchStartXRef.current = null;
+  };
+
+  const handleSelectSideDispatch = (idx: number) => {
+    setEnableTransition(true);
+    setSlideIndex(idx);
   };
 
   return (
@@ -122,27 +143,33 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       {/* Hero Grid Container - Clean Broadsheet Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         
-        {/* Left/Center Main Feature Card: Real Photographic Broadsheet Lead with 5s Sliding Mechanism */}
+        {/* Left/Center Main Feature Card: Real Broadsheet Lead with Seamless Infinite Forward Loop */}
         <div 
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
-          className="lg:col-span-8 group relative bg-[#181818] border border-[#282828] rounded-xs overflow-hidden transition-colors duration-200 hover:border-white/40 min-h-[420px] sm:min-h-[490px] lg:min-h-[550px]"
+          className="lg:col-span-8 group relative bg-[#181818] border border-[#282828] rounded-xs overflow-hidden transition-colors duration-200 hover:border-white/30 min-h-[420px] sm:min-h-[490px] lg:min-h-[550px]"
         >
-          {/* Sliding Track for Big Rectangular Posts */}
+          {/* Sliding Track for Big Rectangular Posts (Always moves forward) */}
           <div 
-            className="flex w-full h-full transition-transform duration-700 ease-out"
-            style={{ transform: `translateX(-${activeIndex * 100}%)` }}
+            onTransitionEnd={handleTransitionEnd}
+            className={`flex w-full h-full ${
+              enableTransition ? 'transition-transform duration-700 ease-in-out' : ''
+            }`}
+            style={{ 
+              transform: `translateX(-${slideIndex * 100}%)`,
+              transitionProperty: enableTransition ? 'transform' : 'none'
+            }}
           >
-            {heroPool.map((article, idx) => {
+            {extendedPool.map((article, idx) => {
               const isBookmarked = bookmarkedIds.includes(article.id);
               const previewImg = getPostPreviewImage(article);
               const isBreaking = article.lifecycle_stage === 'BREAKING' || article.lifecycle?.status === 'BREAKING';
 
               return (
                 <div
-                  key={article.id || idx}
+                  key={`${article.id || 'art'}-${idx}`}
                   onClick={() => onSelectArticle(article)}
                   className="w-full h-full shrink-0 relative p-5 sm:p-8 flex flex-col justify-between cursor-pointer"
                 >
@@ -174,7 +201,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   {/* Top Meta Bar */}
                   <div className="relative z-10 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-mono-meta bg-[#E50914] text-white px-2.5 py-0.5 rounded-xs font-bold uppercase tracking-wider inline-block">
+                      <span className="text-[10px] font-mono-meta bg-[#E50914] text-white px-2.5 py-0.5 rounded-xs font-bold uppercase tracking-wider inline-block shadow">
                         {article.category}
                       </span>
                       <span className="font-mono-meta text-[11px] text-stone-300 uppercase tracking-widest hidden sm:inline">
@@ -183,11 +210,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                     </div>
 
                     <div className="flex items-center gap-2">
-                      {/* Carousel Indicator Pill: Current Slide / Total */}
-                      <span className="font-mono-meta text-[11px] text-stone-300 bg-black/60 px-2.5 py-0.5 rounded-xs border border-white/10 hidden sm:inline-block">
-                        WIRE {idx + 1} OF {totalSlides}
-                      </span>
-
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -238,53 +260,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               );
             })}
           </div>
-
-          {/* Sliding Navigation Controls (Hover Left/Right Arrows + Progress Pips) */}
-          <div className="absolute top-1/2 -translate-y-1/2 left-3 right-3 flex items-center justify-between pointer-events-none z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <button
-              onClick={handlePrevSlide}
-              className="p-2 bg-black/70 hover:bg-[#E50914] text-white rounded-full transition-colors pointer-events-auto cursor-pointer shadow-lg backdrop-blur-xs"
-              title="Previous Dispatch"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <button
-              onClick={handleNextSlide}
-              className="p-2 bg-black/70 hover:bg-[#E50914] text-white rounded-full transition-colors pointer-events-auto cursor-pointer shadow-lg backdrop-blur-xs"
-              title="Next Dispatch"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* Bottom Slide Progress Tracker (5-Second Visual Pips) */}
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-black/60 px-3 py-1.5 rounded-full border border-white/10 backdrop-blur-xs">
-            {heroPool.map((_, idx) => (
-              <button
-                key={idx}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setActiveIndex(idx);
-                }}
-                className={`transition-all duration-300 h-1.5 rounded-full cursor-pointer ${
-                  idx === activeIndex
-                    ? 'w-7 bg-[#E50914]'
-                    : 'w-2 bg-stone-500 hover:bg-stone-300'
-                }`}
-                title={`Go to story ${idx + 1}`}
-              />
-            ))}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsPaused(!isPaused);
-              }}
-              className="text-stone-400 hover:text-white transition-colors ml-1 p-0.5"
-              title={isPaused ? 'Resume Auto-Slide' : 'Pause Auto-Slide'}
-            >
-              {isPaused ? <Play className="w-2.5 h-2.5 text-emerald-400" /> : <Pause className="w-2.5 h-2.5" />}
-            </button>
-          </div>
         </div>
 
         {/* Right Side News Column: Interactive Dispatches Synced with Sliding Stage */}
@@ -299,28 +274,33 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             </div>
 
             <div className="space-y-3 sm:space-y-4 divide-y divide-[#282828]">
-              {sideArticles.map((item, idx) => {
+              {heroPool.map((item, idx) => {
                 const isBookmarked = bookmarkedIds.includes(item.id);
                 const isCurrentlyActive = idx === activeIndex;
 
                 return (
                   <div
                     key={item.id}
-                    onClick={() => setActiveIndex(idx)}
-                    className={`group pt-3 first:pt-0 pb-1 cursor-pointer transition-all duration-200 rounded-xs p-1.5 -mx-1.5 ${
+                    onClick={() => handleSelectSideDispatch(idx)}
+                    className={`group pt-3 first:pt-0 pb-1 cursor-pointer transition-all duration-300 rounded-xs p-2 -mx-2 ${
                       isCurrentlyActive
-                        ? 'bg-[#222222] border-l-2 border-[#E50914] pl-2.5'
-                        : 'hover:bg-[#1C1C1C]'
+                        ? 'bg-[#202020] border-l-3 border-[#E50914] pl-3 shadow-md'
+                        : 'hover:bg-[#1A1A1A] border-l-3 border-transparent'
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2 mb-1.5 min-w-0 w-full overflow-hidden">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] font-mono-meta bg-[#222222] border border-[#333333] text-stone-300 px-2 py-0.5 rounded-xs font-bold uppercase tracking-wider inline-block truncate shrink min-w-0 group-hover:border-[#E50914] transition">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[10px] font-mono-meta px-2 py-0.5 rounded-xs font-bold uppercase tracking-wider inline-block truncate transition ${
+                          isCurrentlyActive
+                            ? 'bg-[#E50914] text-white'
+                            : 'bg-[#222222] border border-[#333333] text-stone-300 group-hover:border-[#E50914]'
+                        }`}>
                           {item.category}
                         </span>
                         {isCurrentlyActive && (
-                          <span className="text-[9px] font-mono-meta text-[#E50914] font-bold uppercase tracking-wider hidden sm:inline">
-                            • ACTIVE
+                          <span className="inline-flex items-center gap-1 text-[9px] font-mono-meta text-[#E50914] font-bold uppercase tracking-wider">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#E50914] animate-pulse" />
+                            NOW PLAYING
                           </span>
                         )}
                       </div>
@@ -343,7 +323,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                           onSelectArticle(item);
                         } else {
                           e.stopPropagation();
-                          setActiveIndex(idx);
+                          handleSelectSideDispatch(idx);
                         }
                       }}
                       className={`font-editorial text-sm sm:text-base leading-snug font-medium transition ${

@@ -258,6 +258,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminEmail, onSi
     }
   };
 
+  // Dynamic Real Counts directly derived from loaded database dispatches
+  const beatCounts = React.useMemo(() => {
+    const counts: Record<string, number> = { ALL: articles.length };
+    articles.forEach((a) => {
+      counts[a.category_id] = (counts[a.category_id] || 0) + 1;
+    });
+    return counts;
+  }, [articles]);
+
+  const lifecycleCounts = React.useMemo(() => {
+    const counts: Record<string, number> = { ALL: articles.length, BREAKING: 0, HEADLINE: 0, DEVELOPING: 0, REGULAR: 0, ARCHIVED: 0 };
+    articles.forEach((a) => {
+      const lc = computeArticleLifecycle(a.published_at, a.lifecycle_stage);
+      if (counts[lc.status] !== undefined) {
+        counts[lc.status] += 1;
+      }
+    });
+    return counts;
+  }, [articles]);
+
   const filteredArticles = articles.filter((a) => {
     if (statusFilter !== 'ALL' && a.status !== statusFilter) return false;
     if (categoryFilter !== 'ALL' && a.category_id !== categoryFilter) return false;
@@ -331,19 +351,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminEmail, onSi
   return (
     <div className="w-full min-h-screen bg-[#101010] text-stone-200 font-sans-body pb-24">
       {/* Top Admin Bar */}
-      <header className="sticky top-0 z-40 bg-[#161616] border-b border-[#252525] px-2 sm:px-4 md:px-6 py-3.5 flex items-center justify-between shadow-xl">
-        <div className="flex items-center gap-3">
+      <header className="sticky top-0 z-40 bg-[#161616] border-b border-[#252525] px-3 sm:px-4 md:px-6 py-2.5 sm:py-3.5 flex flex-wrap items-center justify-between gap-2.5 sm:gap-4 shadow-xl">
+        <div className="flex items-center gap-2.5 shrink-0">
           <img
             src="/logo.png"
             alt="The Chronicles"
-            className="h-7 w-auto object-contain rounded-xs shadow"
+            className="h-6 sm:h-7 w-auto object-contain rounded-xs shadow"
           />
-          <span className="font-editorial text-sm sm:text-base font-bold text-white hidden md:inline">
+          <span className="font-editorial text-sm sm:text-base font-bold text-white hidden lg:inline">
             Independent Editorial Administration Hub
+          </span>
+          <span className="font-editorial text-sm font-bold text-white lg:hidden">
+            CHR Admin
           </span>
         </div>
 
-        <div className="flex items-center gap-1.5 sm:gap-3 overflow-x-auto max-w-full scrollbar-none py-1">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2.5">
           {/* Dispatches Tab Button */}
           <button
             onClick={() => setActiveTab('list')}
@@ -354,7 +377,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminEmail, onSi
             }`}
           >
             <FileText className="w-3.5 h-3.5" />
-            <span><span className="hidden sm:inline">DISPATCHES </span>({totalArticles})</span>
+            <span>DISPATCHES ({totalArticles})</span>
           </button>
 
           {/* Users Directory Tab Button */}
@@ -367,9 +390,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminEmail, onSi
             }`}
           >
             <Users className="w-3.5 h-3.5" />
-            <span><span className="hidden sm:inline">USERS </span>({totalUsers})</span>
+            <span>USERS ({totalUsers})</span>
             {activeUsersCount > 0 && (
-              <span className="bg-emerald-500 text-black text-[9px] font-black px-1.5 py-0.2 rounded-full">
+              <span className="bg-emerald-500 text-black text-[9px] font-black px-1.5 py-0.2 rounded-full hidden sm:inline">
                 {activeUsersCount} ACTIVE
               </span>
             )}
@@ -385,7 +408,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminEmail, onSi
             }`}
           >
             <Flag className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">REPORTS</span>
+            <span>REPORTS</span>
             {pendingReportsCount > 0 && (
               <span className="bg-white text-[#E50914] text-[10px] font-black px-1.5 py-0.2 rounded-full">
                 {pendingReportsCount}
@@ -399,19 +422,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminEmail, onSi
               setEditingArticle(null);
               setActiveTab('editor');
             }}
-            className="flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 bg-[#E50914] hover:bg-[#C40711] text-white rounded-xs font-mono-meta text-xs uppercase font-bold tracking-wider transition-colors shadow-lg shrink-0 cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#E50914] hover:bg-[#C40711] text-white rounded-xs font-mono-meta text-xs uppercase font-bold tracking-wider transition-colors shadow-lg shrink-0 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span className="hidden md:inline">WRITE NEW DISPATCH</span>
-            <span className="md:hidden">WRITE</span>
+            <span>WRITE</span>
+            <span className="hidden xl:inline">NEW DISPATCH</span>
           </button>
 
           {/* Admin Identity & Sign Out */}
           {onSignOut && (
-            <div className="flex items-center gap-2 pl-2 sm:pl-3 border-l border-[#2F2F2F] shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 pl-2 sm:pl-3 border-l border-[#2F2F2F] shrink-0">
               {adminEmail && (
                 <span
-                  className="hidden xl:inline-block text-[11px] font-mono-meta text-stone-300 font-bold truncate max-w-[170px]"
+                  className="hidden 2xl:inline-block text-[11px] font-mono-meta text-stone-300 font-bold truncate max-w-[150px]"
                   title={adminEmail}
                 >
                   {adminEmail}
@@ -424,17 +447,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminEmail, onSi
                   setIsPasswordModalOpen(true);
                 }}
                 title="Change Administrative Password"
-                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#202020] hover:bg-stone-700 text-stone-300 hover:text-white rounded-xs font-mono-meta text-xs transition-colors cursor-pointer border border-[#303030]"
+                className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 bg-[#202020] hover:bg-stone-700 text-stone-300 hover:text-white rounded-xs font-mono-meta text-xs transition-colors cursor-pointer border border-[#303030]"
               >
-                <KeyRound className="w-3.5 h-3.5 text-amber-400" />
-                <span className="hidden md:inline">CHANGE PASSWORD</span>
+                <KeyRound className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <span className="hidden md:inline">PASSWORD</span>
               </button>
               <button
                 onClick={onSignOut}
                 title="Sign out of Admin Console"
-                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#202020] hover:bg-[#E50914] text-stone-300 hover:text-white rounded-xs font-mono-meta text-xs transition-colors cursor-pointer border border-[#303030]"
+                className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 bg-[#202020] hover:bg-[#E50914] text-stone-300 hover:text-white rounded-xs font-mono-meta text-xs transition-colors cursor-pointer border border-[#303030]"
               >
-                <LogOut className="w-3.5 h-3.5" />
+                <LogOut className="w-3.5 h-3.5 shrink-0" />
                 <span className="hidden md:inline">SIGN OUT</span>
               </button>
             </div>
@@ -444,7 +467,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminEmail, onSi
 
       <main className="w-full max-w-[98%] 2xl:max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 mt-6">
         {/* Executive Real-Time Metric Overview Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-3 sm:gap-4 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4 mb-6">
           <div className="bg-[#181818] border border-[#262626] p-4 rounded-xs">
             <span className="text-[10px] font-mono-meta text-stone-500 uppercase tracking-widest block mb-1">
               TOTAL DISPATCHES
@@ -545,20 +568,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminEmail, onSi
                     setCurrentPage(1);
                   }}
                   options={[
-                    { value: 'ALL', label: 'All Beats (500)' },
-                    { value: 'NIGERIA', label: 'Nigeria (50)' },
-                    { value: 'WORLD', label: 'World (50)' },
-                    { value: 'POLITICS', label: 'Politics (50)' },
-                    { value: 'FINANCE', label: 'Finance (50)' },
-                    { value: 'TECHNOLOGY', label: 'Technology (50)' },
-                    { value: 'SCIENCE', label: 'Science (50)' },
-                    { value: 'LIFESTYLE', label: 'Lifestyle (50)' },
-                    { value: 'FASHION', label: 'Fashion (50)' },
-                    { value: 'CELEBRITY', label: 'Celebrity (50)' },
-                    { value: 'SPORT', label: 'Sport (50)' },
-                    { value: 'EDUCATION', label: 'Education (50)' },
+                    { value: 'ALL', label: `All Beats (${beatCounts.ALL || 0})` },
+                    { value: 'NIGERIA', label: `Nigeria (${beatCounts.NIGERIA || 0})` },
+                    { value: 'WORLD', label: `World (${beatCounts.WORLD || 0})` },
+                    { value: 'POLITICS', label: `Politics (${beatCounts.POLITICS || 0})` },
+                    { value: 'FINANCE', label: `Finance (${beatCounts.FINANCE || 0})` },
+                    { value: 'TECHNOLOGY', label: `Technology (${beatCounts.TECHNOLOGY || 0})` },
+                    { value: 'SCIENCE', label: `Science (${beatCounts.SCIENCE || 0})` },
+                    { value: 'LIFESTYLE', label: `Lifestyle (${beatCounts.LIFESTYLE || 0})` },
+                    { value: 'FASHION', label: `Fashion (${beatCounts.FASHION || 0})` },
+                    { value: 'CELEBRITY', label: `Celebrity (${beatCounts.CELEBRITY || 0})` },
+                    { value: 'SPORT', label: `Sport (${beatCounts.SPORT || 0})` },
+                    { value: 'EDUCATION', label: `Education (${beatCounts.EDUCATION || 0})` },
                   ]}
-                  className="w-44"
+                  className="w-48"
                 />
 
                 <CustomDropdown
@@ -568,14 +591,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminEmail, onSi
                     setCurrentPage(1);
                   }}
                   options={[
-                    { value: 'ALL', label: 'All Lifecycles (Decay)' },
-                    { value: 'BREAKING', label: 'Breaking (0–6h)' },
-                    { value: 'HEADLINE', label: 'Headline (6–24h)' },
-                    { value: 'DEVELOPING', label: 'Developing (24–48h)' },
-                    { value: 'REGULAR', label: 'Regular Feed (48–72h)' },
-                    { value: 'ARCHIVED', label: 'Archived (72h+)' },
+                    { value: 'ALL', label: `All Lifecycles (${lifecycleCounts.ALL || 0})` },
+                    { value: 'BREAKING', label: `Breaking (${lifecycleCounts.BREAKING || 0})` },
+                    { value: 'HEADLINE', label: `Headline (${lifecycleCounts.HEADLINE || 0})` },
+                    { value: 'DEVELOPING', label: `Developing (${lifecycleCounts.DEVELOPING || 0})` },
+                    { value: 'REGULAR', label: `Regular Feed (${lifecycleCounts.REGULAR || 0})` },
+                    { value: 'ARCHIVED', label: `Archived (${lifecycleCounts.ARCHIVED || 0})` },
                   ]}
-                  className="w-48"
+                  className="w-52"
                 />
               </div>
 
@@ -644,7 +667,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminEmail, onSi
                                       {art.title}
                                     </h4>
                                     <p className="text-[11px] text-stone-500 font-sans-body line-clamp-1">
-                                      {art.subtitle || 'No lead deck recorded.'}
+                                      {art.subtitle ? art.subtitle.replace(/^Strategic assessment:\s*/i, '') : 'No lead deck recorded.'}
                                     </p>
                                   </div>
                                 </div>
@@ -825,7 +848,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminEmail, onSi
                 {/* Pagination Controls */}
                 <div className="bg-[#161616] border border-[#282828] p-3 flex flex-wrap items-center justify-between gap-3 text-xs font-mono-meta">
                   <div className="flex items-center gap-2">
-                    <span className="text-stone-400">Rows per page:</span>
+                    <span className="text-stone-400 whitespace-nowrap">Rows per page:</span>
                     <CustomDropdown
                       value={String(pageSize)}
                       onChange={(v) => {
@@ -836,7 +859,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminEmail, onSi
                         { value: '25', label: '25 PER PAGE' },
                         { value: '50', label: '50 PER PAGE' },
                         { value: '100', label: '100 PER PAGE' },
-                        { value: '500', label: 'ALL 500' },
+                        { value: '99999', label: `ALL (${filteredArticles.length})` },
                       ]}
                       className="w-36"
                     />

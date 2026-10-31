@@ -44,7 +44,11 @@ export const ReportModal: React.FC<ReportModalProps> = ({
     setError(null);
 
     try {
-      await submitReport(user?.id || null, itemType, itemId, reason, details);
+      const trimmedDetails = details.trim();
+      const finalDetails = itemTitle
+        ? (trimmedDetails ? `[Target: "${itemTitle}"] ${trimmedDetails}` : `[Target: "${itemTitle}"]`)
+        : (trimmedDetails || undefined);
+      await submitReport(user?.id || null, itemType, itemId, reason, finalDetails);
       setSubmitted(true);
       setTimeout(() => {
         setSubmitted(false);

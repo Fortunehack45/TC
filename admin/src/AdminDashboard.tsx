@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import {
   FileText, Plus, Flag, Eye, Edit3, Trash2, Search, ArrowLeft, BarChart2,
   Clock, Check, X, ShieldAlert, Sparkles, Users, UserCheck, UserX, UserMinus, ShieldCheck,
-  Activity, RefreshCw, LogOut, KeyRound, Lock, EyeOff
+  Activity, RefreshCw, LogOut, KeyRound, Lock, EyeOff, AlertCircle, CornerDownRight
 } from 'lucide-react';
-import { DBArticle, DBReport, Profile } from './database.types';
+import { DBArticle, DBReport, EnrichedReport, Profile } from './database.types';
 import {
   supabase, getArticles, deleteArticle, upsertArticle, getReports, updateReportStatus,
   deleteComment, getUsers, updateUserStatus, updateUserRole, deleteUser
@@ -62,7 +62,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminEmail, onSi
   const [lifecycleFilter, setLifecycleFilter] = useState<'ALL' | LifecycleStatus>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const [reports, setReports] = useState<DBReport[]>([]);
+  const [reports, setReports] = useState<EnrichedReport[]>([]);
   const [loadingReports, setLoadingReports] = useState(false);
   const [reportFilter, setReportFilter] = useState<'ALL' | 'pending' | 'resolved' | 'dismissed'>('pending');
 
@@ -202,8 +202,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminEmail, onSi
     }
   };
 
-  const handleRemoveReportedItem = async (report: DBReport) => {
-    if (!confirm(`Delete offending ${report.item_type}?`)) return;
+  const handleRemoveReportedItem = async (report: EnrichedReport) => {
+    if (!confirm(`Permanently delete offending ${report.item_type}? This action cannot be undone.`)) return;
     try {
       if (report.item_type === 'comment' || report.item_type === 'reply') {
         await deleteComment(report.item_id);
@@ -212,9 +212,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminEmail, onSi
       }
       await updateReportStatus(report.id, 'resolved');
       setReports((prev) =>
-        prev.map((r) => (r.id === report.id ? { ...r, status: 'resolved' } : r))
+        prev.map((r) => (r.id === report.id ? { ...r, status: 'resolved', item_not_found: true } : r))
       );
-      alert('Offending content deleted and report resolved.');
+      alert(`Offending ${report.item_type} deleted and report marked as resolved.`);
       loadArticles();
     } catch (err: any) {
       alert(`Action failed: ${err.message}`);
@@ -1255,59 +1255,263 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminEmail, onSi
                 {filteredReports.map((report) => (
                   <div
                     key={report.id}
-                    className="bg-[#161616] border border-[#262626] p-5 rounded-xs flex flex-col md:flex-row md:items-center justify-between gap-4"
+                    className="bg-[#161616] border border-[#262626] rounded-xs p-5 space-y-4 hover:border-[#383838] transition-all"
                   >
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-mono-meta font-bold bg-[#E50914] text-white px-2 py-0.5 rounded-xs uppercase">
-                          {report.item_type}
-                        </span>
-                        <span className="text-xs font-bold text-white font-editorial">
-                          Reason: {report.reason}
-                        </span>
+                    {/* TOP BAR: Badges, Violation, Status, and Timestamps */}
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#222] pb-3">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span
-                          className={`text-[9px] font-mono-meta uppercase px-2 py-0.2 rounded-xs border ${
+                          className={`text-[10px] font-mono-meta font-bold px-2 py-0.5 rounded-xs uppercase tracking-wider ${
+                            report.item_type === 'article'
+                              ? 'bg-[#E50914] text-white'
+                              : report.item_type === 'reply'
+                              ? 'bg-purple-950 text-purple-300 border border-purple-700'
+                              : 'bg-sky-950 text-sky-300 border border-sky-700'
+                          }`}
+                        >
+                          {report.item_type === 'article' ? 'REPORTED DISPATCH' : report.item_type === 'reply' ? 'REPORTED REPLY' : 'REPORTED COMMENT'}
+                        </span>
+
+                        <span className="text-xs font-bold text-white font-editorial bg-[#1F1F1F] px-2.5 py-0.5 border border-[#333] rounded-xs flex items-center gap-1.5">
+                          <Flag className="w-3 h-3 text-[#E50914]" />
+                          <span>Violation: {report.reason}</span>
+                        </span>
+
+                        <span
+                          className={`text-[9px] font-mono-meta uppercase px-2 py-0.5 rounded-xs border font-semibold flex items-center gap-1.5 ${
                             report.status === 'pending'
-                              ? 'bg-amber-950 text-amber-300 border-amber-700'
+                              ? 'bg-amber-950/80 text-amber-300 border-amber-700'
                               : report.status === 'resolved'
-                              ? 'bg-emerald-950 text-emerald-300 border-emerald-700'
+                              ? 'bg-emerald-950/80 text-emerald-300 border-emerald-700'
                               : 'bg-stone-800 text-stone-400 border-stone-600'
                           }`}
                         >
+                          <span className={`w-1.5 h-1.5 rounded-full ${report.status === 'pending' ? 'bg-amber-400 animate-pulse' : report.status === 'resolved' ? 'bg-emerald-400' : 'bg-stone-400'}`} />
                           {report.status}
                         </span>
                       </div>
 
-                      {report.details && (
-                        <p className="text-xs text-stone-300 italic border-l-2 border-stone-600 pl-2">
-                          &ldquo;{report.details}&rdquo;
-                        </p>
-                      )}
-
-                      <div className="text-[11px] font-mono-meta text-stone-500">
-                        Item ID: <code className="text-stone-400">{report.item_id}</code> &bull;{' '}
-                        {new Date(report.created_at).toLocaleString()}
+                      <div className="text-[11px] font-mono-meta text-stone-500 flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-stone-500" />
+                        <span>Filed: {new Date(report.created_at).toLocaleString()}</span>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
-                      {report.status === 'pending' && (
-                        <>
-                          <button
-                            onClick={() => handleRemoveReportedItem(report)}
-                            className="bg-red-900/80 hover:bg-red-800 text-red-200 border border-red-700 px-3 py-1.5 text-xs font-mono-meta font-bold uppercase transition-colors cursor-pointer"
-                          >
-                            Delete Offending Item
-                          </button>
+                    {/* SECTION 1: THE REPORTED CONTENT (POST OR COMMENT OR REPLY) */}
+                    <div className="space-y-2">
+                      <div className="text-[10px] font-mono-meta uppercase tracking-wider text-stone-400 font-bold flex items-center gap-1.5">
+                        <ShieldAlert className="w-3.5 h-3.5 text-[#E50914]" />
+                        <span>REPORTED CONTENT IN QUESTION:</span>
+                      </div>
 
+                      {/* CASE A: REPORTED ARTICLE / DISPATCH */}
+                      {report.item_type === 'article' && (
+                        report.reported_article ? (
+                          <div className="bg-[#1C1C1C] border border-[#2D2D2D] p-4 rounded-xs flex flex-col md:flex-row gap-4 items-start justify-between group hover:border-[#444] transition-colors">
+                            <div className="flex gap-4 items-start flex-1 min-w-0">
+                              {report.reported_article.cover_image_url && (
+                                <img
+                                  src={report.reported_article.cover_image_url}
+                                  alt={report.reported_article.title}
+                                  className="w-24 h-20 md:w-32 md:h-24 object-cover rounded-xs border border-[#333] shrink-0"
+                                />
+                              )}
+                              <div className="space-y-1.5 min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-2 text-[10px] font-mono-meta">
+                                  <span className="bg-[#242424] text-[#E50914] px-1.5 py-0.5 rounded-xs font-bold uppercase border border-[#333]">
+                                    {report.reported_article.category_id}
+                                  </span>
+                                  <span className="text-stone-400">By {report.reported_article.author_name}</span>
+                                  <span className="text-stone-500">&bull;</span>
+                                  <span className="text-stone-400">{report.reported_article.read_time || '5 min read'}</span>
+                                  <span className="text-stone-500">&bull;</span>
+                                  <span className="text-stone-400 uppercase font-semibold">{report.reported_article.status}</span>
+                                </div>
+
+                                <h4
+                                  onClick={() => setPreviewArticle(report.reported_article!)}
+                                  className="font-editorial text-base md:text-lg font-bold text-white hover:text-[#E50914] transition-colors leading-snug cursor-pointer line-clamp-2"
+                                  title="Click to preview complete dispatch"
+                                >
+                                  {report.reported_article.title}
+                                </h4>
+
+                                {report.reported_article.subtitle && (
+                                  <p className="font-editorial text-xs text-stone-300 italic line-clamp-2 leading-relaxed">
+                                    {report.reported_article.subtitle}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex md:flex-col gap-2 shrink-0 w-full md:w-auto pt-2 md:pt-0 border-t md:border-t-0 border-[#2A2A2A]">
+                              <button
+                                onClick={() => setPreviewArticle(report.reported_article!)}
+                                className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 bg-[#252525] hover:bg-[#333] text-stone-200 border border-[#3A3A3A] px-3 py-1.5 text-xs font-mono-meta font-bold uppercase transition-colors cursor-pointer"
+                                title="Preview the complete article formatted as readers see it"
+                              >
+                                <Eye className="w-3.5 h-3.5 text-stone-300" />
+                                <span>Preview</span>
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setEditingArticle(report.reported_article!);
+                                  setActiveTab('editor');
+                                }}
+                                className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 bg-[#252525] hover:bg-[#333] text-amber-300 border border-[#3A3A3A] px-3 py-1.5 text-xs font-mono-meta font-bold uppercase transition-colors cursor-pointer"
+                                title="Open dispatch in Word Editor to adjust content"
+                              >
+                                <Edit3 className="w-3.5 h-3.5 text-amber-400" />
+                                <span>Edit</span>
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="bg-amber-950/20 border border-amber-900/40 p-3.5 rounded-xs text-amber-300/90 text-xs font-mono-meta flex items-center gap-2">
+                            <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                            <span>Reported dispatch (ID: <code className="text-amber-200">{report.item_id}</code>) has been deleted or cannot be found in the database.</span>
+                          </div>
+                        )
+                      )}
+
+                      {/* CASE B: REPORTED COMMENT OR REPLY */}
+                      {(report.item_type === 'comment' || report.item_type === 'reply') && (
+                        report.reported_comment ? (
+                          <div className="bg-[#1C1414] border border-[#3A2222] p-4 rounded-xs space-y-3">
+                            {/* Comment Author Header & Story association */}
+                            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#2C1818] pb-2.5 text-xs">
+                              <div className="flex items-center gap-2.5">
+                                <img
+                                  src={report.reported_comment.author_avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${report.reported_comment.author_name}&backgroundColor=e50914`}
+                                  alt={report.reported_comment.author_name}
+                                  className="w-6 h-6 rounded-full border border-[#442222]"
+                                />
+                                <span className="font-bold text-white font-editorial">{report.reported_comment.author_name}</span>
+                                {report.reported_comment.author_email && (
+                                  <span className="text-stone-400 font-mono-meta text-[11px]">({report.reported_comment.author_email})</span>
+                                )}
+                              </div>
+
+                              <div className="text-[11px] font-mono-meta text-stone-400">
+                                Posted: {new Date(report.reported_comment.created_at).toLocaleString()}
+                              </div>
+                            </div>
+
+                            {/* Associated Story context */}
+                            {report.reported_comment.article_title && (
+                              <div className="flex items-center gap-2 text-xs font-mono-meta text-stone-400 bg-[#140D0D] p-2 border border-[#2D1A1A] rounded-xs">
+                                <FileText className="w-3.5 h-3.5 text-[#E50914] shrink-0" />
+                                <span className="text-stone-500 uppercase">On Story:</span>
+                                <span className="text-stone-200 font-editorial font-medium truncate">&ldquo;{report.reported_comment.article_title}&rdquo;</span>
+                                {report.reported_article && (
+                                  <button
+                                    onClick={() => setPreviewArticle(report.reported_article!)}
+                                    className="ml-auto text-[10px] text-[#E50914] hover:underline uppercase shrink-0 font-bold cursor-pointer"
+                                  >
+                                    View Story &rarr;
+                                  </button>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Parent comment context if this is a reply */}
+                            {report.item_type === 'reply' && report.reported_comment.parent_content_snippet && (
+                              <div className="text-xs text-stone-400 font-sans-body bg-[#170E0E] p-2.5 border-l-2 border-purple-600 rounded-r-xs space-y-0.5">
+                                <div className="text-[10px] font-mono-meta text-purple-400 uppercase font-semibold flex items-center gap-1">
+                                  <CornerDownRight className="w-3 h-3" />
+                                  <span>Replying to {report.reported_comment.parent_author_name || 'Subscriber'}:</span>
+                                </div>
+                                <p className="italic text-stone-400 line-clamp-2">
+                                  &ldquo;{report.reported_comment.parent_content_snippet}&rdquo;
+                                </p>
+                              </div>
+                            )}
+
+                            {/* The Exact Reported Content Quoted */}
+                            <div className="space-y-1">
+                              <div className="text-[10px] font-mono-meta text-red-400 uppercase font-bold tracking-wider">
+                                OFFENDING {report.item_type.toUpperCase()} TEXT:
+                              </div>
+                              <div className="p-3.5 bg-[#120808] border-l-4 border-[#E50914] text-stone-100 font-sans-body text-sm leading-relaxed whitespace-pre-wrap select-text rounded-r-xs shadow-inner">
+                                &ldquo;{report.reported_comment.content}&rdquo;
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="bg-amber-950/20 border border-amber-900/40 p-3.5 rounded-xs text-amber-300/90 text-xs font-mono-meta flex items-center gap-2">
+                            <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                            <span>Reported {report.item_type} (ID: <code className="text-amber-200">{report.item_id}</code>) has already been deleted or removed from the database.</span>
+                          </div>
+                        )
+                      )}
+                    </div>
+
+                    {/* SECTION 2: REPORTER & AUDIT CONTEXT */}
+                    <div className="bg-[#1A1A1A] border border-[#252525] p-3 rounded-xs flex flex-col md:flex-row md:items-center justify-between gap-2.5 text-xs">
+                      <div className="space-y-1">
+                        <div className="text-stone-400 text-xs flex items-center gap-2">
+                          <span className="font-mono-meta uppercase text-[10px] text-stone-500 font-bold">SUBMITTED BY:</span>
+                          <span className="text-white font-medium">
+                            {report.reporter_profile?.display_name || report.reporter_email || 'Verified Subscriber'}
+                          </span>
+                          {report.reporter_profile?.email && (
+                            <span className="text-stone-400 font-mono-meta text-[11px]">({report.reporter_profile.email})</span>
+                          )}
+                        </div>
+
+                        {report.details && (
+                          <div className="text-xs text-stone-300 italic flex items-center gap-1.5 pt-0.5">
+                            <span className="text-stone-500 font-mono-meta text-[10px] uppercase font-bold not-italic">REPORTER NOTE:</span>
+                            <span>&ldquo;{report.details}&rdquo;</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="text-[11px] font-mono-meta text-stone-500 shrink-0">
+                        Item ID: <code className="text-stone-400">{report.item_id}</code>
+                      </div>
+                    </div>
+
+                    {/* SECTION 3: MODERATION ACTION BUTTONS */}
+                    <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-[#222]">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-mono-meta text-stone-500 uppercase font-semibold">Status:</span>
+                        {(['pending', 'resolved', 'dismissed'] as const).map((st) => (
+                          <button
+                            key={st}
+                            onClick={() => handleUpdateReport(report.id, st)}
+                            disabled={report.status === st}
+                            className={`px-2.5 py-1 text-[11px] font-mono-meta uppercase rounded-xs transition-colors cursor-pointer border ${
+                              report.status === st
+                                ? 'bg-[#2E2E2E] text-stone-200 border-[#444] font-bold cursor-default'
+                                : 'text-stone-400 hover:text-white border-[#2A2A2A] hover:border-[#444] bg-[#1B1B1B]'
+                            }`}
+                          >
+                            {st}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {report.status === 'pending' && (
                           <button
                             onClick={() => handleUpdateReport(report.id, 'dismissed')}
-                            className="bg-[#242424] hover:bg-[#303030] text-stone-300 px-3 py-1.5 text-xs font-mono-meta uppercase transition-colors cursor-pointer"
+                            className="bg-[#242424] hover:bg-[#303030] text-stone-300 px-3 py-1.5 text-xs font-mono-meta uppercase transition-colors cursor-pointer border border-[#333]"
                           >
-                            Dismiss
+                            Dismiss Report
                           </button>
-                        </>
-                      )}
+                        )}
+
+                        {/* Delete Offending Item */}
+                        <button
+                          onClick={() => handleRemoveReportedItem(report)}
+                          className="flex items-center gap-1.5 bg-red-950 hover:bg-red-900 text-red-200 border border-red-800 px-3.5 py-1.5 text-xs font-mono-meta font-bold uppercase transition-colors cursor-pointer shadow-sm"
+                          title={`Permanently delete the reported ${report.item_type}`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-red-300" />
+                          <span>Delete Offending {report.item_type === 'article' ? 'Dispatch' : report.item_type}</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}

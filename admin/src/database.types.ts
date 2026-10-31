@@ -56,3 +56,28 @@ export interface DBReport {
   created_at: string;
   reporter_email?: string | null;
 }
+
+export interface ReportedCommentData {
+  id: string;
+  article_id: string;
+  user_id: string;
+  parent_id: string | null;
+  content: string;
+  likes_count: number;
+  created_at: string;
+  author_name: string;
+  author_email: string | null;
+  author_avatar: string | null;
+  article_title?: string;
+  article_slug?: string;
+  article_category?: string;
+  parent_author_name?: string;
+  parent_content_snippet?: string;
+}
+
+export interface EnrichedReport extends DBReport {
+  reported_article?: DBArticle | null;
+  reported_comment?: ReportedCommentData | null;
+  reporter_profile?: Profile | null;
+  item_not_found?: boolean;
+}

@@ -242,12 +242,13 @@ section::selection {
 .prose .drop-cap-red {
   float: left !important;
   font-family: 'Playfair Display', Georgia, serif !important;
-  font-size: 3.85rem !important;
+  font-size: 3.5rem !important;
   line-height: 0.82 !important;
   font-weight: 800 !important;
   color: #e50914 !important;
-  margin-right: 0.65rem !important;
-  margin-top: 0.15rem !important;
+  margin-right: 0.25rem !important;
+  padding-right: 0 !important;
+  margin-top: 0.1rem !important;
   margin-bottom: -0.1rem !important;
   display: inline-block !important;
 }

@@ -62,7 +62,7 @@ function sanitizeEditorialHtml(rawHtml: string): string {
   });
 
   // 5. Convert ASCII and Markdown tables into responsive broadsheet tables
-  const tableBlockRegex = /(?:<p>\s*([A-Z0-9\s()&;:/\.,'"-]{4,90})\s*<\/p>\s*)?((?:<p>\s*(?:\+[-+]+\+|\|[^\n<]+)\s*<\/p>\s*){2,})/gi;
+  const tableBlockRegex = /(?:<p>\s*([A-Z0-9\s()&;:/\.,'"-]{4,90})\s*<\/p>\s*)?((?:<p>\s*(?:\+[-+]+\+|\|(?:(?!<\/p>)[\s\S])+)\s*<\/p>\s*){2,})/gi;
   html = html.replace(tableBlockRegex, (_, preTitle, rawBlock) => {
     let title = '';
     let leadHtml = '';
@@ -141,7 +141,10 @@ function sanitizeEditorialHtml(rawHtml: string): string {
   html = html.replace(/([a-zA-Z0-9]):([A-Z])/g, '$1: $2');
   html = html.replace(/([a-zA-Z0-9]);([a-zA-Z])/g, '$1; $2');
 
-  // 7. Clean up redundant empty tags and residual paragraph wrappers
+  // 7. Format ASCII workflow arrows (+--->) into elegant broadsheet callout chips
+  html = html.replace(/<p>\s*\+--+>\s*(.*?)\s*<\/p>/gi, '<div class="my-2 py-2 px-3.5 border-l-2 border-[#E50914] bg-[#161616] text-stone-300 text-xs sm:text-sm flex items-center gap-2.5 rounded-r-xs"><span class="text-[#E50914] font-bold">&rarr;</span><span>$1</span></div>');
+
+  // 8. Clean up redundant empty tags and residual paragraph wrappers
   html = html.replace(/<p>\s*<\/p>/gi, '');
   html = html.replace(/<p>\s*(<(?:figure|div|table|h[1-6]|ul|ol|pre)\b)/gi, '$1');
   html = html.replace(/(<\/(?:figure|div|table|h[1-6]|ul|ol|pre)>)\s*<\/p>/gi, '$1');

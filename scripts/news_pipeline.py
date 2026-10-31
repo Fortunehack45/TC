@@ -1377,17 +1377,68 @@ def format_broadsheet_article_rules(item: dict, full_body_text: str) -> dict:
     lead_p2 = f"<p>{raw_paras[1]}</p>" if len(raw_paras) > 1 else f"<p>{dp(0)}</p>"
     lead_p3 = f"<p>{raw_paras[2]}</p>" if len(raw_paras) > 2 else f"<p>{dp(1)}</p>"
 
-    # 2. Executive Callout Box: Key Takeaways & Strategic Summary
-    takeaways = [
-        f"Official verification confirmed from {dateline} under strict broadsheet standards.",
-        f"Multi-departmental task teams deployed to oversee administrative execution and field compliance.",
-        f"Statutory authorities and independent auditors monitoring governance benchmarks across regional centers.",
-        f"Follow-up technical briefs and comprehensive regulatory disclosures scheduled as audits conclude."
-    ]
+    # 2. Executive Callout Box: Summary
+    if category == 'SPORT':
+        takeaways = [
+            f"Sporting verification and match updates confirmed from {dateline}.",
+            "Club leadership, coaching personnel, and regulatory panels reviewing match outcomes and conduct.",
+            "Independent analysts and broadcast commentators tracking competitive ramifications across league standings.",
+            "Follow-up statements and official fixtures scheduled as tournament reviews proceed."
+        ]
+    elif category == 'FINANCE':
+        takeaways = [
+            f"Financial markets and transaction metrics verified from {dateline}.",
+            "Institutional investors, asset managers, and corporate boards assessing balance sheet liquidity.",
+            "Regulatory compliance officers and exchange authorities monitoring disclosure adherence.",
+            "Updated equity indices, fiscal forecasts, and quarterly earnings notifications forthcoming."
+        ]
+    elif category == 'CELEBRITY':
+        takeaways = [
+            f"Entertainment dispatches and studio disclosures verified from {dateline}.",
+            "Industry executives, production teams, and artist representatives issuing verified statements.",
+            "Cultural critics and global audiences responding across broadcast and digital platforms.",
+            "Further release schedules and interview briefings expected in subsequent media windows."
+        ]
+    elif category == 'FASHION':
+        takeaways = [
+            f"Fashion week presentations and designer collections previewed from {dateline}.",
+            "Creative directors, atelier tailors, and luxury houses showcasing seasonal aesthetics.",
+            "Retail buyers and fashion editors reviewing textile craft and market commercialization.",
+            "Comprehensive runway reviews and editorial retrospectives scheduled for upcoming editions."
+        ]
+    elif category == 'TECHNOLOGY':
+        takeaways = [
+            f"Technology disclosures and engineering developments verified from {dateline}.",
+            "Software architects, systems engineers, and product leads monitoring deployment metrics.",
+            "Cybersecurity specialists and platform compliance teams safeguarding architectural resilience.",
+            "Next-generation feature releases and technical documentation scheduled for general availability."
+        ]
+    elif category == 'SCIENCE':
+        takeaways = [
+            f"Scientific research findings and experimental observations verified from {dateline}.",
+            "Lead investigators, laboratory researchers, and peer evaluators reviewing empirical datasets.",
+            "Academic institutions and statutory research bodies assessing reproducibility and methodological rigor.",
+            "Comprehensive research papers and symposium proceedings scheduled for scholarly presentation."
+        ]
+    elif category == 'EDUCATION':
+        takeaways = [
+            f"Academic policy updates and institutional notifications verified from {dateline}.",
+            "University councils, faculty leadership, and student unions assessing statutory implementation.",
+            "Accreditation bodies and public education watchdogs monitoring campus governance standards.",
+            "Further administrative circulars and academic calendar revisions forthcoming."
+        ]
+    else:
+        takeaways = [
+            f"Authoritative broadsheet verification confirmed from {dateline}.",
+            "Administrative authorities, field observers, and oversight panels tracking operational progress.",
+            "Civil society coalitions and governance watchdogs monitoring public interest benchmarks.",
+            "Follow-up technical briefs and statutory disclosures scheduled as assessments conclude."
+        ]
+
     takeaways_li = "".join([f"<li>{t}</li>" for t in takeaways])
     takeaways_html = f"""
 <div class="my-6 p-5 bg-[#181818] border border-[#2D2D2D] rounded-xs">
-  <h4 class="font-mono-meta text-xs uppercase tracking-wider text-[#E50914] font-bold mb-3">Key Takeaways & Strategic Summary</h4>
+  <h4 class="font-mono-meta text-xs uppercase tracking-wider text-[#E50914] font-bold mb-3">Summary</h4>
   <ul class="list-disc pl-5 space-y-1.5 font-editorial text-sm text-stone-300">
     {takeaways_li}
   </ul>

@@ -183,7 +183,7 @@ def upgrade_single_article(art: dict) -> Tuple[dict, int]:
     takeaways_li = "".join([f"<li>{t}</li>" for t in takeaways])
     takeaways_html = f"""
 <div class="my-6 p-5 bg-[#181818] border border-[#2D2D2D] rounded-xs">
-  <h4 class="font-mono-meta text-xs uppercase tracking-wider text-[#E50914] font-bold mb-3">Key Takeaways & Strategic Summary</h4>
+  <h4 class="font-mono-meta text-xs uppercase tracking-wider text-[#E50914] font-bold mb-3">Summary</h4>
   <ul class="list-disc pl-5 space-y-1.5 font-editorial text-sm text-stone-300">
     {takeaways_li}
   </ul>

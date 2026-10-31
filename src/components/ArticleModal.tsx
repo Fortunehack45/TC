@@ -19,6 +19,31 @@ interface ArticleModalProps {
   onOpenAuth?: () => void;
 }
 
+function sanitizeEditorialHtml(rawHtml: string): string {
+  if (!rawHtml) return '';
+  let html = rawHtml;
+  // 1. Remove mojibake
+  html = html.replace(/[\uFFFD\u0092\u0091\u0093\u0094]/g, "'");
+
+  // 2. Remove AI heading artifacts e.g. <h3>Section Heading: The Crisis</h3>
+  html = html.replace(/<h3([^>]*)>\s*(?:Section\s+Heading|Chapter\s+\d+|Section\s+\d+|Part\s+\d+|Heading):\s*/gi, '<h3$1>');
+
+  // 3. Remove fake desk attributions on blockquotes e.g. &mdash; Celebrity Affairs Desk
+  html = html.replace(/<footer[^>]*>\s*&mdash;\s*[^<]*(?:Desk|Affairs|Statutory|Disclosure|Editorial)[^<]*<\/footer>/gi, '');
+
+  // 4. Fix double punctuation in quotes e.g. ,." or .," or .."
+  html = html.replace(/[,;]\.([”"’'])/g, '.$1');
+  html = html.replace(/\.[,;]([”"’'])/g, '.$1');
+  html = html.replace(/,,+/g, ',');
+  html = html.replace(/\.\.+/g, '.');
+
+  // 5. Fix missing space after punctuation
+  html = html.replace(/([a-z0-9])\.([A-Z])/g, '$1. $2');
+  html = html.replace(/([a-zA-Z0-9]),([a-zA-Z])/g, '$1, $2');
+
+  return html;
+}
+
 export const ArticleModal: React.FC<ArticleModalProps> = ({
   article,
   onClose,
@@ -251,8 +276,8 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
         </nav>
       </div>
 
-      {/* Main In-Page Article Body */}
-      <article className="w-full max-w-[94%] 2xl:max-w-[1480px] mx-auto px-2 sm:px-4 py-2">
+      {/* Main In-Page Article Body (Centered Broadsheet Reading Measure) */}
+      <article className="w-full max-w-4xl 2xl:max-w-5xl mx-auto px-4 sm:px-6 md:px-8 py-6">
         {/* Category kicker */}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs font-mono-meta text-stone-400 mb-4">
           <span className="bg-[#E50914] text-white px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-xs whitespace-nowrap">
@@ -340,8 +365,8 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
         <div className={`font-sans-body text-stone-300 space-y-6 ${getFontClass()}`}>
           {article.content_html ? (
             <div
-              className="prose prose-invert max-w-none article-prose prose-headings:font-editorial prose-headings:text-white prose-p:leading-relaxed prose-a:text-[#E50914] prose-blockquote:border-l-4 prose-blockquote:border-[#E50914] prose-blockquote:font-editorial prose-blockquote:italic prose-table:border prose-table:border-[#333] prose-th:bg-[#222] prose-th:p-2 prose-td:p-2 prose-td:border-t prose-td:border-[#333]"
-              dangerouslySetInnerHTML={{ __html: article.content_html }}
+              className="prose prose-invert max-w-none article-prose prose-headings:font-editorial prose-headings:text-white prose-p:text-base sm:prose-p:text-lg prose-p:leading-[1.85] prose-p:text-stone-300 prose-a:text-[#E50914] prose-blockquote:border-l-4 prose-blockquote:border-[#E50914] prose-blockquote:font-editorial prose-blockquote:italic prose-h3:text-2xl sm:prose-h3:text-3xl prose-h3:border-b prose-h3:border-[#2A2A2A] prose-h3:pb-2 prose-h3:mt-10 prose-h3:mb-4 prose-table:border prose-table:border-[#333] prose-th:bg-[#222] prose-th:p-2 prose-td:p-2 prose-td:border-t prose-td:border-[#333]"
+              dangerouslySetInnerHTML={{ __html: sanitizeEditorialHtml(article.content_html) }}
             />
           ) : article.fullContent ? (
             article.fullContent.split('\n\n').map((paragraph, index) => (

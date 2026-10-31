@@ -56,7 +56,7 @@ const getInitialSelectedArticle = (): any | null => {
     }
 
     // 2. Check general articles cache
-    const cachedArticles = sessionStorage.getItem('tc_cached_articles_v3');
+    const cachedArticles = sessionStorage.getItem('tc_cached_articles_v4');
     if (cachedArticles) {
       const list = JSON.parse(cachedArticles);
       if (Array.isArray(list)) {
@@ -178,7 +178,7 @@ function MainApp() {
   // Live Database Articles (Synchronously restored from session cache on frame 0)
   const [articles, setArticles] = useState<Article[]>(() => {
     try {
-      const cached = sessionStorage.getItem('tc_cached_articles_v3');
+      const cached = sessionStorage.getItem('tc_cached_articles_v4');
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
@@ -253,7 +253,7 @@ function MainApp() {
         setArticles(mapped);
         setLoadedArticles(mapped);
         try {
-          sessionStorage.setItem('tc_cached_articles_v3', JSON.stringify(mapped.slice(0, 60)));
+          sessionStorage.setItem('tc_cached_articles_v4', JSON.stringify(mapped.slice(0, 60)));
         } catch {}
       }
     } catch (err) {

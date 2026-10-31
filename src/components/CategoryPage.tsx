@@ -123,27 +123,32 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({
   }, [category]);
 
   // Transform Supabase articles directly - 100% database driven
-  const combinedArticles: any[] = dbArticles.map((a) => ({
-    id: a.id,
-    title: cleanEditorialTitle(a.title),
-    subtitle: a.subtitle ? cleanEditorialTitle(a.subtitle) : undefined,
-    excerpt: a.subtitle ? cleanEditorialTitle(a.subtitle) : (a.content_html ? a.content_html.replace(/<[^>]+>/g, '').slice(0, 180) + '...' : ''),
-    content_html: a.content_html,
-    category: a.category_id,
-    section: a.category_id,
-    author: a.author_name,
-    date: new Date(a.published_at || a.created_at).toLocaleDateString('en-GB', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    }),
-    readTime: a.read_time,
-    cover_image_url: a.cover_image_url,
-    video_url: a.video_url,
-    tags: a.tags || [],
-    views_count: a.views_count,
-    likes_count: a.likes_count,
-  }));
+  const combinedArticles: any[] = dbArticles.map((a) => {
+    const cat = (a.category_id || category || 'WORLD').toUpperCase();
+    const sanitizedTags = (a.tags || []).filter((t: string) => cat === 'NIGERIA' || t.toUpperCase() !== 'NIGERIA');
+    return {
+      id: a.id,
+      title: cleanEditorialTitle(a.title),
+      subtitle: a.subtitle ? cleanEditorialTitle(a.subtitle) : undefined,
+      excerpt: a.subtitle ? cleanEditorialTitle(a.subtitle) : (a.content_html ? a.content_html.replace(/<[^>]+>/g, '').slice(0, 180) + '...' : ''),
+      content_html: a.content_html,
+      category: cat,
+      section: cat,
+      tag: cat,
+      author: a.author_name,
+      date: new Date(a.published_at || a.created_at).toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      }),
+      readTime: a.read_time,
+      cover_image_url: a.cover_image_url,
+      video_url: a.video_url,
+      tags: sanitizedTags.length > 0 ? sanitizedTags : [cat, 'VERIFIED_DISPATCH'],
+      views_count: a.views_count,
+      likes_count: a.likes_count,
+    };
+  });
 
   // Filter by subtopic/tag
   const filteredArticles = combinedArticles.filter((art) => {

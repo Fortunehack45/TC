@@ -1,5 +1,5 @@
 import React from 'react';
-import { Article } from '../data/artData';
+import { Article, cleanEditorialTitle } from '../data/artData';
 import { ArtGraphic } from './ArtGraphics';
 import { ArrowUpRight, Bookmark, ArrowRight, ShieldCheck } from 'lucide-react';
 import { getPostPreviewImage } from '../lib/imageHelper';
@@ -104,7 +104,7 @@ export const NigeriaSection: React.FC<NigeriaSectionProps> = ({
               </div>
 
               <h3 className="font-editorial text-xl sm:text-2xl font-bold text-white group-hover:text-[#E50914] leading-snug mb-3 transition-colors">
-                {leadArticle.title}
+                {cleanEditorialTitle(leadArticle.title)}
               </h3>
 
               <p className="text-sm text-stone-300 font-sans-body leading-relaxed line-clamp-3 mb-4">
@@ -152,7 +152,7 @@ export const NigeriaSection: React.FC<NigeriaSectionProps> = ({
                     </div>
 
                     <h4 className="font-editorial text-sm sm:text-base font-bold text-white group-hover:text-[#E50914] leading-snug line-clamp-2 transition-colors mb-1.5">
-                      {item.title}
+                      {cleanEditorialTitle(item.title)}
                     </h4>
 
                     <p className="text-xs text-stone-400 font-sans-body line-clamp-2 leading-relaxed">

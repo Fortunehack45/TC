@@ -1,5 +1,5 @@
 import React from 'react';
-import { Article, getAllArticles } from '../data/artData';
+import { Article, getAllArticles, cleanEditorialTitle } from '../data/artData';
 import { ArtGraphic } from './ArtGraphics';
 import { Sparkles, X, ArrowUpRight } from 'lucide-react';
 
@@ -22,19 +22,19 @@ export const SearchResultsSection: React.FC<SearchResultsSectionProps> = ({
 
   // Filtering logic across all database articles
   const filtered = pool.filter((item) => {
+    const itemCat = (item.category || item.section || 'WORLD').toUpperCase();
     const matchesCategory =
       selectedCategory === 'ALL' ||
-      item.category?.toUpperCase() === selectedCategory.toUpperCase() ||
-      item.section?.toUpperCase() === selectedCategory.toUpperCase();
+      itemCat === selectedCategory.toUpperCase();
 
     const q = searchQuery.trim().toLowerCase();
     const matchesQuery =
       q === '' ||
       item.title.toLowerCase().includes(q) ||
       item.excerpt.toLowerCase().includes(q) ||
-      item.category.toLowerCase().includes(q) ||
+      itemCat.toLowerCase().includes(q) ||
       (item.author && item.author.toLowerCase().includes(q)) ||
-      (item.tags && item.tags.some((t) => t.toLowerCase().includes(q)));
+      (item.tags && item.tags.some((t) => t.toLowerCase() === q || t.toLowerCase().includes(q)));
 
     return matchesCategory && matchesQuery;
   });
@@ -99,7 +99,7 @@ export const SearchResultsSection: React.FC<SearchResultsSectionProps> = ({
                 </div>
 
                 <h3 className="font-editorial text-base sm:text-lg font-bold text-white group-hover:text-[#E50914] leading-snug mb-2 transition-colors line-clamp-2">
-                  {item.title}
+                  {cleanEditorialTitle(item.title)}
                 </h3>
 
                 <p className="text-xs text-stone-400 font-sans-body leading-relaxed line-clamp-3 mb-4">

@@ -46,15 +46,42 @@ export function cleanEditorialTitle(rawTitle: string): string {
   let cleaned = rawTitle.trim();
   // Fix un-decoded unicode artifacts (mojibake)
   cleaned = cleaned.replace(/[\uFFFD\u0092\u0091\u0093\u0094]/g, "'");
-  
-  // If title has single quotes between individual letters (e.g. "I'r'a'n'" or "H'o'w'")
-  if ((cleaned.match(/'/g) || []).length >= 4 && /[A-Za-z]'(?:[A-Za-z]'|\s'|')/.test(cleaned)) {
-    // Strip isolated character-bounding quotes while keeping standard words intact
-    cleaned = cleaned.replace(/(?:^|\s)'([A-Za-z])'/g, '$1');
-    cleaned = cleaned.replace(/'([A-Za-z])'/g, '$1');
-    cleaned = cleaned.replace(/'/g, '');
-  }
-  return cleaned.trim();
+  cleaned = cleaned.replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+
+  // 1. Fix letter-by-letter quotes e.g. "'I'r'a'n'" or "'H'o'w'" or "B'r'a'c'e's'"
+  const tokens = cleaned.split(/\s+/);
+  const fixedTokens = tokens.map((tok) => {
+    const quoteCount = (tok.match(/'/g) || []).length;
+    if (quoteCount >= 2 && tok.length <= quoteCount * 2 + 5) {
+      return tok.replace(/'/g, '');
+    }
+    return tok;
+  });
+  cleaned = fixedTokens.join(' ');
+
+  // 2. Add missing spaces after punctuation if words were stuck together
+  cleaned = cleaned.replace(/([a-z0-9])\.([A-Z])/g, '$1. $2');
+  cleaned = cleaned.replace(/([a-zA-Z0-9]),([a-zA-Z])/g, '$1, $2');
+  cleaned = cleaned.replace(/([a-zA-Z0-9]):([a-zA-Z])/g, '$1: $2');
+
+  // 3. Split concatenated CamelCase words if word is abnormally long without space
+  const words = cleaned.split(/\s+/);
+  const separatedWords = words.map((w) => {
+    if (w.length > 16 && !w.startsWith('http') && !w.startsWith('www')) {
+      // lower to Upper: e.g. HowOne -> How One
+      let fixed = w.replace(/([a-z])([A-Z])/g, '$1 $2');
+      // UPPER to UpperLower: e.g. MAXPOWERKey -> MAXPOWER Key
+      fixed = fixed.replace(/([A-Z]{2,})([A-Z][a-z])/g, '$1 $2');
+      // Letter to number: e.g. Fest3.0 -> Fest 3.0
+      fixed = fixed.replace(/([a-zA-Z])(\d+)/g, '$1 $2');
+      // Number to letter: e.g. 500Patriot -> 500 Patriot
+      fixed = fixed.replace(/(\d+)([a-zA-Z])/g, '$1 $2');
+      return fixed;
+    }
+    return w;
+  });
+
+  return separatedWords.join(' ').replace(/\s{2,}/g, ' ').trim();
 }
 
 export function mapDBArticleToArticle(db: DBArticle): Article {
@@ -74,10 +101,14 @@ export function mapDBArticleToArticle(db: DBArticle): Article {
       })
     : '30 October 2026';
 
+  const category = (db.category_id || 'WORLD').toUpperCase();
+  // Sanitize tags so non-Nigeria articles never retain a stray NIGERIA regional feed tag
+  const sanitizedTags = (db.tags || []).filter((t) => category === 'NIGERIA' || t.toUpperCase() !== 'NIGERIA');
+
   return {
     id: db.id,
-    section: db.category_id || 'WORLD',
-    category: db.category_id || 'WORLD',
+    section: category,
+    category: category,
     title: safeTitle,
     subtitle: safeSubtitle,
     excerpt: excerpt,
@@ -88,8 +119,8 @@ export function mapDBArticleToArticle(db: DBArticle): Article {
     readTime: db.read_time || '5 min read',
     imageUrl: db.cover_image_url || DEFAULT_FALLBACK_IMAGE,
     cover_image_url: db.cover_image_url || DEFAULT_FALLBACK_IMAGE,
-    tag: db.tags && db.tags[0] ? db.tags[0] : db.category_id,
-    tags: db.tags || [],
+    tag: category,
+    tags: sanitizedTags.length > 0 ? sanitizedTags : [category, 'VERIFIED_DISPATCH'],
     views_count: db.views_count,
     likes_count: db.likes_count,
     status: db.status,

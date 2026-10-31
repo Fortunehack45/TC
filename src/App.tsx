@@ -23,6 +23,102 @@ import { Article, mapDBArticleToArticle, setLoadedArticles } from './data/artDat
 import { toggleArticleBookmark, supabase } from './lib/supabase';
 import { getPostPreviewImage } from './lib/imageHelper';
 
+// Helper to extract article param from query (?article=) or short path (/p/:slug or /article/:slug)
+const getRequestedArticleParam = (): string | null => {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get('article');
+    if (q) return q;
+
+    const path = window.location.pathname;
+    const match = path.match(/^\/(?:p|article)\/([^/]+)/);
+    if (match && match[1]) {
+      return decodeURIComponent(match[1]);
+    }
+  } catch {}
+  return null;
+};
+
+// Retrieve article synchronously from session cache on frame 0 to prevent flashing
+const getInitialSelectedArticle = (): any | null => {
+  try {
+    const param = getRequestedArticleParam();
+    if (!param) return null;
+
+    // 1. Check current article cache
+    const cachedCurrent = sessionStorage.getItem('tc_current_article_data');
+    if (cachedCurrent) {
+      const parsed = JSON.parse(cachedCurrent);
+      if (parsed && (parsed.slug === param || parsed.id === param)) {
+        return parsed;
+      }
+    }
+
+    // 2. Check general articles cache
+    const cachedArticles = sessionStorage.getItem('tc_cached_articles');
+    if (cachedArticles) {
+      const list = JSON.parse(cachedArticles);
+      if (Array.isArray(list)) {
+        const found = list.find((a: any) => a.slug === param || a.id === param);
+        if (found) return found;
+      }
+    }
+  } catch {}
+  return null;
+};
+
+// Dedicated Instant Article Skeleton while resolving requested article
+const ArticleLoadingSkeleton: React.FC<{ onBack: () => void }> = ({ onBack }) => (
+  <div className="w-full bg-[#121212] text-stone-200 min-h-screen">
+    {/* Top Action Bar Skeleton */}
+    <div className="bg-[#141414] border-b border-[#252525] py-2 px-2.5 sm:px-6 mb-6 sticky top-12 z-30 shadow-md">
+      <div className="w-full max-w-[98%] 2xl:max-w-[1480px] mx-auto flex items-center justify-between gap-2">
+        <button
+          onClick={onBack}
+          className="flex items-center gap-1.5 text-xs font-mono-meta tracking-wider uppercase text-stone-400 bg-[#1E1E1E] px-2.5 sm:px-3.5 py-1.5 rounded-xs border border-[#2E2E2E] cursor-pointer shrink-0"
+        >
+          <span className="font-bold text-[#E50914]">&larr;</span>
+          <span className="font-bold">BACK</span>
+        </button>
+        <div className="flex items-center gap-2">
+          <div className="h-7 w-20 bg-[#222222] border border-[#333333] rounded-xs animate-pulse" />
+          <div className="h-7 w-12 bg-[#222222] border border-[#333333] rounded-xs animate-pulse" />
+        </div>
+      </div>
+    </div>
+
+    {/* Breadcrumbs Skeleton */}
+    <div className="w-full max-w-[94%] 2xl:max-w-[1480px] mx-auto px-2 sm:px-4 mb-6">
+      <div className="h-7 w-56 sm:w-80 bg-[#181818] border border-[#262626] rounded-xs animate-pulse" />
+    </div>
+
+    {/* Article Content Skeleton */}
+    <article className="w-full max-w-[94%] 2xl:max-w-[1480px] mx-auto px-2 sm:px-4 py-2 animate-pulse">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="h-5 w-28 bg-[#E50914]/40 rounded-xs" />
+        <div className="h-4 w-24 bg-[#262626] rounded-xs" />
+        <div className="h-4 w-20 bg-[#262626] rounded-xs hidden sm:block" />
+      </div>
+
+      <div className="h-9 sm:h-14 w-full max-w-4xl bg-[#222222] rounded-xs mb-3" />
+      <div className="h-9 sm:h-14 w-4/5 max-w-3xl bg-[#222222] rounded-xs mb-6" />
+
+      <div className="h-6 w-3/4 max-w-2xl bg-[#1c1c1c] border-l-4 border-[#E50914] pl-4 mb-8" />
+
+      <div className="w-full h-64 sm:h-96 md:h-[460px] bg-[#1a1a1a] border border-[#282828] rounded-xs mb-10" />
+
+      <div className="max-w-4xl space-y-4">
+        <div className="h-4 w-full bg-[#202020] rounded-xs" />
+        <div className="h-4 w-11/12 bg-[#202020] rounded-xs" />
+        <div className="h-4 w-4/5 bg-[#202020] rounded-xs" />
+        <div className="h-4 w-full bg-[#202020] rounded-xs mt-6" />
+        <div className="h-4 w-5/6 bg-[#202020] rounded-xs" />
+        <div className="h-4 w-3/4 bg-[#202020] rounded-xs" />
+      </div>
+    </article>
+  </div>
+);
+
 function MainApp() {
   const { user } = useAuth();
 
@@ -45,7 +141,11 @@ function MainApp() {
   };
 
   const [activeSection, setActiveSection] = useState<string>(getInitialSection);
-  const [selectedArticle, setSelectedArticle] = useState<any | null>(null);
+  const [selectedArticle, setSelectedArticle] = useState<any | null>(getInitialSelectedArticle);
+  const [isInitialArticleLoading, setIsInitialArticleLoading] = useState<boolean>(() => {
+    const param = getRequestedArticleParam();
+    return Boolean(param && !getInitialSelectedArticle());
+  });
   const [activePodcast, setActivePodcast] = useState<Article | null>(null);
   const [isPlayingPodcast, setIsPlayingPodcast] = useState(false);
   const [isBookmarksOpen, setIsBookmarksOpen] = useState(false);
@@ -74,9 +174,18 @@ function MainApp() {
     };
   }, []);
 
-  // Live Database Articles (100% directly loaded from Supabase tc_articles)
-  const [articles, setArticles] = useState<Article[]>([]);
-  const [isLoadingArticles, setIsLoadingArticles] = useState(true);
+  // Live Database Articles (Synchronously restored from session cache on frame 0)
+  const [articles, setArticles] = useState<Article[]>(() => {
+    try {
+      const cached = sessionStorage.getItem('tc_cached_articles');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return [];
+  });
+  const [isLoadingArticles, setIsLoadingArticles] = useState(articles.length === 0);
 
   // In-Page Inline Search State
   const [isSearchInlineOpen, setIsSearchInlineOpen] = useState(false);
@@ -130,7 +239,7 @@ function MainApp() {
 
   // Load all published articles directly from Supabase tc_articles
   const loadDatabaseArticles = async () => {
-    setIsLoadingArticles(true);
+    if (articles.length === 0) setIsLoadingArticles(true);
     try {
       const { data, error } = await supabase
         .from('tc_articles')
@@ -142,6 +251,9 @@ function MainApp() {
         const mapped = data.map(mapDBArticleToArticle);
         setArticles(mapped);
         setLoadedArticles(mapped);
+        try {
+          sessionStorage.setItem('tc_cached_articles', JSON.stringify(mapped.slice(0, 60)));
+        } catch {}
       }
     } catch (err) {
       console.warn('Failed to load articles from Supabase:', err);
@@ -153,27 +265,6 @@ function MainApp() {
   useEffect(() => {
     loadDatabaseArticles();
   }, []);
-
-  // Helper to extract article param from query (?article=) or short path (/p/:slug or /article/:slug)
-  const getRequestedArticleParam = (): string | null => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const q = params.get('article');
-      if (q) return q;
-
-      const path = window.location.pathname;
-      const match = path.match(/^\/(?:p|article)\/([^/]+)/);
-      if (match && match[1]) {
-        return decodeURIComponent(match[1]);
-      }
-
-      const lastArticle = sessionStorage.getItem('tc_last_article');
-      if (lastArticle && (path === '/' || path === '' || path.startsWith('/p/'))) {
-        return lastArticle;
-      }
-    } catch {}
-    return null;
-  };
 
   // Safe article lookup by slug or UUID without crashing PostgREST
   const fetchArticleByParam = async (param: string): Promise<Article | null> => {
@@ -204,9 +295,20 @@ function MainApp() {
   useEffect(() => {
     const articleParam = getRequestedArticleParam();
     if (articleParam) {
-      fetchArticleByParam(articleParam).then((art) => {
-        if (art) setSelectedArticle(art);
-      });
+      if (!selectedArticle || (selectedArticle.slug !== articleParam && selectedArticle.id !== articleParam)) {
+        setIsInitialArticleLoading(true);
+        fetchArticleByParam(articleParam).then((art) => {
+          setSelectedArticle(art);
+          setIsInitialArticleLoading(false);
+          if (art) {
+            try {
+              sessionStorage.setItem('tc_current_article_data', JSON.stringify(art));
+            } catch {}
+          }
+        });
+      }
+    } else {
+      setIsInitialArticleLoading(false);
     }
   }, []);
 
@@ -220,17 +322,25 @@ function MainApp() {
 
       const articleParam = getRequestedArticleParam();
       if (articleParam) {
+        setIsInitialArticleLoading(!selectedArticle);
         fetchArticleByParam(articleParam).then((art) => {
           setSelectedArticle(art);
+          setIsInitialArticleLoading(false);
+          if (art) {
+            try {
+              sessionStorage.setItem('tc_current_article_data', JSON.stringify(art));
+            } catch {}
+          }
         });
       } else {
         setSelectedArticle(null);
+        setIsInitialArticleLoading(false);
       }
     };
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [articles]);
+  }, [articles, selectedArticle]);
 
   // Update browser URL and Dynamic Open Graph & Twitter Cards when article or section changes
   useEffect(() => {
@@ -382,6 +492,7 @@ function MainApp() {
     <div className="w-full min-h-screen bg-[#121212] text-stone-200 font-sans-body flex flex-col justify-between">
       {/* Full-bleed Header Navigation */}
       <HeaderNav
+        isArticleOpen={Boolean(selectedArticle || isInitialArticleLoading)}
         activeSection={activeSection}
         onSelectSection={handleSelectSection}
         onOpenBookmarks={() => setIsBookmarksOpen(true)}

@@ -311,18 +311,18 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({
                     </p>
                   </div>
 
-                  <div className="pt-4 border-t border-[#2A2A2A] flex items-center justify-between text-xs font-mono-meta text-stone-400">
-                    <div className="flex items-center gap-3">
-                      <span className="flex items-center gap-1">
+                  <div className="pt-4 border-t border-[#2A2A2A] flex flex-wrap items-center justify-between text-xs font-mono-meta text-stone-400 gap-2">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <span className="flex items-center gap-1 whitespace-nowrap">
                         <User className="w-3.5 h-3.5 text-stone-500" /> {leadArticle.author || 'The Editorial Board'}
                       </span>
                       {typeof leadArticle.views_count === 'number' && (
-                        <span className="flex items-center gap-1 text-stone-400">
+                        <span className="flex items-center gap-1 text-stone-400 whitespace-nowrap">
                           <Eye className="w-3.5 h-3.5 text-stone-500" /> {leadArticle.views_count.toLocaleString()} views
                         </span>
                       )}
                     </div>
-                    <span className="text-[#E50914] font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                    <span className="text-[#E50914] font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform whitespace-nowrap">
                       READ FULL DISPATCH <ArrowUpRight className="w-4 h-4" />
                     </span>
                   </div>
@@ -394,20 +394,20 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({
                           </p>
                         </div>
 
-                        <div className="pt-3 border-t border-[#222222] flex items-center justify-between text-[11px] font-mono-meta text-stone-500">
-                          <div className="flex items-center gap-2">
-                            <span>{art.readTime || '5 min read'}</span>
+                        <div className="pt-3 border-t border-[#222222] flex flex-wrap items-center justify-between text-[11px] font-mono-meta text-stone-500 gap-1.5">
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                            <span className="whitespace-nowrap">{art.readTime || '5 min read'}</span>
                             {typeof art.views_count === 'number' && (
                               <>
                                 <span>•</span>
-                                <span className="flex items-center gap-1">
+                                <span className="flex items-center gap-1 whitespace-nowrap">
                                   <Eye className="w-3 h-3 text-stone-500" />
                                   {art.views_count.toLocaleString()}
                                 </span>
                               </>
                             )}
                           </div>
-                          <span>{art.author || 'The Editorial Board'}</span>
+                          <span className="whitespace-nowrap">{art.author || 'The Editorial Board'}</span>
                         </div>
                       </article>
                     );

@@ -618,47 +618,221 @@ def sanitize_paragraph_quotes(text: str) -> str:
     return stripped.strip()
 
 
-def classify_article_beat(title: str, text: str, fallback_cat: str) -> str:
-    """Classifies news dispatches across broadsheet beats with precision weighting."""
-    combined = f"{title} {title} {text[:3000]}".lower()
+def classify_article_beat(title: str, text: str, fallback_cat: str = "") -> str:
+    """
+    Intelligently classifies news dispatches across all 11 broadsheet beats.
+    Inspects headline syntax first, then semantic body context, without hardcoded fallback bias.
+    """
+    title_lower = title.lower()
 
+    # 1. SPORT
+    sport_patterns = [
+        r'\bsuper eagles\b', r'\bafcon\b', r'\bfootball\b', r'\bpremier league\b',
+        r'\bchampions league\b', r'\bchelsea\b', r'\barsenal\b', r'\bmanchester\b', r'\bman utd\b',
+        r'\bstriker\b', r'\bcoach\b', r'\btransfer\b', r'\btournament\b', r'\bswimmer\b',
+        r'\bmedals?\b', r'\bolympics?\b', r'\bballon d[’\']?or\b', r'\bpoints as\b', r'\bpelicans\b',
+        r'\bleague\b', r'\bmatch\b', r'\bworld cup\b', r'\bsüper lig\b', r'\bsuper lig\b',
+        r'\bosimhen\b', r'\bmbappe\b', r'\bkane\b', r'\bogbu\b', r'\bgalatasaray\b', r'\bachiuwa\b',
+        r'\bvilla to sue carragher\b', r'\bcarragher\b', r'\bnba\b', r'\bkings fall\b'
+    ]
+    if any(re.search(p, title_lower) for p in sport_patterns):
+        return 'SPORT'
+
+    # 2. FINANCE (Capital Markets, Corporate Earnings, IPOs, Crypto, Banking, Tax)
+    finance_patterns = [
+        r'\bipo\b', r'\blists? on (?:nyse|nasdaq|ngx|stock exchange)\b', r'\blisting\b',
+        r'\bvaluation\b', r'\bmarket cap(?:italisation)?\b', r'\braises? \$\d+', r'\braises? n\d+',
+        r'\braising \$\d+', r'\braising n\d+', r'\bpost-ipo\b', r'\bshares?\b',
+        r'\bstock exchange\b', r'\bwall street\b', r'\bprofit rises?\b', r'\bprofit jumps?\b',
+        r'\brevenue\b', r'\bdividend\b', r'\binflation\b', r'\bbond yields?\b',
+        r'\bcrypto(?:currency)?\b', r'\bbitcoin\b', r'\bbinance\b', r'\bstolen in\b',
+        r'\bstock investors\b', r'\btax debt\b', r'\btax reforms?\b', r'\bborrowing, says debt\b',
+        r'\beconomic growth\b', r'\bcommercial bank\b', r'\binterest rate\b', r'\bcbn\b',
+        r'\bcentral bank\b', r'\bmonetary policy\b', r'\bsovereign debt\b', r'\bfinancial planning\b',
+        r'\bn450 billion\b', r'\bn4\.6trn\b', r'\bbua foods\b', r'\bcorporate earnings\b'
+    ]
+    if any(re.search(p, title_lower) for p in finance_patterns):
+        return 'FINANCE'
+
+    # 3. CELEBRITY & ENTERTAINMENT
+    celeb_patterns = [
+        r'\bmovie\b', r'\bfilm\b', r'\bactor\b', r'\bactress\b', r'\bhollywood\b',
+        r'\bnollywood\b', r'\bgrammy\b', r'\boscar\b', r'\bscorsese\b', r'\bangelina jolie\b',
+        r'\bpop star\b', r'\bafrobeats?\b', r'\bwizkid\b', r'\bdavido\b', r'\bburna boy\b',
+        r'\bcelebrity traitors\b', r'\brussell brand\b', r'\btraitors comes\b', r'\bcleopatra\b'
+    ]
+    if any(re.search(p, title_lower) for p in celeb_patterns):
+        return 'CELEBRITY'
+
+    # 4. FASHION
+    fashion_patterns = [
+        r'\bfashion week\b', r'\brunway\b', r'\bhaute couture\b', r'\bdesigner\b',
+        r'\bwardrobe\b', r'\bcouture\b', r'\bapparel\b', r'\bluxury fashion\b', r'\bvogue\b',
+        r'\bdries van noten\b', r'\bparadiso chic\b', r'\bchristie brown\b', r'\bchic ni city\b',
+        r'\bcuts 195 jobs, dries\b'
+    ]
+    if any(re.search(p, title_lower) for p in fashion_patterns):
+        return 'FASHION'
+
+    # 5. TECHNOLOGY
+    tech_patterns = [
+        r'\bai\b', r'\bartificial intelligence\b', r'\bai search\b', r'\bai spending\b',
+        r'\btech stocks\b', r'\bgoogle value\b', r'\bcyberattack\b', r'\bsemiconductor\b',
+        r'\bchipmakers?\b', r'\bsoftware\b', r'\bstartup\b', r'\bcloud\b', r'\bcybersecurity\b',
+        r'\balgorithm\b', r'\bsmartphone\b', r'\bapple\b', r'\bmicrosoft\b', r'\bmeta\b'
+    ]
+    if any(re.search(p, title_lower) for p in tech_patterns):
+        return 'TECHNOLOGY'
+
+    # 6. EDUCATION
+    education_patterns = [
+        r'\bcolleges? closed\b', r'\buniversity\b', r'\basuu\b', r'\bstudents?\b',
+        r'\bjamb\b', r'\bwaec\b', r'\blecturers?\b', r'\bcampus\b', r'\bpolytechnic\b',
+        r'\bscholarships?\b', r'\btertiary\b', r'\bschools?\b', r'\badmissions?\b'
+    ]
+    if any(re.search(p, title_lower) for p in education_patterns):
+        return 'EDUCATION'
+
+    # 7. SCIENCE
+    science_patterns = [
+        r'\bnasa\b', r'\bspace\b', r'\btelescope\b', r'\bastronomy\b', r'\bphysics\b',
+        r'\bclimate\b', r'\bwettest week\b', r'\bnafdac\b', r'\bmax power\b', r'\bplanetary\b',
+        r'\bbiology\b', r'\bgenetics\b', r'\bwithout rain\b'
+    ]
+    if any(re.search(p, title_lower) for p in science_patterns):
+        return 'SCIENCE'
+
+    # 8. LIFESTYLE
+    lifestyle_patterns = [
+        r'\bwellness\b', r'\bhealthy eating\b', r'\bdiet\b', r'\bmental health\b',
+        r'\bculinary\b', r'\bhospitality\b', r'\binterior design\b', r'\bdecor\b',
+        r'\brelationship\b', r'\bfitness\b', r'\bworkout\b', r'\bleisure\b'
+    ]
+    if any(re.search(p, title_lower) for p in lifestyle_patterns):
+        return 'LIFESTYLE'
+
+    # 9. POLITICS
+    politics_patterns = [
+        r'\bconvoy\b', r'\bguber\b', r'\belection\b', r'\bsenate\b', r'\bgovernor\b',
+        r'\bminister\b', r'\blawmakers?\b', r'\bapc\b', r'\bpdp\b', r'\badc\b',
+        r'\bel-rufai\b', r'\bel-sayed\b', r'\bdetention\b', r'\bprotests\b',
+        r'\bobamacare\b', r'\bcash payment to vulnerable\b', r'\bpolitical\b',
+        r'\bparliament\b', r'\bcongress\b', r'\bwhite house\b', r'\bexecutive council\b'
+    ]
+    if any(re.search(p, title_lower) for p in politics_patterns):
+        return 'POLITICS'
+
+    # 10. WORLD (Foreign diplomacy, conflicts, international incidents)
+    world_patterns = [
+        r'\bus approves sale\b', r'\bpatriot missiles\b', r'\bukraine\b', r'\brussia\b',
+        r'\bhelicopter crashes in northern indian state\b', r'\bu\.s\. to send dozens\b',
+        r'\bafghanistan\b', r'\bgermany and france brace\b', r'\bgermany, nigeria explore\b',
+        r'\baviation agreement\b', r'\bdw\b', r'\bforeign ministry\b'
+    ]
+    if any(re.search(p, title_lower) for p in world_patterns):
+        return 'WORLD'
+
+    # 11. Multi-token scoring fallback across full text
+    combined = f"{title} {title} {title} {text[:3000]}".lower()
     scores = {
-        'NIGERIA': len(re.findall(r'\b(nigeria|nigerian|zamfara|lagos|abuja|kano|rivers|ogun|borno|enugu|kaduna|ibadan|delta|edo|fct|fubara|wike|tinubu|shettima|efcc|cbn|nass|invec|nairametrics|lawal|akpabio|sanwo-olu|sub-national|senatorial|state government|federal government)\b', combined)) * 2,
-        'POLITICS': len(re.findall(r'\b(senate|minister|governor|assembly|election|court|party|lawmaker|tribunal|judiciary|apc|pdp|bill|cabinet|impeachment|biden|trump|congress|parliament|vote|ballot|detention|politicians)\b', combined)) * 2,
-        'FINANCE': len(re.findall(r'\b(naira|dollar|cbn|inflation|bank|stock|ipo|revenue|investment|budget|dividend|gdp|debt|earnings|shares|interest rate|market capitalisation|liquidity|treasury|bond|monetary|equities|ngx|wall street|crude oil|bua)\b', combined)) * 2.2,
-        'TECHNOLOGY': len(re.findall(r'\b(ai|artificial intelligence|software|app|cyber|semiconductor|chip|google|apple|microsoft|meta|startup|digital payments|fintech|algorithm|smartphone|gadget|opay|crypto|bitcoin|ethereum|hardware|cybersecurity)\b', combined)) * 2.2,
-        'SCIENCE': len(re.findall(r'\b(nasa|space|telescope|orbit|climate|species|biology|physics|medicine|vaccine|laboratory|satellite|astronomy|niprd|solar|cosmic|lunar|mars|researchers|genetics|dna|environment|pharmaceutical)\b', combined)) * 2,
-        'SPORT': len(re.findall(r'\b(super eagles|afcon|fifa|football|striker|arsenal|chelsea|manchester|coach|transfer|tournament|olympics|league|winger|defender|ogbu|osimhen|lookman|champions league|premier league|goal|match|cup|ballon|squad)\b', combined)) * 2.5,
-        'EDUCATION': len(re.findall(r'\b(university|asuu|student|students|jamb|waec|lecturer|campus|polytechnic|curriculum|scholarship|matriculation|convocation|tertiary|examinations|schools|admissions|academic|faculty|unilag|ui|oau|ahmadu bello)\b', combined)) * 2.5,
-        'LIFESTYLE': len(re.findall(r'\b(wellness|nutrition|travel|culinary|mental health|hospitality|architecture|leisure|interior design|relationship|gastronomy|lifestyle|decor|fitness)\b', combined)) * 2.2,
-        'FASHION': len(re.findall(r'\b(fashion|runway|haute couture|designer|wardrobe|collection|styling|fashion week|apparel|aesthetics|luxury fashion|textile|vogue|model|tailoring|couture|garment)\b', combined)) * 2.5,
-        'CELEBRITY': len(re.findall(r'\b(nollywood|hollywood|grammy|oscar|music video|afrobeat|wizkid|davido|burna boy|asake|tiwa|album|pop star|entertainment|red carpet|premiere|box office|actor|actress|celebrity|cinema)\b', combined)) * 2.5,
-        'WORLD': len(re.findall(r'\b(diplomacy|united nations|treaty|gaza|ukraine|ambassador|bilateral|summit|border|foreign ministry|peacekeeping|geopolitics|consulate|emigration|visas|russia|israel|nato|white house|downing street|kremlin|beijing)\b', combined)) * 1.5
+        'NIGERIA': len(re.findall(r'\b(nigeria|nigerian|zamfara|lagos|abuja|kano|rivers|ogun|borno|enugu|kaduna|ibadan|delta|edo|fct|fubara|wike|tinubu|shettima|efcc|cbn|nass|invec|nairametrics|lawal|akpabio|sanwo-olu|sub-national|senatorial|state government|federal government)\b', combined)),
+        'POLITICS': len(re.findall(r'\b(senate|minister|governor|assembly|election|court|party|lawmaker|tribunal|judiciary|apc|pdp|bill|cabinet|impeachment|congress|parliament|vote|ballot|detention|politicians)\b', combined)),
+        'FINANCE': len(re.findall(r'\b(naira|dollar|cbn|inflation|bank|stock|ipo|revenue|investment|budget|dividend|gdp|debt|earnings|shares|interest rate|market capitalisation|liquidity|treasury|bond|monetary|equities|ngx|wall street|crude oil|bua)\b', combined)),
+        'TECHNOLOGY': len(re.findall(r'\b(ai|artificial intelligence|software|app|cyber|semiconductor|chip|google|apple|microsoft|meta|startup|digital payments|fintech|algorithm|smartphone|gadget|opay|crypto|bitcoin|ethereum|hardware|cybersecurity)\b', combined)),
+        'SCIENCE': len(re.findall(r'\b(nasa|space|telescope|orbit|climate|species|biology|physics|medicine|vaccine|laboratory|satellite|astronomy|niprd|solar|cosmic|lunar|mars|researchers|genetics|dna|environment|pharmaceutical)\b', combined)),
+        'SPORT': len(re.findall(r'\b(super eagles|afcon|fifa|football|striker|arsenal|chelsea|manchester|coach|transfer|tournament|olympics|league|winger|defender|ogbu|osimhen|lookman|champions league|premier league|goal|match|cup|ballon|squad)\b', combined)),
+        'EDUCATION': len(re.findall(r'\b(university|asuu|student|students|jamb|waec|lecturer|campus|polytechnic|curriculum|scholarship|matriculation|convocation|tertiary|examinations|schools|admissions|academic|faculty|unilag|ui|oau|ahmadu bello)\b', combined)),
+        'LIFESTYLE': len(re.findall(r'\b(wellness|nutrition|travel|culinary|mental health|hospitality|architecture|leisure|interior design|relationship|gastronomy|lifestyle|decor|fitness)\b', combined)),
+        'FASHION': len(re.findall(r'\b(fashion|runway|haute couture|designer|wardrobe|collection|styling|fashion week|apparel|aesthetics|luxury fashion|textile|vogue|model|tailoring|couture|garment)\b', combined)),
+        'CELEBRITY': len(re.findall(r'\b(nollywood|hollywood|grammy|oscar|music video|afrobeat|wizkid|davido|burna boy|asake|tiwa|album|pop star|entertainment|red carpet|premiere|box office|actor|actress|celebrity|cinema)\b', combined)),
+        'WORLD': len(re.findall(r'\b(diplomacy|united nations|treaty|gaza|ukraine|ambassador|bilateral|summit|border|foreign ministry|peacekeeping|geopolitics|consulate|emigration|visas|russia|israel|nato|white house|downing street|kremlin|beijing)\b', combined))
     }
 
-    if fallback_cat in scores and scores[fallback_cat] >= 2:
-        return fallback_cat
-
     best_cat = max(scores, key=scores.get)
-    if fallback_cat == 'NIGERIA' and scores['NIGERIA'] >= scores['WORLD']:
-        return 'NIGERIA'
     if scores[best_cat] >= 2:
         return best_cat
-    return fallback_cat
+
+    return 'NIGERIA'
 
 
-def classify_lifecycle_and_type(title: str, text: str) -> Tuple[str, str]:
-    """Detects whether dispatch is true BREAKING, HEADLINE, DEVELOPING, or REGULAR."""
-    t = f"{title} {text[:600]}".lower()
+from email.utils import parsedate_to_datetime
 
-    if any(k in t for k in ['breaking news', 'just in', 'flash:', 'plane crash', 'explosion', 'earthquake', 'dies at', 'dead at', 'shot dead', 'emergency declared', 'impeached', 'resigns', 'erupts', 'military strike', 'hostage']):
+def parse_wire_timestamp(raw_date_str: str) -> Optional[datetime]:
+    """Parse various RSS/Atom date formats into a timezone-aware UTC datetime."""
+    if not raw_date_str:
+        return None
+    s = raw_date_str.strip()
+    try:
+        dt = parsedate_to_datetime(s)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc)
+    except Exception:
+        pass
+
+    try:
+        iso_s = s.replace('Z', '+00:00')
+        dt = datetime.fromisoformat(iso_s)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc)
+    except Exception:
+        pass
+
+    return None
+
+
+def classify_lifecycle_and_type(title: str, text: str, pub_dt: Optional[datetime] = None) -> Tuple[str, str]:
+    """
+    Dynamically detects whether dispatch is BREAKING, HEADLINE, DEVELOPING, or REGULAR.
+    Factors in headline urgency, semantic keywords, AND dispatch freshness (age in minutes).
+    """
+    now = datetime.now(timezone.utc)
+    age_minutes = 999999.0
+    if pub_dt:
+        age_minutes = max(0.0, (now - pub_dt).total_seconds() / 60.0)
+
+    t = f"{title} {text[:500]}".lower()
+
+    # 1. Critical Breaking Patterns (Fatal accidents, emergency alerts, crashes, explosions, sudden halts)
+    breaking_patterns = [
+        r'\bcrash\b', r'\bcrashes\b', r'\bkilled\b', r'\bdead\b', r'\bdies\b',
+        r'\bshot dead\b', r'\battack(?:ed|s)?\b', r'\btrading halted\b', r'\bemergency\b',
+        r'\bexplosion\b', r'\bgunmen\b', r'\balleged killing\b', r'\bplane crash\b',
+        r'\bboat capsize\b', r'\bbreaking\b', r'\bjust in\b', r'\bflash:\b'
+    ]
+    if any(re.search(p, t) for p in breaking_patterns):
         return 'BREAKING', 'BREAKING'
 
-    if any(k in t for k in ['investigation', 'exclusive:', 'special report', 'deep dive', 'analysis:', 'revelation', 'scrutiny', 'audit', 'landmark', 'historic', 'verdict', 'ipo', 'unveils', 'record profit', 'overhaul']):
+    # 2. Freshness-Driven Breaking Escalation:
+    # If the story was published in the last 40 minutes and reports major actions, listings, or clashes:
+    if age_minutes <= 40.0:
+        if any(w in t for w in ['lists on', 'ipo', 'appoints', 'sues', 'drops below', 'rises to', 'protest', 'strike', 'scores again', 'rejects account', 'cuts jobs']):
+            return 'BREAKING', 'BREAKING'
+        return 'DEVELOPING', 'LATEST'
+
+    # 3. High-Impact Headline Patterns (IPOs, mega investments, historic policy, landmark verdicts)
+    headline_patterns = [
+        r'\bipo\b', r'\blists on\b', r'\braises? \$\d+', r'\braises? n\d+',
+        r'\bballon d[’\']?or\b', r'\bprofit rises?\b', r'\bexclusive\b',
+        r'\blandmarked?\b', r'\bhistoric\b', r'\bn450 billion\b', r'\bblasts\b',
+        r'\bn4\.6trn\b', r'\btax reforms?\b', r'\bplunges by \$500bn\b'
+    ]
+    if any(re.search(p, t) for p in headline_patterns):
         return 'HEADLINE', 'HEADLINE'
 
-    if any(k in t for k in ['developing story', 'peace talks', 'trial resumes', 'counter-offensive', 'negotiations underway', 'ongoing review', 'probe', 'crisis', 'dispute', 'struggle', 'clash', 'inquiry']):
+    # 4. Developing Story Patterns (Inquiries, ongoing negotiations, trials, probes)
+    developing_patterns = [
+        r'\bdeveloping\b', r'\bkey lessons\b', r'\bbrace for\b', r'\bexplore\b',
+        r'\bmove to\b', r'\bseeking\b', r'\bdemands? justice\b', r'\bprobe\b',
+        r'\binvestigation\b', r'\btrial\b', r'\bseeks international\b'
+    ]
+    if any(re.search(p, t) for p in developing_patterns):
         return 'DEVELOPING', 'DEVELOPING'
+
+    # 5. Fresh Dispatches under 2 hours get classified as LATEST
+    if age_minutes <= 120.0:
+        return 'REGULAR', 'LATEST'
 
     return 'REGULAR', 'LATEST'
 
@@ -1098,6 +1272,16 @@ def fetch_wire_articles(feed: dict) -> List[dict]:
                 if 'encoded' in child.tag.lower() and child.text:
                     content_encoded = child.text.strip()
 
+            pub_elem = (
+                item.find('pubDate') or
+                item.find('{http://www.w3.org/2005/Atom}published') or
+                item.find('{http://www.w3.org/2005/Atom}updated') or
+                item.find('date') or
+                item.find('{http://purl.org/dc/elements/1.1/}date')
+            )
+            raw_pub_date = (pub_elem.text if pub_elem is not None and pub_elem.text else '').strip()
+            pub_dt = parse_wire_timestamp(raw_pub_date) or datetime.now(timezone.utc)
+
             if not title or not link:
                 continue
 
@@ -1111,13 +1295,18 @@ def fetch_wire_articles(feed: dict) -> List[dict]:
                 'feed_name': feed['name'],
                 'region': feed['region'],
                 'default_category': feed['default_category'],
-                'default_dateline': feed['default_dateline']
+                'default_dateline': feed['default_dateline'],
+                'published_at': pub_dt.isoformat(),
+                'pub_dt': pub_dt
             }
 
             media_url = extract_media_url_from_entry(item, entry_dict)
             if media_url:
                 entry_dict['image_url'] = media_url
                 articles.append(entry_dict)
+
+        # Sort articles by freshness so newest wire updates are processed first
+        articles.sort(key=lambda x: x.get('pub_dt') or datetime.min.replace(tzinfo=timezone.utc), reverse=True)
 
     except Exception as e:
         logger.warning(f"Error reading feed {feed['name']}: {e}")
@@ -1143,8 +1332,9 @@ def format_broadsheet_article_rules(item: dict, full_body_text: str) -> dict:
     # 2. Detect True Sector/Beat
     category = classify_article_beat(title, full_body_text, item['default_category'])
 
-    # 3. Detect Lifecycle Stage & Dispatch Type
-    lifecycle_stage, dispatch_type = classify_lifecycle_and_type(title, full_body_text)
+    # 3. Detect Lifecycle Stage & Dispatch Type with News Freshness
+    pub_dt = item.get('pub_dt')
+    lifecycle_stage, dispatch_type = classify_lifecycle_and_type(title, full_body_text, pub_dt=pub_dt)
 
     # 4. Extract Real Quote & Deduplicate from text
     primary_quote, quote_speaker, cleaned_body_text = extract_and_attribute_quote(
@@ -1289,7 +1479,8 @@ def format_broadsheet_article_rules(item: dict, full_body_text: str) -> dict:
         'dateline': dateline,
         'content_html': full_html,
         'word_count': word_count,
-        'read_time': read_time
+        'read_time': read_time,
+        'published_at': item.get('published_at') or datetime.now(timezone.utc).isoformat()
     }
 
 
@@ -1334,6 +1525,8 @@ def process_single_article(
             'VERIFIED_DISPATCH'
         ]
 
+        published_at = editorial.get('published_at') or now_iso
+
         payload = {
             'id': article_id,
             'title': editorial['title'],
@@ -1348,7 +1541,7 @@ def process_single_article(
             'read_time': editorial['read_time'],
             'views_count': 0,
             'likes_count': 0,
-            'published_at': now_iso,
+            'published_at': published_at,
             'created_at': now_iso,
             'updated_at': now_iso,
             'lifecycle_stage': editorial['lifecycle_stage']
@@ -1372,7 +1565,7 @@ def process_single_article(
 
 
 def run_pipeline(
-    batch_size: int = 60,
+    batch_size: int = 10,
     beat: str = 'all',
     dry_run: bool = False
 ) -> int:
@@ -1394,7 +1587,7 @@ def run_pipeline(
 
     # 3. Parallel wire discovery across all feeds
     discovered_by_feed = {}
-    with ThreadPoolExecutor(max_workers=8) as executor:
+    with ThreadPoolExecutor(max_workers=10) as executor:
         future_to_feed = {executor.submit(fetch_wire_articles, feed): feed for feed in active_feeds}
         for future in as_completed(future_to_feed):
             feed = future_to_feed[future]
@@ -1408,7 +1601,7 @@ def run_pipeline(
     total_discovered = sum(len(v) for v in discovered_by_feed.values())
     logger.info(f"Discovered {total_discovered} raw wire dispatches across {len(discovered_by_feed)} active feeds.")
 
-    # 4. Multi-Sector Round-Robin Interleaving
+    # 4. Multi-Sector Round-Robin Interleaving with Freshness Priority
     interleaved_items = []
     feed_lists = list(discovered_by_feed.values())
     max_len = max([len(lst) for lst in feed_lists]) if feed_lists else 0
@@ -1416,6 +1609,12 @@ def run_pipeline(
         for lst in feed_lists:
             if idx < len(lst):
                 interleaved_items.append(lst[idx])
+
+    # Sort all candidate wire items by publish freshness (most recent first)
+    interleaved_items.sort(
+        key=lambda x: x.get('pub_dt') or datetime.min.replace(tzinfo=timezone.utc),
+        reverse=True
+    )
 
     # 5. Multi-Layered Anti-Duplicate Filtering
     unique_candidates = []
@@ -1447,9 +1646,9 @@ def run_pipeline(
     if not unique_candidates:
         return 0
 
-    # 6. Parallel editorial processing, watermarking, and publication
+    # 6. Parallel editorial processing, watermarking, and publication (up to 10 stories in parallel)
     published_count = 0
-    with ThreadPoolExecutor(max_workers=8) as executor:
+    with ThreadPoolExecutor(max_workers=10) as executor:
         futures = [
             executor.submit(process_single_article, item, sb_client, ledger, dry_run)
             for item in unique_candidates
@@ -1469,7 +1668,7 @@ def run_pipeline(
 
 def main():
     parser = argparse.ArgumentParser(description="The Chronicles Automated Real-Time News Pipeline")
-    parser.add_argument('--batch-size', type=int, default=60, help="Maximum articles to publish per sweep (default: 60)")
+    parser.add_argument('--batch-size', type=int, default=10, help="Maximum articles to publish per sweep (default: 10)")
     parser.add_argument('--beat', type=str, choices=['all', 'nigeria', 'global'], default='all', help="Filter wire beats")
     parser.add_argument('--once', action='store_true', help="Run single sweep and exit immediately")
     parser.add_argument('--daemon', action='store_true', help="Run continuously in 1-minute loop (default if not --once)")

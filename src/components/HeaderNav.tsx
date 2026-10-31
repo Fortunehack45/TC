@@ -32,6 +32,7 @@ interface HeaderNavProps {
   onToggleInlineSearch: () => void;
   onOpenAuth: () => void;
   onOpenResetPassword?: () => void;
+  isArticleOpen?: boolean;
 }
 
 export const HeaderNav: React.FC<HeaderNavProps> = ({
@@ -49,6 +50,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
   onToggleInlineSearch,
   onOpenAuth,
   onOpenResetPassword,
+  isArticleOpen = false,
 }) => {
   const { user, profile, isAdmin, signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -108,7 +110,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
       <MarketTicker />
 
       {/* Topmost Minimal Bar Indicator */}
-      <div className="w-full max-w-[98%] 2xl:max-w-[1920px] mx-auto px-2 sm:px-4 md:px-5 py-2 flex items-center justify-between text-[11px] font-mono-meta tracking-widest text-stone-400 border-b border-[#1A1A1A]">
+      <div className="w-full max-w-[98%] 2xl:max-w-[1920px] mx-auto px-2 sm:px-4 md:px-5 py-2 hidden sm:flex items-center justify-between text-[11px] font-mono-meta tracking-widest text-stone-400 border-b border-[#1A1A1A]">
         <div className="flex items-center gap-2 sm:gap-3">
           <span className="text-stone-200 font-bold">HOME</span>
           <span className="text-stone-600">|</span>
@@ -351,26 +353,28 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
       </div>
 
       {/* Mobile Horizontal Swipe Category Bar */}
-      <div className="xl:hidden w-full bg-[#151515] border-t border-[#222222] px-2 py-1.5 overflow-x-auto scrollbar-none overscroll-x-contain shadow-inner">
-        <div className="flex items-center gap-1.5 w-max">
-          {navItems.map((item) => {
-            const isActive = activeSection === item.id && !searchQuery;
-            return (
-              <button
-                key={item.id}
-                onClick={() => handleNavClick(item.id)}
-                className={`px-3 py-1.5 rounded-xs text-[11px] font-mono-meta font-bold uppercase whitespace-nowrap transition-colors min-h-[36px] flex items-center cursor-pointer ${
-                  isActive
-                    ? 'bg-[#E50914] text-white shadow-xs'
-                    : 'text-stone-300 hover:text-white bg-[#1E1E1E] hover:bg-[#282828]'
-                }`}
-              >
-                {item.label}
-              </button>
-            );
-          })}
+      {!isArticleOpen && (
+        <div className="xl:hidden w-full bg-[#141414] border-t border-[#222222] px-2.5 py-1 overflow-x-auto scrollbar-none overscroll-x-contain shadow-inner">
+          <div className="flex items-center gap-1 w-max">
+            {navItems.map((item) => {
+              const isActive = activeSection === item.id && !searchQuery;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => handleNavClick(item.id)}
+                  className={`px-2.5 py-1 text-[11px] font-mono-meta font-bold uppercase whitespace-nowrap transition-colors flex items-center cursor-pointer border-b-2 min-h-[30px] ${
+                    isActive
+                      ? 'text-[#E50914] border-[#E50914]'
+                      : 'text-stone-400 hover:text-white border-transparent'
+                  }`}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* INLINE IN-PAGE SEARCH PANEL */}
       {isSearchInlineOpen && (

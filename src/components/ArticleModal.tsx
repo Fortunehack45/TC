@@ -234,24 +234,18 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
             <span className="font-semibold">HOME</span>
           </button>
           <ChevronRight className="w-3.5 h-3.5 text-stone-600 shrink-0" />
-          {article.section && article.section.toUpperCase() !== article.category.toUpperCase() && (
-            <>
-              <button
-                onClick={() => {
-                  if (onNavigateToSection) {
-                    onNavigateToSection(article.section);
-                  } else {
-                    onClose();
-                  }
-                }}
-                className="text-stone-300 hover:text-[#E50914] font-bold uppercase transition-colors"
-              >
-                {article.section}
-              </button>
-              <ChevronRight className="w-3.5 h-3.5 text-stone-600 shrink-0" />
-            </>
-          )}
-          <span className="text-[#E50914] font-bold uppercase">{article.category}</span>
+          <button
+            onClick={() => {
+              if (onNavigateToSection) {
+                onNavigateToSection(article.category);
+              } else {
+                onClose();
+              }
+            }}
+            className="text-[#E50914] hover:underline font-bold uppercase transition-colors"
+          >
+            {article.category}
+          </button>
           <ChevronRight className="w-3.5 h-3.5 text-stone-600 shrink-0 hidden sm:inline" />
           <span className="text-stone-400 truncate max-w-xs sm:max-w-md hidden sm:inline">{article.title}</span>
         </nav>
@@ -260,27 +254,25 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
       {/* Main In-Page Article Body */}
       <article className="w-full max-w-[94%] 2xl:max-w-[1480px] mx-auto px-2 sm:px-4 py-2">
         {/* Category kicker */}
-        <div className="flex flex-wrap items-center gap-3 text-xs font-mono-meta text-stone-400 mb-4">
-          <span className="bg-[#E50914] text-white px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-xs">
-            {article.section && article.section.toUpperCase() !== article.category.toUpperCase()
-              ? `${article.section} • ${article.category}`
-              : article.category}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs font-mono-meta text-stone-400 mb-4">
+          <span className="bg-[#E50914] text-white px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-xs whitespace-nowrap">
+            {article.category}
           </span>
           {article.date && (
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1 whitespace-nowrap">
               <Calendar className="w-3.5 h-3.5 text-[#E50914]" /> {formatProgressiveTimestamp(article.published_at || article.date)}
             </span>
           )}
-          <span className="flex items-center gap-1">
+          <span className="flex items-center gap-1 whitespace-nowrap">
             <Eye className="w-3.5 h-3.5 text-stone-500" /> {viewsCount.toLocaleString()} views
           </span>
           {article.author && (
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1 whitespace-nowrap">
               <User className="w-3.5 h-3.5 text-stone-500" /> {article.author}
             </span>
           )}
           {article.readTime && (
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1 whitespace-nowrap">
               <Clock className="w-3.5 h-3.5 text-stone-500" /> {article.readTime}
             </span>
           )}

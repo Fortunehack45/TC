@@ -112,7 +112,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
           <span className="text-stone-500 flex items-center gap-1 shrink-0 text-[11px] mr-1">
             <Filter className="w-3 h-3" /> FILTER:
           </span>
-          {['ALL', 'WORLD', 'POLITICS', 'FINANCE', 'TECHNOLOGY', 'SCIENCE', 'FASHION', 'SPORT'].map((cat) => (
+          {['ALL', 'NIGERIA', 'WORLD', 'POLITICS', 'FINANCE', 'TECHNOLOGY', 'SCIENCE', 'FASHION', 'SPORT'].map((cat) => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}

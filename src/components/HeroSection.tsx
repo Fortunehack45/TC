@@ -1,7 +1,7 @@
 import React from 'react';
 import { ArtGraphic } from './ArtGraphics';
 import { HERO_NEWS } from '../data/artData';
-import { ArrowUpRight, Bookmark, Clock, Calendar } from 'lucide-react';
+import { ArrowUpRight, Bookmark, Clock, Calendar, Eye } from 'lucide-react';
 import { getPostPreviewImage } from '../lib/imageHelper';
 
 interface HeroSectionProps {
@@ -57,12 +57,17 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               <img
                 src={getPostPreviewImage(leadArticle)}
                 alt={leadArticle.title}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-45"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-100"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = '/og-image.png';
                 }}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#121212] via-[#121212]/70 to-[#121212]/30" />
+              <div 
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background: 'linear-gradient(to top, rgba(18,18,18,0.98) 0%, rgba(18,18,18,0.85) 32%, rgba(18,18,18,0.4) 58%, rgba(18,18,18,0) 80%)'
+                }}
+              />
             </div>
           ) : (
             <div className="w-full h-full flex items-center justify-center my-auto py-2 sm:py-4">
@@ -107,6 +112,15 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 <span className="text-white font-medium">{leadArticle.author || 'Chronicles Bureau'}</span>
                 <span>•</span>
                 <span>{leadArticle.date}</span>
+                {typeof leadArticle.views_count === 'number' && (
+                  <>
+                    <span>•</span>
+                    <span className="flex items-center gap-1 text-stone-300">
+                      <Eye className="w-3.5 h-3.5 text-stone-400" />
+                      {leadArticle.views_count.toLocaleString()} views
+                    </span>
+                  </>
+                )}
                 <span>•</span>
                 <span>{leadArticle.readTime || '6 min read'}</span>
               </div>
@@ -165,6 +179,15 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                       <span className={item.lifecycle?.status === 'BREAKING' ? 'text-[#E50914] font-bold' : ''}>
                         {item.lifecycle?.timeAgoFormatted || item.date}
                       </span>
+                      {typeof item.views_count === 'number' && (
+                        <>
+                          <span>•</span>
+                          <span className="flex items-center gap-1 text-stone-400">
+                            <Eye className="w-3 h-3 text-stone-500" />
+                            {item.views_count.toLocaleString()}
+                          </span>
+                        </>
+                      )}
                       <span>•</span>
                       <span>{item.readTime || '4 min read'}</span>
                     </div>

@@ -30,6 +30,14 @@ export const Footer: React.FC<FooterProps> = ({ onSelectSection }) => {
             <ul className="space-y-2.5 font-mono-meta text-xs text-stone-400 text-left w-full">
               <li>
                 <button 
+                  onClick={() => onSelectSection('NIGERIA')} 
+                  className="text-left w-full hover:text-[#E50914] transition-colors block"
+                >
+                  NIGERIA BUREAU
+                </button>
+              </li>
+              <li>
+                <button 
                   onClick={() => onSelectSection('WORLD')} 
                   className="text-left w-full hover:text-[#E50914] transition-colors block"
                 >

@@ -292,7 +292,7 @@ export const WordEditor: React.FC<WordEditorProps> = ({
   };
 
   const categories = [
-    'WORLD', 'POLITICS', 'FINANCE', 'TECHNOLOGY', 'SCIENCE', 'EDUCATION',
+    'NIGERIA', 'WORLD', 'POLITICS', 'FINANCE', 'TECHNOLOGY', 'SCIENCE', 'EDUCATION',
     'LIFESTYLE', 'FASHION', 'CELEBRITY', 'SPORT', 'PODCASTS'
   ];
 

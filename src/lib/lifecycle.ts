@@ -11,6 +11,47 @@ export interface ArticleLifecycle {
 }
 
 /**
+ * Progressive time formatter matching broadsheet specifications:
+ * - < 60s: '1 sec ago' or 'X secs ago'
+ * - < 60m: '1 min ago' or 'X mins ago'
+ * - < 24h: '1 hr ago' or 'X hrs ago'
+ * - 24h–48h: 'Yesterday'
+ * - >= 48h: Full broadsheet date, e.g. '31 October 2026'
+ */
+export function formatProgressiveTimestamp(
+  publishedAt: string | Date | null | undefined
+): string {
+  if (!publishedAt) return 'Recently';
+
+  const pubDate = new Date(publishedAt);
+  const pubTime = pubDate.getTime();
+  if (isNaN(pubTime)) return 'Recently';
+
+  const now = Date.now();
+  const diffMs = Math.max(0, now - pubTime);
+  const diffSec = Math.floor(diffMs / 1000);
+
+  if (diffSec < 2) return '1 sec ago';
+  if (diffSec < 60) return `${diffSec} secs ago`;
+
+  const diffMins = Math.floor(diffSec / 60);
+  if (diffMins === 1) return '1 min ago';
+  if (diffMins < 60) return `${diffMins} mins ago`;
+
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours === 1) return '1 hr ago';
+  if (diffHours < 24) return `${diffHours} hrs ago`;
+
+  if (diffHours < 48) return 'Yesterday';
+
+  return pubDate.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+}
+
+/**
  * Computes the dynamic publication lifecycle for an article:
  * - 0–6 hours:   Breaking (Highest visibility)
  * - 6–24 hours:  Headline (Remains prominently featured)
@@ -100,17 +141,7 @@ export function computeArticleLifecycle(
   const diffMs = Math.max(0, now - pubTime);
   const hoursElapsed = diffMs / (1000 * 60 * 60);
 
-  let timeAgoFormatted = '';
-  if (hoursElapsed < 1) {
-    const mins = Math.max(1, Math.round(hoursElapsed * 60));
-    timeAgoFormatted = `${mins}m ago`;
-  } else if (hoursElapsed < 24) {
-    const h = Math.floor(hoursElapsed);
-    timeAgoFormatted = `${h}h ago`;
-  } else {
-    const d = Math.floor(hoursElapsed / 24);
-    timeAgoFormatted = `${d}d ago`;
-  }
+  const timeAgoFormatted = formatProgressiveTimestamp(publishedAt);
 
   // Tier 1: 0–6 hours -> Breaking (Highest visibility)
   if (hoursElapsed < 6) {

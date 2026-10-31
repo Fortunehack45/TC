@@ -129,7 +129,7 @@ VERIFIED_FEEDS = [
         'id': 'pt_general',
         'name': 'Premium Times Nigeria',
         'region': 'nigeria',
-        'default_category': 'WORLD',
+        'default_category': 'NIGERIA',
         'url': 'https://www.premiumtimesng.com/feed',
         'default_dateline': 'ABUJA',
     },
@@ -137,7 +137,7 @@ VERIFIED_FEEDS = [
         'id': 'channels_tv',
         'name': 'Channels Television',
         'region': 'nigeria',
-        'default_category': 'WORLD',
+        'default_category': 'NIGERIA',
         'url': 'https://www.channelstv.com/feed/',
         'default_dateline': 'ABUJA',
     },
@@ -145,7 +145,7 @@ VERIFIED_FEEDS = [
         'id': 'dailypost_ng',
         'name': 'Daily Post Nigeria',
         'region': 'nigeria',
-        'default_category': 'WORLD',
+        'default_category': 'NIGERIA',
         'url': 'https://dailypost.ng/feed/',
         'default_dateline': 'ABUJA',
     },
@@ -169,7 +169,7 @@ VERIFIED_FEEDS = [
         'id': 'punch_ng',
         'name': 'Punch Nigeria',
         'region': 'nigeria',
-        'default_category': 'WORLD',
+        'default_category': 'NIGERIA',
         'url': 'https://punchng.com/feed/',
         'default_dateline': 'ABUJA',
     },
@@ -282,6 +282,25 @@ VERIFIED_FEEDS = [
 
 # Sector-specific broadsheet contextual narratives
 BEAT_SECTOR_CONTEXT = {
+    'NIGERIA': {
+        'sec1_title': 'Federal-State Dynamics & Sub-National Governance',
+        'sec2_title': 'Legislative Review, Statutory Mandates & Regulatory Compliance',
+        'sec3_title': 'Judicial Precedents & Constitutional Repercussions',
+        'sec4_title': 'Socio-Economic Ramifications & Public Infrastructure',
+        'sec5_title': 'Policy Trajectory & Forthcoming National Milestones',
+        'deep_paragraphs': [
+            "The operational trajectory of this national development highlights the intricate coordination required across Nigeria's federal ministries, departments, and sub-national state administrations. Statutory regulatory bodies and parliamentary oversight panels have initiated comprehensive procedural assessments to verify that operational directives align with the 1999 Constitution as amended and prevailing public procurement statutes.",
+            "Sub-national governance analysts observe that executing structural policies of this scope requires seamless synergy between the federal executive council and state governments across all six geopolitical zones. Preserving administrative transparency and procedural adherence remains vital to preventing inter-governmental friction and delivering sustainable public value.",
+            "Parliamentary committees and statutory accountability bodies have signaled their intention to examine procedural adherence through formal oversight hearings. Lawmakers across party lines emphasize that while administrative agility is necessary to address emergent national challenges, legislative scrutiny ensures that public resources and executive prerogatives remain aligned with the public trust.",
+            "Civil society coalitions, governance watchdogs, and regional development monitors have mobilized field observers across multiple states to conduct independent audits. Their primary objective is to verify that administrative directives translate into measurable public value, particularly in communities where past governance interventions suffered from implementation delays.",
+            "Regional political observers in administrative hubs point out that the political economy surrounding these measures carries significant implications for upcoming electoral cycles and inter-governmental alliances. As state governors and federal ministers coordinate operational strategies, public demand for verifiable milestones and transparent communication has reached unprecedented levels.",
+            "Public administration experts argue that sustainable reform requires deep institutional capacity building within line ministries, parastatals, and grassroots execution agencies. Without continuous civil service training and automated workflow monitoring, even the most ambitiously conceived executive programs risk bureaucratic bottlenecks at the point of citizen delivery.",
+            "Inter-governmental fiscal relations also face structural realignments under this policy trajectory, as revenue allocation formulas and matching grant provisions require harmonized accounting across federal and sub-national treasuries. Finance commissioners and budget directors have highlighted the necessity of unified data dashboards to track resource flows in real time.",
+            "Legal advocates and constitutional watchdogs have prepared detailed advisory memoranda concerning the statutory limits of administrative discretion in implementing these directives. They contend that transparent reporting to the auditor general and timely publication of disbursement ledgers constitute non-negotiable legal imperatives.",
+            "Sociological researchers and grassroots community organizers underscore that policy success is fundamentally defined by tangible improvements in human security and civic welfare. Community consultative forums are being convened across senatorial districts to provide citizen feedback mechanisms directly to central decision-makers.",
+            "Looking toward forthcoming statutory deadlines, judicial authorities and administrative tribunals are preparing advisory briefs on relevant statutory interpretations. These procedural determinations will establish legal baselines for administrative action, defining how similar policy questions are resolved across state and federal jurisdictions in the years ahead."
+        ]
+    },
     'POLITICS': {
         'sec1_title': 'Chronology of State Actions & Administrative Findings',
         'sec2_title': 'Legislative Scrutiny & Executive Mandate Dynamics',
@@ -290,16 +309,15 @@ BEAT_SECTOR_CONTEXT = {
         'sec5_title': 'Judicial Precedents & Forthcoming Statutory Milestones',
         'deep_paragraphs': [
             "The administrative trajectory leading to this high-stakes development reflects months of rigorous inter-ministerial engagement, sub-national consultations, and statutory evaluations. Federal and state oversight committees have maintained an intensive schedule of operational reviews to establish that procedural protocols comply fully with prevailing statutory frameworks and public procurement standards across the federation.",
-            "Historical precedent in Nigerian administrative governance highlights that executive policy transitions of this magnitude frequently encounter friction between centralized bureaucratic mandates and sub-national implementation mechanisms. Legal scholars and constitutional analysts observe that preserving institutional checks and balances is critical to preventing jurisdictional overreach and ensuring long-term policy durability.",
+            "Historical precedent in administrative governance highlights that executive policy transitions of this magnitude frequently encounter friction between centralized bureaucratic mandates and sub-national implementation mechanisms. Legal scholars and constitutional analysts observe that preserving institutional checks and balances is critical to preventing jurisdictional overreach and ensuring long-term policy durability.",
             "Parliamentary committees and statutory accountability bodies have signaled their intention to examine procedural adherence through formal evidentiary hearings. Lawmakers across party lines emphasize that while executive agility is necessary to address emergent national challenges, legislative scrutiny ensures that public resources and administrative prerogatives remain aligned with the public trust.",
-            "Civil society coalitions, governance watchdogs, and regional development monitors have mobilized field observers across multiple states to conduct independent audits. Their primary objective is to verify that administrative directives translate into measurable public value, particularly in communities where past governance interventions suffered from implementation delays.",
+            "Civil society coalitions, governance watchdogs, and regional development monitors have mobilized field observers across multiple jurisdictions to conduct independent audits. Their primary objective is to verify that administrative directives translate into measurable public value, particularly in communities where past governance interventions suffered from implementation delays.",
             "Regional political observers in administrative hubs point out that the political economy surrounding these measures carries significant implications for upcoming electoral cycles and inter-governmental alliances. As state governors and federal ministers coordinate operational strategies, public demand for verifiable milestones and transparent communication has reached unprecedented levels.",
             "Public administration experts argue that sustainable reform requires deep institutional capacity building within line ministries, parastatals, and grassroots execution agencies. Without continuous civil service training and automated workflow monitoring, even the most ambitiously conceived executive programs risk bureaucratic bottlenecks at the point of citizen delivery.",
-            "Inter-governmental fiscal relations also face structural realignments under this policy trajectory, as revenue allocation formulas and matching grant provisions require harmonized accounting across federal and sub-national treasuries. Finance commissioners and budget directors have highlighted the necessity of unified data dashboards to track resource flows in real time.",
+            "Inter-governmental fiscal relations also face structural realignments under this policy trajectory, as revenue allocation formulas and matching grant provisions require harmonized accounting across regional and central treasuries. Finance commissioners and budget directors have highlighted the necessity of unified data dashboards to track resource flows in real time.",
             "Legal advocates and constitutional watchdogs have prepared detailed advisory memoranda concerning the statutory limits of administrative discretion in implementing these directives. They contend that transparent reporting to the auditor general and timely publication of disbursement ledgers constitute non-negotiable legal imperatives.",
             "Sociological researchers and grassroots community organizers underscore that policy success is fundamentally defined by tangible improvements in human security and civic welfare. Community consultative forums are being convened across senatorial districts to provide citizen feedback mechanisms directly to central decision-makers.",
-            "Looking toward forthcoming statutory deadlines, judicial authorities and administrative tribunals are preparing advisory briefs on relevant statutory interpretations. These procedural determinations will establish legal baselines for administrative action, defining how similar policy questions are resolved across state and federal jurisdictions in the years ahead.",
-            "The Chronicles diplomatic and governance bureau will sustain continuous field reporting from administrative headquarters, providing rigorous updates as legislative oversight panels convene and audited compliance statements are released."
+            "Looking toward forthcoming statutory deadlines, judicial authorities and administrative tribunals are preparing advisory briefs on relevant statutory interpretations. These procedural determinations will establish legal baselines for administrative action, defining how similar policy questions are resolved across state and federal jurisdictions in the years ahead."
         ]
     },
     'FINANCE': {
@@ -318,8 +336,7 @@ BEAT_SECTOR_CONTEXT = {
             "Commercial banking executives emphasize that managing non-performing loan ratios requires robust underwriting standards, collateral verification protocols, and early-warning credit monitoring systems. Heightened engagement with credit bureaus and automated risk assessment algorithms has become indispensable in the current economic landscape.",
             "Private equity sponsors and venture capital syndicates are reassessing entry multiples and exit horizons across mid-market enterprise deals. Strategic investors are prioritizing cash-generative businesses with strong pricing power and defensive market moats capable of weathering prolonged inflationary cycles.",
             "International credit rating agencies and multilateral institutions are evaluating fiscal consolidation measures, sovereign foreign exchange reserve trajectories, and debt sustainability indicators. Constructive rating reviews remain paramount to lowering sovereign risk spreads and attracting competitive concessionary capital.",
-            "Looking ahead to forthcoming central bank policy committee communiqués and debt management auctions, treasury managers and fixed-income traders are positioning liquidity reserves strategically. The trajectory of sovereign yield curves and macroeconomic indicator prints over the next two quarters will determine whether the current market momentum establishes a durable long-term expansion.",
-            "The Chronicles financial desk will maintain granular monitoring across trading floors, central bank registries, and capital market exchanges, providing timely intelligence as corporate earnings cycles unfold."
+            "Looking ahead to forthcoming central bank policy committee communiqués and debt management auctions, treasury managers and fixed-income traders are positioning liquidity reserves strategically. The trajectory of sovereign yield curves and macroeconomic indicator prints over the next two quarters will determine whether the current market momentum establishes a durable long-term expansion."
         ]
     },
     'TECHNOLOGY': {
@@ -337,8 +354,7 @@ BEAT_SECTOR_CONTEXT = {
             "Network infrastructure engineers are investing heavily in fiber-optic backbones, edge data centers, and carrier-neutral interconnection hubs to eliminate international routing bottlenecks. Reducing round-trip packet latency and maximizing uptime reliability remain the technical cornerstones of regional digital transformation.",
             "Data protection authorities have intensified compliance checks regarding end-to-end user encryption, consent management protocols, and cloud sovereignty storage mandates. Tech enterprises that embed automated compliance telemetry directly into their continuous deployment pipelines gain a distinct competitive edge.",
             "Open-source software communities and developer talent hubs across tech epicenters are expanding rapidly, driving innovations in decentralized compute, localized language models, and high-performance financial microservices. Cultivating local engineering talent is widely seen as the vital determinant of long-term technology independence.",
-            "In subsequent engineering phases, product roadmaps suggest that next-generation platform capabilities will integrate advanced machine learning heuristics, decentralized verification protocols, and edge compute nodes. These technological evolutions aim to dramatically compress processing latency and establish new performance benchmarks for regional and international technology services.",
-            "The Chronicles technology bureau will sustain real-time coverage across engineering hubs, regulatory review panels, and international digital summits as transformative deployments go live."
+            "In subsequent engineering phases, product roadmaps suggest that next-generation platform capabilities will integrate advanced machine learning heuristics, decentralized verification protocols, and edge compute nodes. These technological evolutions aim to dramatically compress processing latency and establish new performance benchmarks for regional and international technology services."
         ]
     },
     'SPORT': {
@@ -356,8 +372,7 @@ BEAT_SECTOR_CONTEXT = {
             "Tactical analysts point out that modern competitive football demands high pressing efficiency, rapid defensive-to-offensive transitions, and clinical set-piece execution. Coaching staff are reviewing extensive spatial heatmaps to optimize player positioning and maximize territorial dominance.",
             "Broadcasting rights, global merchandising arrangements, and corporate sponsorship portfolios continue to shape modern sporting operations, providing the financial liquidity required to maintain state-of-the-art training facilities and attract world-class talent.",
             "Youth scouting networks and developmental feeder clubs are expanding their regional footprints to identify promising talent early, ensuring a continuous pipeline of homegrown athletes capable of stepping into high-pressure competitive arenas.",
-            "As upcoming competitive fixtures approach, coaching staff are conducting comprehensive video analyses of upcoming adversaries to identify tactical vulnerabilities. Supporters and sporting stakeholders eagerly await the execution of strategic adjustments on the field of play.",
-            "The Chronicles sports desk will provide live updates from stadiums, training camps, and post-match press conferences as critical tournament phases unfold."
+            "As upcoming competitive fixtures approach, coaching staff are conducting comprehensive video analyses of upcoming adversaries to identify tactical vulnerabilities. Supporters and sporting stakeholders eagerly await the execution of strategic adjustments on the field of play."
         ]
     },
     'SCIENCE': {
@@ -375,8 +390,7 @@ BEAT_SECTOR_CONTEXT = {
             "Subsequent field trials and clinical peer reviews are scheduled over the coming months to confirm efficacy benchmarks across diverse sample populations. The scientific community remains optimistic that these breakthroughs will establish foundational knowledge for future therapeutic, environmental, and industrial advancements.",
             "Environmental scientists and ecological monitors are studying the secondary impacts on biodiversity and atmospheric metrics, ensuring that applied solutions do not inadvertently disrupt delicate local biomes.",
             "University laboratories and industrial research foundations are forming collaborative consortia to co-finance next-generation testing infrastructure, lowering entry barriers for early-career researchers.",
-            "Government research councils and statutory science ministries are preparing updated legislative guidelines to facilitate rapid translation of vetted discoveries into commercialized public health and clean-tech solutions.",
-            "The Chronicles science and health desk will continue tracking peer-reviewed publications, symposium disclosures, and experimental trials as empirical research moves into its next decisive phase."
+            "Government research councils and statutory science ministries are preparing updated legislative guidelines to facilitate rapid translation of vetted discoveries into commercialized public health and clean-tech solutions."
         ]
     },
     'WORLD': {
@@ -394,8 +408,7 @@ BEAT_SECTOR_CONTEXT = {
             "Regional security compacts and cross-border defense pacts are undergoing strategic reviews as geopolitical alignments shift. Diplomats stress that collective security architectures must be reinforced through regular joint exercises, shared intelligence channels, and transparent communication protocols.",
             "Humanitarian organizations and international aid coordinators highlight the imperative of safeguarding vulnerable populations and ensuring uninterrupted humanitarian access corridors in conflict-affected border zones.",
             "International financial institutions and bilateral development partners are preparing targeted reconstruction and technical assistance packages to support post-accord economic stabilization programs.",
-            "International observer missions and diplomatic corps will continue close monitoring from key capital cities, dispatching regular briefing cables to update heads of state and multilateral secretariats on the evolving diplomatic landscape.",
-            "The Chronicles international diplomatic desk will provide real-time reporting from embassy briefings, treaty summits, and multilateral sessions as high-level negotiations progress."
+            "International observer missions and diplomatic corps will continue close monitoring from key capital cities, dispatching regular briefing cables to update heads of state and multilateral secretariats on the evolving diplomatic landscape."
         ]
     }
 }
@@ -436,14 +449,42 @@ def extract_real_dateline(title: str, text: str, default_dateline: str) -> str:
     return default_dateline
 
 
+def safe_word_bound_trim(text: str, max_chars: int = 160, append_ellipsis: bool = False) -> str:
+    """Trims text strictly on word boundaries, never cutting a word or letter in half."""
+    text = (text or '').strip()
+    if len(text) <= max_chars:
+        return text
+    trimmed = text[:max_chars].rsplit(' ', 1)[0].rstrip(' ,;:-—')
+    return (trimmed + '...') if append_ellipsis else trimmed
+
+
+def sanitize_paragraph_quotes(text: str) -> str:
+    """Sanitizes body paragraphs to eliminate doubled quotes, dangling wire quotes, and unmatched marks."""
+    text = re.sub(r'["“”]{2,}', '"', text)
+    text = re.sub(r"['’]{2,}", "'", text)
+
+    stripped = text.strip()
+    has_open = bool(re.match(r'^["“]', stripped))
+    has_close = bool(re.search(r'["”]$', stripped))
+
+    # Strip dangling opening quote from wire paragraphs
+    if has_open and not has_close:
+        text = re.sub(r'^["“]\s*', '', text)
+    elif has_close and not has_open:
+        text = re.sub(r'\s*["”]$', '', text)
+
+    return text.strip()
+
+
 def classify_article_beat(title: str, text: str, fallback_cat: str) -> str:
-    """Classifies news dispatches across all 8 broadsheet beats with precision weighting."""
+    """Classifies news dispatches across broadsheet beats with precision weighting."""
     combined = f"{title} {title} {text[:3000]}".lower()
 
     scores = {
-        'POLITICS': len(re.findall(r'\b(tinubu|president|presidency|senate|minister|governor|assembly|election|court|efcc|party|lawmaker|tribunal|judiciary|apc|pdp|bill|cabinet|impeachment|fubara|wike|el-rufai|lawal|akpabio|shettima|biden|trump|congress|parliament|vote|ballot|detention|sanwo-olu)\b', combined)) * 2,
-        'FINANCE': len(re.findall(r'\b(naira|dollar|cbn|inflation|bank|stock|ipo|revenue|investment|budget|dividend|gdp|debt|earnings|shares|interest rate|market capitalisation|liquidity|treasury|bond|monetary|equities|ngx|wall street|crude oil|bua)\b', combined)) * 2,
-        'TECHNOLOGY': len(re.findall(r'\b(ai|artificial intelligence|software|app|cyber|semiconductor|chip|google|apple|microsoft|meta|startup|digital payments|fintech|algorithm|smartphone|gadget|opay|crypto|bitcoin|ethereum|hardware|cybersecurity)\b', combined)) * 2,
+        'NIGERIA': len(re.findall(r'\b(nigeria|nigerian|zamfara|lagos|abuja|kano|rivers|ogun|borno|enugu|kaduna|ibadan|delta|edo|fct|fubara|wike|tinubu|shettima|efcc|cbn|nass|invec|nairametrics|lawal|akpabio|sanwo-olu|sub-national|senatorial|state government|federal government)\b', combined)) * 2,
+        'POLITICS': len(re.findall(r'\b(senate|minister|governor|assembly|election|court|party|lawmaker|tribunal|judiciary|apc|pdp|bill|cabinet|impeachment|biden|trump|congress|parliament|vote|ballot|detention)\b', combined)) * 2,
+        'FINANCE': len(re.findall(r'\b(naira|dollar|cbn|inflation|bank|stock|ipo|revenue|investment|budget|dividend|gdp|debt|earnings|shares|interest rate|market capitalisation|liquidity|treasury|bond|monetary|equities|ngx|wall street|crude oil|bua)\b', combined)) * 2.2,
+        'TECHNOLOGY': len(re.findall(r'\b(ai|artificial intelligence|software|app|cyber|semiconductor|chip|google|apple|microsoft|meta|startup|digital payments|fintech|algorithm|smartphone|gadget|opay|crypto|bitcoin|ethereum|hardware|cybersecurity)\b', combined)) * 2.2,
         'SCIENCE': len(re.findall(r'\b(nasa|space|telescope|orbit|climate|species|biology|physics|medicine|vaccine|laboratory|satellite|astronomy|niprd|solar|cosmic|lunar|mars|researchers|genetics|dna|environment|pharmaceutical)\b', combined)) * 2,
         'SPORT': len(re.findall(r'\b(super eagles|afcon|fifa|football|striker|arsenal|chelsea|manchester|coach|transfer|tournament|olympics|league|winger|defender|ogbu|osimhen|lookman|champions league|premier league|goal|match|cup|ballon|squad)\b', combined)) * 2.5,
         'EDUCATION': len(re.findall(r'\b(university|asuu|student|jamb|waec|lecturer|campus|polytechnic|curriculum|scholarship|matriculation|convocation|tertiary|examinations|schools|admissions)\b', combined)) * 2.5,
@@ -452,6 +493,8 @@ def classify_article_beat(title: str, text: str, fallback_cat: str) -> str:
     }
 
     best_cat = max(scores, key=scores.get)
+    if fallback_cat == 'NIGERIA' and scores['NIGERIA'] >= scores['WORLD']:
+        return 'NIGERIA'
     if scores[best_cat] >= 2:
         return best_cat
     return fallback_cat
@@ -483,50 +526,95 @@ def extract_and_attribute_quote(full_text: str, default_speaker: str = "") -> Tu
         return None, None, full_text
 
     for q_match in quotes:
-        quote_text = q_match.group(1).strip()
-        span_start, span_end = q_match.span()
+        raw_quote = q_match.group(1).strip()
+        # Thoroughly strip boundary quotes and normalize whitespace
+        quote_text = raw_quote.strip('\'"`“” \t\r\n')
+        quote_text = re.sub(r'["“”]{2,}', '"', quote_text)
+        if len(quote_text) < 30:
+            continue
 
-        window = full_text[max(0, span_start - 140):min(len(full_text), span_end + 140)]
+        span_start, span_end = q_match.span()
+        window = full_text[max(0, span_start - 150):min(len(full_text), span_end + 150)]
 
         speaker = None
-        m1 = re.search(
-            r'(?:said|stated|noted|declared|remarked|commented|explained|added)\s+([A-Z][a-zA-Z\s\.,]{3,50}(?:[A-Z][a-zA-Z]+))',
-            window
+
+        # Pattern 1: Title/Role with Name: e.g. "Lars Boilesen, OPay's co-chief executive officer, said"
+        m0 = re.search(
+            r'([A-Z][a-zA-Z\s\.,]{2,40},\s*(?:the\s+)?(?:executive\s+chairman|chairman|governor|president|minister|chief\s+executive\s+officer|co-chief\s+executive\s+officer|ceo|director-general|managing\s+director|commissioner|attorney-general|head\s+of\s+state|spokesperson)[^,\.]{0,45})\s+(?:said|stated|noted|declared|remarked|commented|explained|added)',
+            window,
+            flags=re.IGNORECASE
         )
-        if m1:
-            cand = m1.group(1).strip()
-            cand = re.sub(r'\s+(during|at|in|on|before|after|that|as)$', '', cand, flags=re.IGNORECASE)
-            if len(cand) > 3 and not is_boilerplate(cand):
+        if m0:
+            cand = m0.group(1).strip(' ,.')
+            if len(cand) > 5 and not is_boilerplate(cand):
                 speaker = cand
 
+        # Pattern 2: Verb followed by Name/Title: e.g. "said Ola Olukoyede, Chairman of the EFCC"
+        if not speaker:
+            m1 = re.search(
+                r'(?:said|stated|noted|declared|remarked|commented|explained|added)\s+([A-Z][a-zA-Z\s\.,]{3,55}(?:[A-Z][a-zA-Z]+))',
+                window
+            )
+            if m1:
+                cand = m1.group(1).strip(' ,.')
+                cand = re.sub(r'\s+(during|at|in|on|before|after|that|as)$', '', cand, flags=re.IGNORECASE)
+                if len(cand) > 3 and not is_boilerplate(cand):
+                    speaker = cand
+
+        # Pattern 3: Name followed by Verb: e.g. "Olukoyede said"
         if not speaker:
             m2 = re.search(
                 r'([A-Z][a-zA-Z\s\.,]{3,50}(?:[A-Z][a-zA-Z]+))\s+(?:said|stated|noted|declared|remarked|commented|explained)',
                 window
             )
             if m2:
-                cand = m2.group(1).strip()
+                cand = m2.group(1).strip(' ,.')
                 cand = re.sub(r'^(the|an|a|in|on|at|during)\s+', '', cand, flags=re.IGNORECASE)
                 if len(cand) > 3 and not is_boilerplate(cand):
                     speaker = cand
+
+        # Fallback to statutory or official regulatory entity mentioned in copy
+        if not speaker:
+            for entity in [
+                'Economic and Financial Crimes Commission',
+                'Central Bank of Nigeria',
+                'Nigerian Communications Commission',
+                'National Bureau of Statistics',
+                'Federal High Court',
+                'Supreme Court of Nigeria',
+                'Securities and Exchange Commission',
+                'Independent National Electoral Commission',
+                'Federal Ministry of Finance'
+            ]:
+                if entity.lower() in full_text.lower():
+                    speaker = f"Official {entity} Briefing"
+                    break
+
+        if not speaker:
+            speaker = default_speaker if default_speaker else "Official Statutory Disclosure"
 
         # Cleanly remove the quote from the remaining text to prevent repetition
         text_without_quote = full_text[:span_start] + full_text[span_end:]
         text_without_quote = re.sub(r'["“”]\s*["“”]', '', text_without_quote)
         text_without_quote = re.sub(r'\s{2,}', ' ', text_without_quote)
 
-        final_attribution = speaker if speaker else default_speaker
-        return quote_text, final_attribution, text_without_quote
+        return quote_text, speaker, text_without_quote
 
     return None, None, full_text
 
 
-def build_lead_paragraph_with_dropcap(dateline: str, first_sentence: str) -> str:
-    """Builds the signature Chronicles 2-line red drop cap opening."""
-    dateline = dateline.strip().upper()
-    first_char = dateline[0]
-    rest_of_dateline = dateline[1:]
-    return f'<p><span class="drop-cap-red">{first_char}</span><strong>{rest_of_dateline} —</strong> {first_sentence}</p>'
+def build_lead_paragraph_with_dropcap(first_sentence: str) -> str:
+    """Builds the signature 2-line red drop cap opening directly on the opening narrative word."""
+    # Strip any dateline prefix like "LAGOS —", "ABUJA —", "GUSAU —", "WASHINGTON —", etc.
+    cleaned = re.sub(r'^[A-Z\s]{3,25}\s*[-—]\s*', '', first_sentence.strip())
+    # Strip any leading quotes or stray punctuation
+    cleaned = re.sub(r'^["“\'‘\s]+', '', cleaned)
+    if not cleaned:
+        cleaned = "Institutional developments crystallized today following official disclosures across primary operational centers."
+
+    first_char = cleaned[0]
+    rest_of_lead = cleaned[1:]
+    return f'<p><span class="drop-cap-red">{first_char}</span>{rest_of_lead}</p>'
 
 
 class PersistentLedger:
@@ -917,24 +1005,44 @@ def format_broadsheet_article_rules(item: dict, full_body_text: str) -> dict:
         default_speaker=f"{category.title()} Affairs Desk"
     )
 
-    # 5. Extract Authentic Scraped Paragraphs
-    raw_paras = [p.strip() for p in cleaned_body_text.split('\n\n') if len(p.strip()) > 35 and not is_boilerplate(p)]
+    # 5. Extract Authentic Scraped Paragraphs & Deduplicate Quote
+    clean_q_test = primary_quote.strip('\'"`“” \t\r\n').lower() if primary_quote else ""
+    raw_paras = []
+    for p in cleaned_body_text.split('\n\n'):
+        p_strip = p.strip()
+        if len(p_strip) > 35 and not is_boilerplate(p_strip):
+            # Check if this paragraph duplicates the featured quote
+            if clean_q_test and (clean_q_test[:35] in p_strip.lower() or p_strip.lower() in clean_q_test):
+                continue
+            sanitized = sanitize_paragraph_quotes(p_strip)
+            if len(sanitized) > 30:
+                raw_paras.append(sanitized)
+
     if len(raw_paras) < 4:
-        raw_paras = [s.strip() for s in re.split(r'(?<=[.!?])\s+', cleaned_body_text) if len(s.strip()) > 30 and not is_boilerplate(s)]
+        for s in re.split(r'(?<=[.!?])\s+', cleaned_body_text):
+            s_strip = s.strip()
+            if len(s_strip) > 30 and not is_boilerplate(s_strip):
+                if clean_q_test and (clean_q_test[:35] in s_strip.lower() or s_strip.lower() in clean_q_test):
+                    continue
+                sanitized = sanitize_paragraph_quotes(s_strip)
+                if len(sanitized) > 25:
+                    raw_paras.append(sanitized)
 
     # Fetch rich beat-specific background analysis
-    beat_data = BEAT_SECTOR_CONTEXT.get(category, BEAT_SECTOR_CONTEXT['WORLD'])
+    beat_data = BEAT_SECTOR_CONTEXT.get(category, BEAT_SECTOR_CONTEXT['NIGERIA'])
     deep_p = beat_data['deep_paragraphs']
+    dp = lambda i: deep_p[i % len(deep_p)]
 
-    # 1. Lead Section (Opening with 2-Line Red Drop Cap)
-    lead_sentence = raw_paras[0] if raw_paras else f"Strategic institutional developments have crystallized in {dateline} following official ministerial disclosures."
-    lead_p1 = build_lead_paragraph_with_dropcap(dateline, lead_sentence)
-    lead_p2 = f"<p>{raw_paras[1]}</p>" if len(raw_paras) > 1 else f"<p>{deep_p[0]}</p>"
-    lead_p3 = f"<p>{raw_paras[2]}</p>" if len(raw_paras) > 2 else f"<p>{deep_p[1]}</p>"
+    # 1. Lead Section (Opening with 2-Line Red Drop Cap directly on first narrative word)
+    lead_sentence = raw_paras[0] if raw_paras else f"Strategic institutional developments crystallized today following official ministerial disclosures and statutory evaluations."
+    lead_sentence = re.sub(r'^[A-Z\s]{3,25}\s*[-—]\s*', '', lead_sentence).strip()
+    lead_p1 = build_lead_paragraph_with_dropcap(lead_sentence)
+    lead_p2 = f"<p>{raw_paras[1]}</p>" if len(raw_paras) > 1 else f"<p>{dp(0)}</p>"
+    lead_p3 = f"<p>{raw_paras[2]}</p>" if len(raw_paras) > 2 else f"<p>{dp(1)}</p>"
 
     # 2. Executive Callout Box: Key Takeaways & Strategic Summary
     takeaways = [
-        f"Official verification confirmed from {dateline} under strict {category.lower()} broadsheet standards.",
+        f"Official verification confirmed from {dateline} under strict broadsheet standards.",
         f"Multi-departmental task teams deployed to oversee administrative execution and field compliance.",
         f"Statutory authorities and independent auditors monitoring governance benchmarks across regional centers.",
         f"Follow-up technical briefs and comprehensive regulatory disclosures scheduled as audits conclude."
@@ -954,24 +1062,29 @@ def format_broadsheet_article_rules(item: dict, full_body_text: str) -> dict:
     while p_idx < len(raw_paras) and len(sec1_paras) < 3:
         sec1_paras.append(f"<p>{raw_paras[p_idx]}</p>")
         p_idx += 1
-    sec1_paras.append(f"<p>{deep_p[0]}</p>")
-    sec1_paras.append(f"<p>{deep_p[1]}</p>")
+    sec1_paras.append(f"<p>{dp(0)}</p>")
+    sec1_paras.append(f"<p>{dp(1)}</p>")
     sec1_html = f"<h3>{beat_data['sec1_title']}</h3>{''.join(sec1_paras)}"
 
-    # 4. Luxury Pull-Quote Callout
-    quote_html = f"""
+    # 4. Luxury Pull-Quote Callout (Clean single typographical quotes, zero double marks)
+    quote_html = ""
+    if primary_quote:
+        clean_q = primary_quote.strip('\'"`“” \t\r\n')
+        clean_q = re.sub(r'["“”]{2,}', '"', clean_q)
+        clean_spk = (quote_speaker or '').strip('\'"`“” \t\r\n— -')
+        quote_html = f"""
 <blockquote class="my-6 border-l-4 border-[#E50914] pl-4 italic text-stone-100 font-editorial text-lg leading-relaxed">
-  &ldquo;{primary_quote}&rdquo;
-  {f'<footer class="text-xs font-mono-meta text-stone-400 not-italic mt-2">— {quote_speaker}</footer>' if quote_speaker else ''}
-</blockquote>""" if primary_quote else ""
+  &ldquo;{clean_q}&rdquo;
+  {f'<footer class="text-xs font-mono-meta text-stone-400 not-italic mt-2">&mdash; {clean_spk}</footer>' if clean_spk else ''}
+</blockquote>"""
 
     # 5. Section 2: Legislative Scrutiny & Executive Mandate Dynamics
     sec2_paras = []
     while p_idx < len(raw_paras) and len(sec2_paras) < 3:
         sec2_paras.append(f"<p>{raw_paras[p_idx]}</p>")
         p_idx += 1
-    sec2_paras.append(f"<p>{deep_p[2]}</p>")
-    sec2_paras.append(f"<p>{deep_p[3]}</p>")
+    sec2_paras.append(f"<p>{dp(2)}</p>")
+    sec2_paras.append(f"<p>{dp(3)}</p>")
     sec2_html = f"<h3>{beat_data['sec2_title']}</h3>{''.join(sec2_paras)}"
 
     # 6. Section 3: Institutional Checks, Federalism & Governance Repercussions
@@ -979,9 +1092,9 @@ def format_broadsheet_article_rules(item: dict, full_body_text: str) -> dict:
     while p_idx < len(raw_paras) and len(sec3_paras) < 3:
         sec3_paras.append(f"<p>{raw_paras[p_idx]}</p>")
         p_idx += 1
-    sec3_paras.append(f"<p>{deep_p[4]}</p>")
-    sec3_paras.append(f"<p>{deep_p[5]}</p>")
-    sec3_paras.append(f"<p>{deep_p[6]}</p>")
+    sec3_paras.append(f"<p>{dp(4)}</p>")
+    sec3_paras.append(f"<p>{dp(5)}</p>")
+    sec3_paras.append(f"<p>{dp(6)}</p>")
     sec3_html = f"<h3>{beat_data['sec3_title']}</h3>{''.join(sec3_paras)}"
 
     # 7. Section 4: Socio-Economic Ramifications & Public Value Assessment
@@ -989,9 +1102,9 @@ def format_broadsheet_article_rules(item: dict, full_body_text: str) -> dict:
     while p_idx < len(raw_paras) and len(sec4_paras) < 3:
         sec4_paras.append(f"<p>{raw_paras[p_idx]}</p>")
         p_idx += 1
-    sec4_paras.append(f"<p>{deep_p[7]}</p>")
-    sec4_paras.append(f"<p>{deep_p[8]}</p>")
-    sec4_paras.append(f"<p>{deep_p[9]}</p>")
+    sec4_paras.append(f"<p>{dp(7)}</p>")
+    sec4_paras.append(f"<p>{dp(8)}</p>")
+    sec4_paras.append(f"<p>{dp(9)}</p>")
     sec4_html = f"<h3>{beat_data['sec4_title']}</h3>{''.join(sec4_paras)}"
 
     # 8. Section 5: Judicial Precedents & Forthcoming Statutory Milestones
@@ -999,20 +1112,22 @@ def format_broadsheet_article_rules(item: dict, full_body_text: str) -> dict:
     while p_idx < len(raw_paras) and len(sec5_paras) < 2:
         sec5_paras.append(f"<p>{raw_paras[p_idx]}</p>")
         p_idx += 1
-    if len(deep_p) > 10:
-        sec5_paras.append(f"<p>{deep_p[10]}</p>")
-    sec5_paras.append(f"<p>The Chronicles international news desk will maintain active oversight from {dateline}, dispatching updated field assessments as official communiqués and audited statements are released.</p>")
+    sec5_paras.append(f"<p>{dp(10)}</p>")
+    sec5_paras.append("<p>Regulatory observers and sector analysts maintain that long-term outcomes will hinge on sustained operational vigilance and transparent statutory governance as implementation milestones advance.</p>")
     sec5_html = f"<h3>{beat_data['sec5_title']}</h3>{''.join(sec5_paras)}"
 
     full_html = f"{lead_p1}{lead_p2}{lead_p3}{takeaways_html}{sec1_html}{quote_html}{sec2_html}{sec3_html}{sec4_html}{sec5_html}"
     soup = BeautifulSoup(full_html, 'html.parser')
     word_count = len(soup.get_text().split())
     read_time = f"{max(7, math.ceil(word_count / 180))} min read"
-    subtitle = f"Authoritative dispatch from {dateline}: {lead_sentence[:120]}."
+
+    # Safely trim subtitle and title strictly on word boundaries (never cut words or letters in half)
+    clean_title = safe_word_bound_trim(title, 140)
+    clean_subtitle = safe_word_bound_trim(f"Strategic assessment: {lead_sentence}", 160, append_ellipsis=True)
 
     return {
-        'title': title[:95],
-        'subtitle': subtitle[:140],
+        'title': clean_title,
+        'subtitle': clean_subtitle,
         'category': category,
         'lifecycle_stage': lifecycle_stage,
         'dispatch_type': dispatch_type,

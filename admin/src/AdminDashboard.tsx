@@ -546,6 +546,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminEmail, onSi
                   }}
                   options={[
                     { value: 'ALL', label: 'All Beats (500)' },
+                    { value: 'NIGERIA', label: 'Nigeria (50)' },
                     { value: 'WORLD', label: 'World (50)' },
                     { value: 'POLITICS', label: 'Politics (50)' },
                     { value: 'FINANCE', label: 'Finance (50)' },

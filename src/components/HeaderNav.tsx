@@ -71,6 +71,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
 
   const navItems = [
     { id: 'HOME', label: 'HOME' },
+    { id: 'NIGERIA', label: 'NIGERIA' },
     { id: 'WORLD', label: 'WORLD' },
     { id: 'POLITICS', label: 'POLITICS' },
     { id: 'FINANCE', label: 'FINANCE' },
@@ -402,7 +403,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                 <span className="text-stone-500 flex items-center gap-1 shrink-0 text-[11px]">
                   <Filter className="w-3 h-3" /> FILTER:
                 </span>
-                {['ALL', 'WORLD', 'POLITICS', 'FINANCE', 'TECHNOLOGY', 'SCIENCE', 'FASHION', 'SPORT'].map((cat) => (
+                {['ALL', 'NIGERIA', 'WORLD', 'POLITICS', 'FINANCE', 'TECHNOLOGY', 'SCIENCE', 'FASHION', 'SPORT'].map((cat) => (
                   <button
                     key={cat}
                     onClick={() => onCategoryChange(cat)}

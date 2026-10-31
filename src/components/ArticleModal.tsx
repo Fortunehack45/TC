@@ -4,7 +4,8 @@ import { ArtGraphic } from './ArtGraphics';
 import { CommentsSection } from './CommentsSection';
 import { useAuth } from '../context/AuthContext';
 import { toggleArticleLike, getArticleInteractionState, getArticleLikesCount, recordArticleView } from '../lib/supabase';
-import { ArrowLeft, Bookmark, Share2, Type, Clock, Calendar, User, Check, Play, Heart, ChevronRight, Home, Tag, Video } from 'lucide-react';
+import { ArrowLeft, Bookmark, Share2, Type, Clock, Calendar, User, Check, Play, Heart, ChevronRight, Home, Tag, Video, Eye } from 'lucide-react';
+import { formatProgressiveTimestamp } from '../lib/lifecycle';
 import { ShareModal } from './ShareModal';
 
 interface ArticleModalProps {
@@ -36,16 +37,20 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
   // Real Article Like state
   const [articleLikes, setArticleLikes] = useState<number>(0);
   const [isArticleLiked, setIsArticleLiked] = useState<boolean>(false);
+  const [viewsCount, setViewsCount] = useState<number>(Number(article?.views_count) || 0);
 
   useEffect(() => {
     if (article) {
       window.scrollTo(0, 0);
+      setViewsCount(Number(article.views_count) || 0);
 
       // Record real reading view in Supabase (once per browser session per article)
       const viewKey = `tc_viewed_${article.id}`;
       if (!sessionStorage.getItem(viewKey)) {
         sessionStorage.setItem(viewKey, '1');
-        recordArticleView(article.id);
+        recordArticleView(article.id).then((nextViews) => {
+          if (nextViews > 0) setViewsCount(nextViews);
+        });
       }
 
       // Fetch actual real likes count from Supabase tc_likes
@@ -148,6 +153,12 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
           </button>
 
           <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+            {/* Views counter */}
+            <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-xs text-xs font-mono-meta font-bold bg-[#222222] text-stone-300 border border-[#333333]">
+              <Eye className="w-3.5 h-3.5 text-stone-400" />
+              <span className="text-[11px] sm:text-xs">{viewsCount.toLocaleString()} views</span>
+            </div>
+
             {/* Like button */}
             <button
               onClick={handleToggleArticleLike}
@@ -251,9 +262,12 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
           </span>
           {article.date && (
             <span className="flex items-center gap-1">
-              <Calendar className="w-3.5 h-3.5 text-[#E50914]" /> {article.date}
+              <Calendar className="w-3.5 h-3.5 text-[#E50914]" /> {formatProgressiveTimestamp(article.published_at || article.date)}
             </span>
           )}
+          <span className="flex items-center gap-1">
+            <Eye className="w-3.5 h-3.5 text-stone-500" /> {viewsCount.toLocaleString()} views
+          </span>
           {article.author && (
             <span className="flex items-center gap-1">
               <User className="w-3.5 h-3.5 text-stone-500" /> {article.author}

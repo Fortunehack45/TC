@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bookmark, ArrowUpRight, ArrowRight, Clock, Calendar, User, Tag, Filter, Sparkles, ChevronRight, Home, Activity, Headphones } from 'lucide-react';
+import { Bookmark, ArrowUpRight, ArrowRight, Clock, Calendar, User, Tag, Filter, Sparkles, ChevronRight, Home, Activity, Headphones, Eye } from 'lucide-react';
 import { DBArticle } from '../lib/database.types';
 import { getArticles } from '../lib/supabase';
 import { ArtGraphic } from './ArtGraphics';
@@ -17,6 +17,11 @@ interface CategoryPageProps {
 }
 
 const CATEGORY_META: Record<string, { title: string; subtitle: string; subtopics: string[] }> = {
+  NIGERIA: {
+    title: 'NIGERIA BUREAU & NATIONAL DISPATCHES',
+    subtitle: 'Authoritative reporting on Nigerian politics, economy, regulatory reforms, energy, and sub-national governance across all 36 states and the FCT.',
+    subtopics: ['ALL', 'Politics', 'Economy', 'Energy', 'CBN', 'Security', 'Infrastructure'],
+  },
   WORLD: {
     title: 'WORLD DISPATCHES & DIPLOMACY',
     subtitle: 'Authoritative reporting on international accords, bilateral treaties, and global geopolitical movements across 190+ sovereign territories.',
@@ -307,9 +312,16 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({
                   </div>
 
                   <div className="pt-4 border-t border-[#2A2A2A] flex items-center justify-between text-xs font-mono-meta text-stone-400">
-                    <span className="flex items-center gap-1">
-                      <User className="w-3.5 h-3.5 text-stone-500" /> {leadArticle.author || 'The Editorial Board'}
-                    </span>
+                    <div className="flex items-center gap-3">
+                      <span className="flex items-center gap-1">
+                        <User className="w-3.5 h-3.5 text-stone-500" /> {leadArticle.author || 'The Editorial Board'}
+                      </span>
+                      {typeof leadArticle.views_count === 'number' && (
+                        <span className="flex items-center gap-1 text-stone-400">
+                          <Eye className="w-3.5 h-3.5 text-stone-500" /> {leadArticle.views_count.toLocaleString()} views
+                        </span>
+                      )}
+                    </div>
                     <span className="text-[#E50914] font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
                       READ FULL DISPATCH <ArrowUpRight className="w-4 h-4" />
                     </span>
@@ -383,7 +395,18 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({
                         </div>
 
                         <div className="pt-3 border-t border-[#222222] flex items-center justify-between text-[11px] font-mono-meta text-stone-500">
-                          <span>{art.readTime || '5 min read'}</span>
+                          <div className="flex items-center gap-2">
+                            <span>{art.readTime || '5 min read'}</span>
+                            {typeof art.views_count === 'number' && (
+                              <>
+                                <span>•</span>
+                                <span className="flex items-center gap-1">
+                                  <Eye className="w-3 h-3 text-stone-500" />
+                                  {art.views_count.toLocaleString()}
+                                </span>
+                              </>
+                            )}
+                          </div>
                           <span>{art.author || 'The Editorial Board'}</span>
                         </div>
                       </article>

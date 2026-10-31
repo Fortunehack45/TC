@@ -216,6 +216,16 @@ section::selection {
   font-family: 'Playfair Display', Georgia, serif !important;
 }
 
+.prose figure blockquote,
+.article-prose figure blockquote,
+figure blockquote {
+  border-left: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+}
+
 .prose table, .article-prose table {
   border-collapse: collapse !important;
   width: 100% !important;

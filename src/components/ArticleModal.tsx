@@ -50,7 +50,24 @@ function sanitizeEditorialHtml(rawHtml: string): string {
   html = html.replace(/<\/blockquote>\s*<p>\s*<\/blockquote>/gi, '</blockquote>');
   html = html.replace(/<\/blockquote>\s*<p>(?=\s*<(?:h[1-6]|div|figure|blockquote|table)|$)/gi, '</blockquote>');
 
-  // 6. Standardize blockquotes into exactly ONE clean broadsheet pullquote with correct speaker attribution
+  // 6. Merge adjacent blockquotes or <p> tags where the second is an attribution (e.g. <blockquote>— Will Packer</blockquote>)
+  const adjBqRegex = /<blockquote\b[^>]*>([\s\S]*?)<\/blockquote>\s*<blockquote\b[^>]*>\s*(?:<p[^>]*>)?\s*(?:&ldquo;|“|"|'|‘|\s)*(?:&mdash;|—|-{1,2}|–)\s*([\s\S]*?)\s*(?:&rdquo;|”|"|'|’|\s)*(?:<\/p>)?\s*<\/blockquote>/gi;
+  while (adjBqRegex.test(html)) {
+    html = html.replace(adjBqRegex, (_, qInner, spkRaw) => {
+      const spk = spkRaw.replace(/<\/?(?:p|span|footer|figcaption)[^>]*>/gi, '').trim().replace(/^['"-—– \t\r\n]+|['"-—– \t\r\n.]+$/g, '');
+      return `<blockquote>${qInner}<footer>${spk}</footer></blockquote>`;
+    });
+  }
+
+  const adjPRegex = /<blockquote\b[^>]*>([\s\S]*?)<\/blockquote>\s*<p[^>]*>\s*(?:&ldquo;|“|"|'|‘|\s)*(?:&mdash;|—|-{1,2}|–)\s*([A-Z][a-zA-Z\s.,'"-]{3,80}?)\s*(?:&rdquo;|”|"|'|’|\s)*<\/p>/gi;
+  while (adjPRegex.test(html)) {
+    html = html.replace(adjPRegex, (_, qInner, spkRaw) => {
+      const spk = spkRaw.replace(/<\/?(?:p|span|footer|figcaption)[^>]*>/gi, '').trim().replace(/^['"-—– \t\r\n]+|['"-—– \t\r\n.]+$/g, '');
+      return `<blockquote>${qInner}<footer>${spk}</footer></blockquote>`;
+    });
+  }
+
+  // 7. Standardize blockquotes into exactly ONE clean broadsheet pullquote with correct speaker attribution
   html = html.replace(/([\s\S]{0,450})<blockquote\b[^>]*>([\s\S]*?)<\/blockquote>/gi, (match, beforeContext, bqInner) => {
     let inner = bqInner;
     let speaker = '';
@@ -63,6 +80,18 @@ function sanitizeEditorialHtml(rawHtml: string): string {
         speaker = rawSpk;
       }
       inner = inner.replace(/<(?:footer|figcaption)[^>]*>[\s\S]*?<\/(?:footer|figcaption)>/gi, '');
+    }
+
+    // Check if inner ends with trailing attribution: — Speaker
+    if (!speaker) {
+      const endSpkMatch = inner.trim().match(/(?:&mdash;|—|-{1,2}|–)\s*([A-Z][a-zA-Z\s.,'"-]{3,80})$/);
+      if (endSpkMatch) {
+        const rawSpk = endSpkMatch[1].replace(/<[^>]+>/g, '').trim().replace(/^['"-—– \t\r\n]+|['"-—– \t\r\n.]+$/g, '');
+        if (!/desk|affairs|statutory|disclosure|editorial/i.test(rawSpk) && rawSpk.length > 2) {
+          speaker = rawSpk;
+          inner = inner.slice(0, inner.lastIndexOf(endSpkMatch[0])).trim();
+        }
+      }
     }
 
     // If speaker is still empty, extract from the preceding text context
@@ -108,7 +137,11 @@ function sanitizeEditorialHtml(rawHtml: string): string {
     quoteText = quoteText.replace(/[,;]\.([”"’'])/g, '.$1').replace(/\.[,;]([”"’'])/g, '.$1');
     quoteText = quoteText.replace(/([.,;!?])[.,;!?]+/g, '$1');
     if (quoteText && !/[.!?]$/.test(quoteText)) quoteText += '.';
-    if (!quoteText) return beforeContext;
+
+    // Discard isolated attribution blockquote that has no quote content
+    if (!quoteText || /^(?:&mdash;|—|-{1,2}|–)\s*[A-Z]/.test(quoteText)) {
+      return beforeContext;
+    }
 
     const figCap = speaker
       ? `<figcaption class="mt-3.5 text-xs font-mono-meta text-stone-400 not-italic uppercase tracking-wider flex items-center gap-2"><span class="w-5 h-0.5 bg-[#E50914] inline-block shrink-0"></span><span>${speaker}</span></figcaption>`

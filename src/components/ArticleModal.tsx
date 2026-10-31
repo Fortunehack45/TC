@@ -22,24 +22,129 @@ interface ArticleModalProps {
 function sanitizeEditorialHtml(rawHtml: string): string {
   if (!rawHtml) return '';
   let html = rawHtml;
-  // 1. Remove mojibake
-  html = html.replace(/[\uFFFD\u0092\u0091\u0093\u0094]/g, "'");
 
-  // 2. Remove AI heading artifacts e.g. <h3>Section Heading: The Crisis</h3>
-  html = html.replace(/<h3([^>]*)>\s*(?:Section\s+Heading|Chapter\s+\d+|Section\s+\d+|Part\s+\d+|Heading):\s*/gi, '<h3$1>');
+  // 1. Remove mojibake characters
+  html = html.replace(/[\uFFFD\u0092\u0091]/g, "'");
+  html = html.replace(/[\u0093\u0094]/g, '"');
 
-  // 3. Remove fake desk attributions on blockquotes e.g. &mdash; Celebrity Affairs Desk
-  html = html.replace(/<footer[^>]*>\s*&mdash;\s*[^<]*(?:Desk|Affairs|Statutory|Disclosure|Editorial)[^<]*<\/footer>/gi, '');
+  // 2. Fix headings: remove markdown hashes and AI labels (e.g. <h3>## Title</h3> or <h3>Section Heading: Title</h3>)
+  html = html.replace(/<h3([^>]*)>\s*(?:#{1,4}\s*|(?:Section\s+Heading|Chapter\s+\d+|Section\s+\d+|Part\s+\d+|Heading):\s*)+/gi, '<h3$1>');
 
-  // 4. Fix double punctuation in quotes e.g. ,." or .," or .."
-  html = html.replace(/[,;]\.([”"’'])/g, '.$1');
-  html = html.replace(/\.[,;]([”"’'])/g, '.$1');
-  html = html.replace(/,,+/g, ',');
-  html = html.replace(/\.\.+/g, '.');
+  // 3. Fix broken blockquote wrappers and stray tags
+  html = html.replace(/<\/p>\s*<p>\s*<\/blockquote>/gi, '</p></blockquote>');
+  html = html.replace(/<p>\s*<\/blockquote>/gi, '</blockquote>');
+  html = html.replace(/<\/blockquote>\s*<p>\s*<\/blockquote>/gi, '</blockquote>');
+  html = html.replace(/<\/blockquote>\s*<p>(?=\s*<(?:h[1-6]|div|figure|blockquote|table)|$)/gi, '</blockquote>');
 
-  // 5. Fix missing space after punctuation
+  // 4. Standardize blockquotes into professional broadsheet pullquotes
+  html = html.replace(/<blockquote\b[^>]*>([\s\S]*?)<\/blockquote>/gi, (_, bqInner) => {
+    let inner = bqInner;
+    let speaker = '';
+    const footerMatch = inner.match(/<footer[^>]*>\s*(?:&mdash;|—|-)?\s*([\s\S]*?)<\/footer>/i);
+    if (footerMatch) {
+      const rawSpk = footerMatch[1].replace(/<[^>]+>/g, '').trim().replace(/^['"-— \t\r\n]+|['"-— \t\r\n]+$/g, '');
+      if (!/desk|affairs|statutory|disclosure|editorial/i.test(rawSpk)) {
+        speaker = rawSpk;
+      }
+      inner = inner.replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '');
+    }
+    let quoteText = inner.replace(/<\/?(?:p|blockquote)[^>]*>/gi, '').trim();
+    quoteText = quoteText.replace(/^(?:&ldquo;|“|"|'|‘|\s)+|(?:&rdquo;|”|"|'|’|\s)+$/g, '').trim();
+    quoteText = quoteText.replace(/[,;]\.([”"’'])/g, '.$1').replace(/\.[,;]([”"’'])/g, '.$1');
+    quoteText = quoteText.replace(/([.,;!?])[.,;!?]+/g, '$1');
+    if (quoteText && !/[.!?]$/.test(quoteText)) quoteText += '.';
+    if (!quoteText) return '';
+
+    const figCap = speaker
+      ? `<figcaption class="mt-3.5 text-xs font-mono-meta text-stone-400 not-italic uppercase tracking-wider flex items-center gap-2"><span class="w-5 h-0.5 bg-[#E50914] inline-block shrink-0"></span><span>${speaker}</span></figcaption>`
+      : '';
+    return `<figure class="my-8 py-5 px-6 border-l-4 border-[#E50914] bg-[#161616]/80 rounded-r-xs shadow-md"><blockquote class="font-editorial italic text-stone-100 text-lg sm:text-xl leading-relaxed">&ldquo;${quoteText}&rdquo;</blockquote>${figCap}</figure>`;
+  });
+
+  // 5. Convert ASCII and Markdown tables into responsive broadsheet tables
+  const tableBlockRegex = /(?:<p>\s*([A-Z0-9\s()&;:/\.,'"-]{4,90})\s*<\/p>\s*)?((?:<p>\s*(?:\+[-+]+\+|\|[^\n<]+)\s*<\/p>\s*){2,})/gi;
+  html = html.replace(tableBlockRegex, (_, preTitle, rawBlock) => {
+    let title = '';
+    let leadHtml = '';
+    if (preTitle) {
+      const ptClean = preTitle.trim();
+      if (ptClean.split(/\s+/).length > 12 || ptClean.endsWith('.')) {
+        leadHtml = `<p>${preTitle}</p>`;
+      } else {
+        title = ptClean;
+      }
+    }
+
+    const pLines = Array.from(rawBlock.matchAll(/<p>\s*([\s\S]*?)\s*<\/p>/gi)).map((m: any) => m[1].trim());
+    const rows: string[][] = [];
+    let isDiagram = false;
+
+    for (const line of pLines) {
+      if (/^\+[-+=]+\+$/.test(line) || /^\|[-+=|]+\|$/.test(line)) continue;
+      if (line.includes('<---') || line.includes('--->') || /\s+\^\s+/.test(line)) {
+        isDiagram = true;
+      }
+      if (line.startsWith('|') && line.endsWith('|')) {
+        const inner = line.slice(1, -1);
+        rows.push(inner.split('|').map((c: string) => c.trim()));
+      } else if (line.startsWith('|')) {
+        rows.push(line.slice(1).split('|').map((c: string) => c.trim()));
+      } else {
+        rows.push([line]);
+      }
+    }
+
+    if (rows.length === 0) return rawBlock;
+
+    if (rows[0].length === 1 && !title) {
+      const cand = rows[0][0].replace(/^[ -*•]+|[ -*•]+$/g, '');
+      if (cand.length > 3 && (cand === cand.toUpperCase() || cand.split(/\s+/).length <= 10)) {
+        title = cand;
+        rows.shift();
+      }
+    }
+    if (rows.length === 0) return rawBlock;
+
+    if (isDiagram) {
+      const rawText = pLines.filter((l: string) => !/^\+[-+=]+\+$/.test(l)).map((l: string) => l.replace(/^\||\|$/g, '')).join('\n');
+      const titleHtml = title ? `<div class="p-3 font-editorial font-bold text-stone-200 uppercase tracking-wider bg-[#1B1B1B] border-b border-[#2D2D2D]">${title}</div>` : '';
+      return `${leadHtml}<div class="my-6 border border-[#2D2D2D] rounded-xs bg-[#161616] overflow-hidden">${titleHtml}<pre class="p-4 overflow-x-auto font-mono text-xs sm:text-sm text-stone-300 leading-relaxed bg-[#111111]">${rawText}</pre></div>`;
+    }
+
+    const maxCols = Math.max(...rows.map((r: string[]) => r.length));
+    if (maxCols === 1) {
+      const titleHtml = title ? `<div class="p-3 font-editorial font-bold text-stone-200 uppercase tracking-wider bg-[#1B1B1B] border-b border-[#2D2D2D]">${title}</div>` : '';
+      const itemsHtml = rows.map((r: string[]) => {
+        const val = r[0].replace(/^[ -*•]+|[ -*•]+$/g, '');
+        return val ? `<div class="py-2.5 px-4 border-b border-[#262626] last:border-b-0 flex items-start gap-2.5"><span class="text-[#E50914] font-bold mt-0.5">&bull;</span><span class="text-stone-300 text-xs sm:text-sm font-sans-body">${val}</span></div>` : '';
+      }).filter(Boolean).join('');
+      return `${leadHtml}<div class="my-6 border border-[#2D2D2D] rounded-xs bg-[#161616] overflow-hidden">${titleHtml}<div class="divide-y divide-[#222222]">${itemsHtml}</div></div>`;
+    }
+
+    const headerRow = rows[0];
+    const dataRows = rows.slice(1);
+    const captionHtml = title ? `<caption class="p-3 text-left font-editorial font-bold text-stone-200 uppercase tracking-wider bg-[#1B1B1B] border-b border-[#2D2D2D]">${title}</caption>` : '';
+    const thCells = headerRow.map((c: string) => `<th class="py-2.5 px-4 font-semibold uppercase tracking-wider border-r border-[#262626] last:border-r-0">${c}</th>`).join('');
+    const theadHtml = `<thead class="bg-[#1F1F1F] text-[#E50914] font-bold border-b border-[#2D2D2D]"><tr>${thCells}</tr></thead>`;
+    const trList = dataRows.map((row: string[]) => {
+      while (row.length < maxCols) row.push('');
+      const tdCells = row.map((c: string) => `<td class="py-2.5 px-4 border-r border-[#222222] last:border-r-0">${c}</td>`).join('');
+      return `<tr class="hover:bg-[#1E1E1E]/60 transition-colors odd:bg-[#161616] even:bg-[#191919]">${tdCells}</tr>`;
+    }).join('');
+    const tbodyHtml = `<tbody class="divide-y divide-[#262626] text-stone-300 font-mono-meta text-xs sm:text-sm">${trList}</tbody>`;
+    return `${leadHtml}<div class="my-6 overflow-x-auto border border-[#2D2D2D] rounded-xs bg-[#161616] shadow-md"><table class="w-full text-left font-mono-meta text-xs sm:text-sm border-collapse">${captionHtml}${theadHtml}${tbodyHtml}</table></div>`;
+  });
+
+  // 6. Fix punctuation spacing
   html = html.replace(/([a-z0-9])\.([A-Z])/g, '$1. $2');
   html = html.replace(/([a-zA-Z0-9]),([a-zA-Z])/g, '$1, $2');
+  html = html.replace(/([a-zA-Z0-9]):([A-Z])/g, '$1: $2');
+  html = html.replace(/([a-zA-Z0-9]);([a-zA-Z])/g, '$1; $2');
+
+  // 7. Clean up redundant empty tags and residual paragraph wrappers
+  html = html.replace(/<p>\s*<\/p>/gi, '');
+  html = html.replace(/<p>\s*(<(?:figure|div|table|h[1-6]|ul|ol|pre)\b)/gi, '$1');
+  html = html.replace(/(<\/(?:figure|div|table|h[1-6]|ul|ol|pre)>)\s*<\/p>/gi, '$1');
 
   return html;
 }

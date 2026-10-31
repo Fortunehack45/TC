@@ -179,15 +179,19 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 <div
                   key={`${article.id || 'art'}-${idx}`}
                   onClick={() => onSelectArticle(article)}
-                  className="w-full h-full shrink-0 relative p-5 sm:p-8 flex flex-col justify-between cursor-pointer"
+                  className="w-full h-full shrink-0 relative overflow-hidden p-5 sm:p-8 flex flex-col justify-between cursor-pointer"
                 >
                   {/* Photography Background with Smooth Contrast Gradient */}
                   {previewImg !== '/og-image.png' ? (
-                    <div className="absolute inset-0 z-0">
+                    <div className="absolute inset-0 z-0 overflow-hidden">
                       <img
                         src={previewImg}
                         alt={article.title}
-                        className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-700 ease-out"
+                        className={`w-full h-full object-cover transition-transform duration-700 ease-out ${
+                          idx === activeIndex || (idx === totalSlides && activeIndex === 0)
+                            ? 'group-hover:scale-108'
+                            : ''
+                        }`}
                         onError={(e) => {
                           (e.target as HTMLImageElement).src = '/og-image.png';
                         }}
@@ -201,7 +205,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                       />
                     </div>
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center my-auto py-2 sm:py-4">
+                    <div className="w-full h-full flex items-center justify-center my-auto py-2 sm:py-4 overflow-hidden">
                       <ArtGraphic type="hero_world_globe" className="w-full max-w-lg h-60 sm:h-80 md:h-96 rounded-xs" />
                     </div>
                   )}

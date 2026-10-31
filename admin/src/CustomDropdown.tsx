@@ -16,6 +16,7 @@ interface CustomDropdownProps {
   buttonClassName?: string;
   menuClassName?: string;
   placeholder?: string;
+  dropUp?: boolean;
 }
 
 export const CustomDropdown: React.FC<CustomDropdownProps> = ({
@@ -27,6 +28,7 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
   buttonClassName = '',
   menuClassName = '',
   placeholder = 'Select option...',
+  dropUp = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -88,7 +90,9 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
       {/* Custom Built-in Floating Menu */}
       {isOpen && (
         <div
-          className={`absolute left-0 mt-1.5 w-full min-w-[200px] max-h-64 overflow-y-auto bg-[#181818] border border-[#2F2F2F] rounded-xs shadow-2xl z-50 py-1 divide-y divide-[#242424] ${menuClassName}`}
+          className={`absolute left-0 ${
+            dropUp ? 'bottom-full mb-1.5' : 'mt-1.5'
+          } w-full min-w-[200px] max-h-64 overflow-y-auto bg-[#181818] border border-[#2F2F2F] rounded-xs shadow-2xl z-50 py-1 divide-y divide-[#242424] ${menuClassName}`}
         >
           {normalizedOptions.map((opt) => {
             const isSelected = opt.value === value;

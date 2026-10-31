@@ -262,7 +262,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminEmail, onSi
   const beatCounts = React.useMemo(() => {
     const counts: Record<string, number> = { ALL: articles.length };
     articles.forEach((a) => {
-      counts[a.category_id] = (counts[a.category_id] || 0) + 1;
+      const cat = (a.category_id || (a as any).category || '').toUpperCase();
+      if (cat) {
+        counts[cat] = (counts[cat] || 0) + 1;
+      }
     });
     return counts;
   }, [articles]);
@@ -280,7 +283,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminEmail, onSi
 
   const filteredArticles = articles.filter((a) => {
     if (statusFilter !== 'ALL' && a.status !== statusFilter) return false;
-    if (categoryFilter !== 'ALL' && a.category_id !== categoryFilter) return false;
+    if (categoryFilter !== 'ALL') {
+      const artCat = (a.category_id || (a as any).category || '').toUpperCase();
+      if (artCat !== categoryFilter) return false;
+    }
     if (lifecycleFilter !== 'ALL') {
       const lc = computeArticleLifecycle(a.published_at, a.lifecycle_stage);
       if (lc.status !== lifecycleFilter) return false;
@@ -623,13 +629,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminEmail, onSi
                     <table className="w-full text-left font-mono-meta text-xs">
                       <thead className="bg-[#1D1D1D] text-stone-400 uppercase text-[10px] tracking-wider border-b border-[#262626]">
                         <tr>
-                          <th className="py-3 px-4">Headline / Story</th>
-                          <th className="py-3 px-4">Category</th>
-                          <th className="py-3 px-4">Lifecycle</th>
-                          <th className="py-3 px-4">Author</th>
-                          <th className="py-3 px-4">Status</th>
-                          <th className="py-3 px-4">Metrics</th>
-                          <th className="py-3 px-4 text-right">Actions</th>
+                          <th className="py-3 px-4 min-w-[280px]">Headline / Story</th>
+                          <th className="py-3 px-4 min-w-[120px] whitespace-nowrap">Category</th>
+                          <th className="py-3 px-4 min-w-[140px] whitespace-nowrap">Lifecycle</th>
+                          <th className="py-3 px-4 min-w-[200px] whitespace-nowrap">Author</th>
+                          <th className="py-3 px-4 min-w-[110px] whitespace-nowrap">Status</th>
+                          <th className="py-3 px-4 min-w-[150px] whitespace-nowrap">Metrics</th>
+                          <th className="py-3 px-4 min-w-[110px] whitespace-nowrap text-right">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-[#222222]">
@@ -637,7 +643,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminEmail, onSi
                           const lc = computeArticleLifecycle(art.published_at, art.lifecycle_stage);
                           return (
                             <tr key={art.id} className="hover:bg-[#1C1C1C] transition-colors group">
-                              <td className="py-3.5 px-4 max-w-md">
+                              <td className="py-3.5 px-4 max-w-md min-w-[280px]">
                                 <div className="flex items-center gap-3">
                                   {getPostPreviewImage(art) && (
                                     <div className="relative shrink-0">
@@ -667,19 +673,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminEmail, onSi
                                       {art.title}
                                     </h4>
                                     <p className="text-[11px] text-stone-500 font-sans-body line-clamp-1">
-                                      {art.subtitle ? art.subtitle.replace(/^Strategic assessment:\s*/i, '') : 'No lead deck recorded.'}
+                                      {art.subtitle ? art.subtitle.replace(/^(?:Strategic assessment|Executive briefing|Executive summary):\s*/i, '') : 'No lead deck recorded.'}
                                     </p>
                                   </div>
                                 </div>
                               </td>
 
-                              <td className="py-3 px-4">
+                              <td className="py-3 px-4 min-w-[120px] whitespace-nowrap">
                                 <span className="px-2 py-0.5 bg-[#202020] text-stone-300 border border-[#333] text-[10px] rounded-xs uppercase font-bold">
                                   {art.category_id}
                                 </span>
                               </td>
 
-                              <td className="py-3 px-4">
+                              <td className="py-3 px-4 min-w-[140px] whitespace-nowrap">
                                 <div className="flex flex-col gap-0.5">
                                   <span className={`px-2 py-0.5 text-[9px] uppercase font-bold rounded-xs border w-fit ${lc.badgeClass}`}>
                                     {lc.badgeText}
@@ -688,11 +694,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminEmail, onSi
                                 </div>
                               </td>
 
-                              <td className="py-3 px-4 text-stone-300">
+                              <td className="py-3 px-4 min-w-[200px] whitespace-nowrap text-stone-300">
                                 {art.author_name}
                               </td>
 
-                              <td className="py-3 px-4">
+                              <td className="py-3 px-4 min-w-[110px] whitespace-nowrap">
                                 <button
                                   onClick={() => handleTogglePublish(art)}
                                   className={`px-2 py-0.5 text-[10px] uppercase font-bold rounded-xs transition-colors cursor-pointer border ${
@@ -706,12 +712,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminEmail, onSi
                                 </button>
                               </td>
 
-                              <td className="py-3 px-4 text-stone-400 text-[11px]">
+                              <td className="py-3 px-4 min-w-[150px] whitespace-nowrap text-stone-400 text-[11px]">
                                 <span className="text-stone-300 font-bold">{art.views_count || 0}</span> views &bull;{' '}
                                 <span className="text-stone-300 font-bold">{art.likes_count || 0}</span> likes
                               </td>
 
-                              <td className="py-3 px-4 text-right">
+                              <td className="py-3 px-4 min-w-[110px] whitespace-nowrap text-right">
                                 <div className="flex items-center justify-end gap-1.5">
                                   <button
                                     onClick={() => setPreviewArticle(art)}
@@ -851,6 +857,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminEmail, onSi
                     <span className="text-stone-400 whitespace-nowrap">Rows per page:</span>
                     <CustomDropdown
                       value={String(pageSize)}
+                      dropUp={true}
                       onChange={(v) => {
                         setPageSize(Number(v));
                         setCurrentPage(1);

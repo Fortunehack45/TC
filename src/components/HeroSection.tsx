@@ -19,6 +19,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 }) => {
   const [slideIndex, setSlideIndex] = useState(0);
   const [enableTransition, setEnableTransition] = useState(true);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const touchStartXRef = useRef<number | null>(null);
 
@@ -88,19 +89,54 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   // Real active index modulo the total unique slides
   const activeIndex = totalSlides > 0 ? slideIndex % totalSlides : 0;
 
+  // Bulletproof index clamp: Never allow translateX to exceed available slides (prevents blank screen)
+  const safeSlideIndex = totalSlides > 0 ? (slideIndex > totalSlides ? 0 : slideIndex) : 0;
+
   // 5-second automatic forward sliding ticker
   useEffect(() => {
     if (isPaused || totalSlides <= 1) return;
     const timer = setInterval(() => {
       setEnableTransition(true);
-      setSlideIndex((prev) => prev + 1);
+      setIsTransitioning(true);
+      setSlideIndex((prev) => (prev >= totalSlides ? 1 : prev + 1));
     }, 5000);
     return () => clearInterval(timer);
   }, [isPaused, totalSlides]);
 
+  // Guaranteed timeout reset for clone slide: Never relies solely on browser onTransitionEnd
+  useEffect(() => {
+    if (slideIndex >= totalSlides) {
+      const timer = setTimeout(() => {
+        setEnableTransition(false);
+        setIsTransitioning(false);
+        setSlideIndex(0);
+      }, 720);
+      return () => clearTimeout(timer);
+    }
+  }, [slideIndex, totalSlides]);
+
+  // Handle browser tab switching: Pause ticker when hidden, reset safely on return
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.hidden) {
+        setIsPaused(true);
+      } else {
+        setEnableTransition(false);
+        setIsTransitioning(false);
+        setSlideIndex((prev) => (prev >= totalSlides ? 0 : prev));
+        setIsPaused(false);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, [totalSlides]);
+
   // When transition ends on the clone (totalSlides), seamlessly snap back to index 0 with no animation
-  const handleTransitionEnd = () => {
-    if (slideIndex === totalSlides) {
+  const handleTransitionEnd = (e: React.TransitionEvent) => {
+    // Only respond to transitions on the sliding track itself, ignore bubbling from children
+    if (e.target !== e.currentTarget) return;
+    setIsTransitioning(false);
+    if (slideIndex >= totalSlides) {
       setEnableTransition(false);
       setSlideIndex(0);
     }
@@ -128,10 +164,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     if (deltaX > 40) {
       // Swiped right -> forward to previous or loop
       setEnableTransition(true);
+      setIsTransitioning(true);
       setSlideIndex((prev) => (prev > 0 ? prev - 1 : totalSlides - 1));
     } else if (deltaX < -40) {
       // Swiped left -> forward to next
       setEnableTransition(true);
+      setIsTransitioning(true);
       setSlideIndex((prev) => prev + 1);
     }
     touchStartXRef.current = null;
@@ -139,6 +177,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
   const handleSelectSideDispatch = (idx: number) => {
     setEnableTransition(true);
+    setIsTransitioning(true);
     setSlideIndex(idx);
   };
 
@@ -166,7 +205,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               enableTransition ? 'transition-transform duration-700 ease-in-out' : ''
             }`}
             style={{ 
-              transform: `translateX(-${slideIndex * 100}%)`,
+              transform: `translateX(-${safeSlideIndex * 100}%)`,
               transitionProperty: enableTransition ? 'transform' : 'none'
             }}
           >
@@ -174,12 +213,15 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               const isBookmarked = bookmarkedIds.includes(article.id);
               const previewImg = getPostPreviewImage(article);
               const isBreaking = article.lifecycle_stage === 'BREAKING' || article.lifecycle?.status === 'BREAKING';
+              const isCurrentView = idx === safeSlideIndex || (safeSlideIndex === totalSlides && idx === 0);
 
               return (
                 <div
                   key={`${article.id || 'art'}-${idx}`}
                   onClick={() => onSelectArticle(article)}
-                  className="w-full h-full shrink-0 relative overflow-hidden p-5 sm:p-8 flex flex-col justify-between cursor-pointer"
+                  className={`w-full min-w-full max-w-full basis-full shrink-0 relative overflow-hidden p-5 sm:p-8 flex flex-col justify-between cursor-pointer transition-opacity duration-300 ${
+                    !isTransitioning && !isCurrentView ? 'opacity-0 pointer-events-none' : 'opacity-100'
+                  }`}
                 >
                   {/* Photography Background with Smooth Contrast Gradient */}
                   {previewImg !== '/og-image.png' ? (
@@ -188,9 +230,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                         src={previewImg}
                         alt={article.title}
                         className={`w-full h-full object-cover transition-transform duration-700 ease-out ${
-                          idx === activeIndex || (idx === totalSlides && activeIndex === 0)
-                            ? 'group-hover:scale-108'
-                            : ''
+                          isCurrentView ? 'group-hover:scale-105' : 'scale-100'
                         }`}
                         onError={(e) => {
                           (e.target as HTMLImageElement).src = '/og-image.png';
@@ -279,10 +319,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           <div>
             <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#282828] font-mono-meta text-xs">
               <span className="text-white font-bold uppercase tracking-wider flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#E50914] shrink-0" />
+                <span className="w-2 h-2 rounded-full bg-[#E50914] shrink-0 inline-block" />
                 BREAKING NEWS
               </span>
-              <span className="text-stone-400 text-[11px] font-mono-meta font-medium tracking-wider">LIVE UPDATES</span>
+              <span className="text-stone-400 text-[11px] font-mono-meta font-medium tracking-wider">LIVE WIRE</span>
             </div>
 
             <div className="space-y-2">
@@ -294,25 +334,25 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   <div
                     key={item.id}
                     onClick={() => handleSelectSideDispatch(idx)}
-                    className={`group cursor-pointer transition-all duration-300 rounded-r-xs py-2.5 px-3 border-l-4 ${
+                    className={`group cursor-pointer transition-all duration-200 rounded-r-xs p-3 sm:p-3.5 border-l-[3px] ${
                       isCurrentlyActive
-                        ? 'bg-[#222222] border-[#E50914] shadow-md'
-                        : 'bg-transparent border-transparent hover:bg-[#1C1C1C]'
+                        ? 'bg-[#202020] border-[#E50914] shadow-sm'
+                        : 'bg-transparent border-transparent hover:bg-[#1A1A1A]'
                     }`}
                   >
-                    <div className="flex items-center justify-between gap-2 mb-1.5 min-w-0 w-full overflow-hidden">
-                      <div className="flex items-center gap-2">
-                        <span className={`text-[10px] font-mono-meta px-2 py-0.5 rounded-xs font-bold uppercase tracking-wider inline-block truncate transition ${
+                    <div className="flex items-center justify-between gap-2 mb-2 min-w-0 w-full overflow-hidden">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className={`text-[10px] font-mono-meta px-2 py-0.5 rounded-xs font-bold uppercase tracking-wider inline-block truncate transition shrink-0 ${
                           isCurrentlyActive
                             ? 'bg-[#E50914] text-white'
-                            : 'bg-[#222222] border border-[#333333] text-stone-300 group-hover:border-[#E50914]'
+                            : 'bg-[#222222] border border-[#333333] text-stone-300 group-hover:border-stone-500'
                         }`}>
                           {item.category}
                         </span>
                         {isCurrentlyActive && (
-                          <span className="inline-flex items-center gap-1.5 text-[9px] font-mono-meta text-[#E50914] font-bold uppercase tracking-wider">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#E50914] shrink-0" />
-                            NOW VIEWING
+                          <span className="inline-flex items-center gap-1.5 text-[9px] font-mono-meta text-[#E50914] font-bold uppercase tracking-wider shrink-0">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#E50914] shrink-0 inline-block" />
+                            CURRENT STORY
                           </span>
                         )}
                       </div>
@@ -321,7 +361,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                           e.stopPropagation();
                           onToggleBookmark(item.id);
                         }}
-                        className="text-stone-500 hover:text-[#E50914] p-1.5 min-h-[28px] min-w-[28px] flex items-center justify-center transition-colors cursor-pointer"
+                        className="text-stone-500 hover:text-[#E50914] p-1.5 min-h-[28px] min-w-[28px] flex items-center justify-center transition-colors cursor-pointer shrink-0"
                         title={isBookmarked ? 'Remove Bookmark' : 'Bookmark Story'}
                       >
                         <Bookmark className={`w-3.5 h-3.5 ${isBookmarked ? 'fill-[#E50914] text-[#E50914]' : ''}`} />
@@ -338,29 +378,29 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                           handleSelectSideDispatch(idx);
                         }
                       }}
-                      className={`font-editorial text-sm sm:text-base leading-snug font-medium transition ${
+                      className={`font-editorial text-sm sm:text-base leading-snug font-medium transition line-clamp-2 ${
                         isCurrentlyActive
                           ? 'text-white font-bold'
-                          : 'text-stone-200 group-hover:text-white group-hover:underline'
+                          : 'text-stone-300 group-hover:text-white'
                       }`}
                     >
                       {item.title}
                     </h3>
 
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono-meta text-[11px] text-stone-500 mt-1.5">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono-meta text-[11px] text-stone-400 mt-2">
                       <span className={`whitespace-nowrap ${item.lifecycle_stage === 'BREAKING' ? 'text-[#E50914] font-bold' : ''}`}>
                         {formatProgressiveTimestamp(item.published_at || item.date)}
                       </span>
                       {typeof item.views_count === 'number' && (
                         <>
-                          <span>•</span>
+                          <span className="text-stone-600">•</span>
                           <span className="flex items-center gap-1 text-stone-400 whitespace-nowrap">
                             <Eye className="w-3 h-3 text-stone-500" />
                             {item.views_count.toLocaleString()}
                           </span>
                         </>
                       )}
-                      <span>•</span>
+                      <span className="text-stone-600">•</span>
                       <span className="whitespace-nowrap">{item.readTime || '5 min read'}</span>
                     </div>
                   </div>

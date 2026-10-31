@@ -25,7 +25,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   // If articles are loading or empty, render an authentic broadsheet skeleton
   if (!articles || articles.length === 0) {
     return (
-      <section className="w-full bg-[#121212] pt-3 sm:pt-5 pb-8 sm:pb-12 px-2 sm:px-4 md:px-5 max-w-[98%] 2xl:max-w-[1920px] mx-auto border-b border-[#222222]">
+      <section 
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      className="w-full bg-[#121212] pt-3 sm:pt-5 pb-8 sm:pb-12 px-2 sm:px-4 md:px-5 max-w-[98%] 2xl:max-w-[1920px] mx-auto border-b border-[#222222]"
+    >
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
           {/* Main Lead Skeleton Card */}
           <div className="lg:col-span-8 bg-[#181818] border border-[#282828] rounded-xs p-5 sm:p-8 flex flex-col justify-between min-h-[380px] sm:min-h-[480px] lg:min-h-[540px] animate-pulse">
@@ -139,7 +143,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   };
 
   return (
-    <section className="w-full bg-[#121212] pt-3 sm:pt-5 pb-8 sm:pb-12 px-2 sm:px-4 md:px-5 max-w-[98%] 2xl:max-w-[1920px] mx-auto border-b border-[#222222]">
+    <section 
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      className="w-full bg-[#121212] pt-3 sm:pt-5 pb-8 sm:pb-12 px-2 sm:px-4 md:px-5 max-w-[98%] 2xl:max-w-[1920px] mx-auto border-b border-[#222222]"
+    >
       {/* Hero Grid Container - Clean Broadsheet Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         
@@ -179,7 +187,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                       <img
                         src={previewImg}
                         alt={article.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                        className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-700 ease-out"
                         onError={(e) => {
                           (e.target as HTMLImageElement).src = '/og-image.png';
                         }}
@@ -265,15 +273,15 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         {/* Right Side News Column: Interactive Dispatches Synced with Sliding Stage */}
         <div className="lg:col-span-4 bg-[#181818] border border-[#282828] p-4 sm:p-5 rounded-xs flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between pb-3 mb-2 border-b border-[#282828] font-mono-meta text-xs">
-              <span className="text-white font-bold uppercase tracking-wider flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-[#E50914] animate-ping" />
-                LATEST DISPATCHES
+            <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#282828] font-mono-meta text-xs">
+              <span className="text-white font-bold uppercase tracking-wider flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#E50914] shrink-0" />
+                BREAKING NEWS
               </span>
-              <span className="text-stone-400 text-[11px] font-mono-meta font-medium">SLIDES EVERY 5S</span>
+              <span className="text-stone-400 text-[11px] font-mono-meta font-medium tracking-wider">LIVE UPDATES</span>
             </div>
 
-            <div className="space-y-3 sm:space-y-4 divide-y divide-[#282828]">
+            <div className="space-y-2">
               {heroPool.map((item, idx) => {
                 const isBookmarked = bookmarkedIds.includes(item.id);
                 const isCurrentlyActive = idx === activeIndex;
@@ -282,10 +290,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   <div
                     key={item.id}
                     onClick={() => handleSelectSideDispatch(idx)}
-                    className={`group pt-3 first:pt-0 pb-1 cursor-pointer transition-all duration-300 rounded-xs p-2 -mx-2 ${
+                    className={`group cursor-pointer transition-all duration-300 rounded-r-xs py-2.5 px-3 border-l-4 ${
                       isCurrentlyActive
-                        ? 'bg-[#202020] border-l-3 border-[#E50914] pl-3 shadow-md'
-                        : 'hover:bg-[#1A1A1A] border-l-3 border-transparent'
+                        ? 'bg-[#222222] border-[#E50914] shadow-md'
+                        : 'bg-transparent border-transparent hover:bg-[#1C1C1C]'
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2 mb-1.5 min-w-0 w-full overflow-hidden">
@@ -298,9 +306,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                           {item.category}
                         </span>
                         {isCurrentlyActive && (
-                          <span className="inline-flex items-center gap-1 text-[9px] font-mono-meta text-[#E50914] font-bold uppercase tracking-wider">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#E50914] animate-pulse" />
-                            NOW PLAYING
+                          <span className="inline-flex items-center gap-1.5 text-[9px] font-mono-meta text-[#E50914] font-bold uppercase tracking-wider">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#E50914] shrink-0" />
+                            NOW VIEWING
                           </span>
                         )}
                       </div>
@@ -309,7 +317,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                           e.stopPropagation();
                           onToggleBookmark(item.id);
                         }}
-                        className="text-stone-500 hover:text-[#E50914] p-1.5 min-h-[32px] min-w-[32px] flex items-center justify-center transition-colors cursor-pointer"
+                        className="text-stone-500 hover:text-[#E50914] p-1.5 min-h-[28px] min-w-[28px] flex items-center justify-center transition-colors cursor-pointer"
                         title={isBookmarked ? 'Remove Bookmark' : 'Bookmark Story'}
                       >
                         <Bookmark className={`w-3.5 h-3.5 ${isBookmarked ? 'fill-[#E50914] text-[#E50914]' : ''}`} />
@@ -335,7 +343,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                       {item.title}
                     </h3>
 
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono-meta text-[11px] text-stone-500 mt-1">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono-meta text-[11px] text-stone-500 mt-1.5">
                       <span className={`whitespace-nowrap ${item.lifecycle_stage === 'BREAKING' ? 'text-[#E50914] font-bold' : ''}`}>
                         {formatProgressiveTimestamp(item.published_at || item.date)}
                       </span>

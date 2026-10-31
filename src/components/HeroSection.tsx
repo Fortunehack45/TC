@@ -79,18 +79,18 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   }
 
   // Top 5 articles form the rotating Hero Showcase Pool
-  const heroPool = articles.slice(0, 5);
+  const heroPool = (articles || []).slice(0, 5);
   const totalSlides = heroPool.length;
+
+  // Real active index modulo the total unique slides (0 to totalSlides - 1)
+  const activeIndex = totalSlides > 0 ? slideIndex % totalSlides : 0;
+
+  // Safe slide index clamped to [0, totalSlides]
+  const safeSlideIndex = totalSlides > 0 ? (slideIndex >= totalSlides + 1 ? 0 : slideIndex) : 0;
 
   // Infinite Forward Loop Extended Array: [0, 1, 2, 3, 4, 0]
   // Appending the first article clone at the end allows continuous forward sliding without any backward rewind
   const extendedPool = totalSlides > 1 ? [...heroPool, heroPool[0]] : heroPool;
-
-  // Real active index modulo the total unique slides
-  const activeIndex = totalSlides > 0 ? slideIndex % totalSlides : 0;
-
-  // Bulletproof index clamp: Never allow translateX to exceed available slides (prevents blank screen)
-  const safeSlideIndex = totalSlides > 0 ? (slideIndex > totalSlides ? 0 : slideIndex) : 0;
 
   // 5-second automatic forward sliding ticker
   useEffect(() => {
@@ -105,7 +105,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
   // Guaranteed timeout reset for clone slide: Never relies solely on browser onTransitionEnd
   useEffect(() => {
-    if (slideIndex >= totalSlides) {
+    if (slideIndex >= totalSlides && totalSlides > 0) {
       const timer = setTimeout(() => {
         setEnableTransition(false);
         setIsTransitioning(false);
@@ -170,7 +170,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       // Swiped left -> forward to next
       setEnableTransition(true);
       setIsTransitioning(true);
-      setSlideIndex((prev) => prev + 1);
+      setSlideIndex((prev) => (prev >= totalSlides ? 1 : prev + 1));
     }
     touchStartXRef.current = null;
   };
@@ -196,12 +196,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           onMouseLeave={() => setIsPaused(false)}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
-          className="lg:col-span-8 group relative bg-[#181818] border border-[#282828] rounded-xs overflow-hidden transition-colors duration-200 hover:border-white/30 min-h-[420px] sm:min-h-[490px] lg:min-h-[550px]"
+          className="lg:col-span-8 group relative bg-[#181818] border border-[#282828] rounded-xs overflow-hidden transition-colors duration-200 hover:border-white/30 min-h-[420px] sm:min-h-[490px] lg:min-h-[550px] flex flex-col"
         >
           {/* Sliding Track for Big Rectangular Posts (Always moves forward) */}
           <div 
             onTransitionEnd={handleTransitionEnd}
-            className={`flex w-full h-full ${
+            className={`flex flex-1 w-full h-full min-h-[420px] sm:min-h-[490px] lg:min-h-[550px] ${
               enableTransition ? 'transition-transform duration-700 ease-in-out' : ''
             }`}
             style={{ 
@@ -219,9 +219,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 <div
                   key={`${article.id || 'art'}-${idx}`}
                   onClick={() => onSelectArticle(article)}
-                  className={`w-full min-w-full max-w-full basis-full shrink-0 relative overflow-hidden p-5 sm:p-8 flex flex-col justify-between cursor-pointer transition-opacity duration-300 ${
-                    !isTransitioning && !isCurrentView ? 'opacity-0 pointer-events-none' : 'opacity-100'
-                  }`}
+                  className="w-full min-w-full max-w-full basis-full shrink-0 relative overflow-hidden p-5 sm:p-8 flex flex-col justify-between cursor-pointer"
                 >
                   {/* Photography Background with Smooth Contrast Gradient */}
                   {previewImg !== '/og-image.png' ? (

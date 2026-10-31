@@ -41,11 +41,30 @@ export const handleImageFallback = (e: React.SyntheticEvent<HTMLImageElement, Ev
 // In-memory live cache of database articles loaded from Supabase
 let liveArticlesCache: Article[] = [];
 
+export function cleanEditorialTitle(rawTitle: string): string {
+  if (!rawTitle) return '';
+  let cleaned = rawTitle.trim();
+  // Fix un-decoded unicode artifacts (mojibake)
+  cleaned = cleaned.replace(/[\uFFFD\u0092\u0091\u0093\u0094]/g, "'");
+  
+  // If title has single quotes between individual letters (e.g. "I'r'a'n'" or "H'o'w'")
+  if ((cleaned.match(/'/g) || []).length >= 4 && /[A-Za-z]'(?:[A-Za-z]'|\s'|')/.test(cleaned)) {
+    // Strip isolated character-bounding quotes while keeping standard words intact
+    cleaned = cleaned.replace(/(?:^|\s)'([A-Za-z])'/g, '$1');
+    cleaned = cleaned.replace(/'([A-Za-z])'/g, '$1');
+    cleaned = cleaned.replace(/'/g, '');
+  }
+  return cleaned.trim();
+}
+
 export function mapDBArticleToArticle(db: DBArticle): Article {
+  const safeTitle = cleanEditorialTitle(db.title);
+  const safeSubtitle = db.subtitle ? cleanEditorialTitle(db.subtitle) : undefined;
+
   // Extract text from content_html for clean excerpt fallback
   const rawHtml = db.content_html || '';
   const textContent = rawHtml.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-  const excerpt = db.subtitle || (textContent.length > 180 ? textContent.slice(0, 180) + '...' : textContent);
+  const excerpt = safeSubtitle || (textContent.length > 180 ? textContent.slice(0, 180) + '...' : textContent);
 
   const formattedDate = db.published_at
     ? new Date(db.published_at).toLocaleDateString('en-GB', {
@@ -59,8 +78,8 @@ export function mapDBArticleToArticle(db: DBArticle): Article {
     id: db.id,
     section: db.category_id || 'WORLD',
     category: db.category_id || 'WORLD',
-    title: db.title,
-    subtitle: db.subtitle || undefined,
+    title: safeTitle,
+    subtitle: safeSubtitle,
     excerpt: excerpt,
     fullContent: textContent,
     content_html: rawHtml,

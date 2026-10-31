@@ -27,6 +27,10 @@ export const HeadlinesSection: React.FC<HeadlinesSectionProps> = ({
     // Find articles in the HEADLINE stage first (6-24 hours old)
     const headlineStage = articles.filter((a) => a.lifecycle?.status === 'HEADLINE');
 
+    const nigeriaArt =
+      headlineStage.find((a) => a.category?.toUpperCase() === 'NIGERIA') ||
+      getByCat(['NIGERIA'])[0];
+
     const worldArt =
       headlineStage.find((a) => a.category?.toUpperCase() === 'WORLD') ||
       getByCat(['WORLD'])[0];
@@ -47,7 +51,7 @@ export const HeadlinesSection: React.FC<HeadlinesSectionProps> = ({
       headlineStage.find((a) => ['EDUCATION', 'LIFESTYLE', 'CELEBRITY', 'SPORT'].includes(a.category?.toUpperCase())) ||
       getByCat(['EDUCATION', 'LIFESTYLE', 'CELEBRITY', 'SPORT'])[0];
 
-    const pool = [worldArt, politicsArt, techArt, financeArt, cultureArt].filter(Boolean);
+    const pool = [nigeriaArt, worldArt, politicsArt, techArt, financeArt, cultureArt].filter(Boolean);
 
     // Ensure we always have 5 items
     if (pool.length < 5) {

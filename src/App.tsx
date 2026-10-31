@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { HeaderNav } from './components/HeaderNav';
 import { HeroSection } from './components/HeroSection';
 import { HeadlinesSection } from './components/HeadlinesSection';
+import { NigeriaSection } from './components/NigeriaSection';
 import { BooksSection } from './components/BooksSection';
 import { MuseumSection } from './components/MuseumSection';
 import { SportsSection } from './components/SportsSection';
@@ -55,7 +56,7 @@ const getInitialSelectedArticle = (): any | null => {
     }
 
     // 2. Check general articles cache
-    const cachedArticles = sessionStorage.getItem('tc_cached_articles');
+    const cachedArticles = sessionStorage.getItem('tc_cached_articles_v3');
     if (cachedArticles) {
       const list = JSON.parse(cachedArticles);
       if (Array.isArray(list)) {
@@ -177,7 +178,7 @@ function MainApp() {
   // Live Database Articles (Synchronously restored from session cache on frame 0)
   const [articles, setArticles] = useState<Article[]>(() => {
     try {
-      const cached = sessionStorage.getItem('tc_cached_articles');
+      const cached = sessionStorage.getItem('tc_cached_articles_v3');
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
@@ -252,7 +253,7 @@ function MainApp() {
         setArticles(mapped);
         setLoadedArticles(mapped);
         try {
-          sessionStorage.setItem('tc_cached_articles', JSON.stringify(mapped.slice(0, 60)));
+          sessionStorage.setItem('tc_cached_articles_v3', JSON.stringify(mapped.slice(0, 60)));
         } catch {}
       }
     } catch (err) {
@@ -575,6 +576,15 @@ function MainApp() {
               onSelectArticle={(art) => handleSelectArticle(art as Article)}
               onToggleBookmark={handleToggleBookmark}
               bookmarkedIds={bookmarkedIds}
+            />
+
+            {/* Nigeria National Dispatches Section */}
+            <NigeriaSection
+              onSelectArticle={(art) => handleSelectArticle(art as Article)}
+              onToggleBookmark={handleToggleBookmark}
+              bookmarkedIds={bookmarkedIds}
+              onNavigateToCategory={() => handleSelectSection('NIGERIA')}
+              articles={articles.filter((a) => a.category?.toUpperCase() === 'NIGERIA')}
             />
 
             {/* Section 1: WORLD & POLITICS */}

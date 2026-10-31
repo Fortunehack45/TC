@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Bookmark, ArrowUpRight, ArrowRight, Clock, Calendar, User, Tag, Filter, Sparkles, ChevronRight, Home, Activity, Headphones, Eye } from 'lucide-react';
 import { DBArticle } from '../lib/database.types';
 import { getArticles } from '../lib/supabase';
+import { cleanEditorialTitle } from '../data/artData';
 import { ArtGraphic } from './ArtGraphics';
 import { getAllArticles, Article } from '../data/artData';
 import { getPostPreviewImage } from '../lib/imageHelper';
@@ -124,9 +125,9 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({
   // Transform Supabase articles directly - 100% database driven
   const combinedArticles: any[] = dbArticles.map((a) => ({
     id: a.id,
-    title: a.title,
-    subtitle: a.subtitle,
-    excerpt: a.subtitle || (a.content_html ? a.content_html.replace(/<[^>]+>/g, '').slice(0, 180) + '...' : ''),
+    title: cleanEditorialTitle(a.title),
+    subtitle: a.subtitle ? cleanEditorialTitle(a.subtitle) : undefined,
+    excerpt: a.subtitle ? cleanEditorialTitle(a.subtitle) : (a.content_html ? a.content_html.replace(/<[^>]+>/g, '').slice(0, 180) + '...' : ''),
     content_html: a.content_html,
     category: a.category_id,
     section: a.category_id,

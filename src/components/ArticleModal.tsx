@@ -7,6 +7,7 @@ import { toggleArticleLike, getArticleInteractionState, getArticleLikesCount, re
 import { ArrowLeft, Bookmark, Share2, Type, Clock, Calendar, User, Check, Play, Heart, ChevronRight, Home, Tag, Video, Eye } from 'lucide-react';
 import { formatProgressiveTimestamp } from '../lib/lifecycle';
 import { ShareModal } from './ShareModal';
+import { getPostPreviewImage } from '../lib/imageHelper';
 
 interface ArticleModalProps {
   article: (Article & { content_html?: string; cover_image_url?: string; video_url?: string; tags?: string[] }) | null;
@@ -35,122 +36,80 @@ function sanitizeEditorialHtml(rawHtml: string): string {
   // 3. Fix headings: remove markdown hashes and AI labels (e.g. <h3>## Title</h3> or <h3>Section Heading: Title</h3>)
   html = html.replace(/<h3([^>]*)>\s*(?:#{1,4}\s*|(?:Section\s+Heading|Chapter\s+\d+|Section\s+\d+|Part\s+\d+|Heading):\s*)+/gi, '<h3$1>');
 
-  // 4. Unwrap any existing figures or duplicate blockquotes to avoid nested cascade borders
-  html = html.replace(/<\/?figure\b[^>]*>/gi, '');
-  while (/<blockquote\b[^>]*>\s*<blockquote\b[^>]*>/i.test(html)) {
-    html = html.replace(/<blockquote\b[^>]*>\s*<blockquote\b[^>]*>/gi, '<blockquote>');
+  // 4. Unnest nested figures to avoid cascading multi-line borders
+  while (/<figure\b[^>]*>(?:(?!<\/figure>)[\s\S])*<figure\b/i.test(html)) {
+    html = html.replace(/(<figure\b[^>]*>[\s\S]*?)<figure\b[^>]*>([\s\S]*?)<\/figure>([\s\S]*?<\/figure>)/gi, '$1$2$3');
   }
-  while (/<\/blockquote>\s*<\/blockquote>/i.test(html)) {
-    html = html.replace(/<\/blockquote>\s*<\/blockquote>/gi, '</blockquote>');
+  html = html.replace(/<\/figure>\s*<\/figure>/gi, '</figure>');
+
+  // 5. Rescue stranded figcaption: </figure><figcaption ...> -> move inside figure
+  while (/<\/figure>\s*<figcaption\b([^>]*)>([\s\S]*?)<\/figcaption>/i.test(html)) {
+    html = html.replace(/<\/figure>\s*<figcaption\b([^>]*)>([\s\S]*?)<\/figcaption>/gi, '<figcaption$1>$2</figcaption></figure>');
   }
 
-  // 5. Fix broken blockquote wrappers and stray tags
-  html = html.replace(/<\/p>\s*<p>\s*<\/blockquote>/gi, '</p></blockquote>');
-  html = html.replace(/<p>\s*<\/blockquote>/gi, '</blockquote>');
-  html = html.replace(/<\/blockquote>\s*<p>\s*<\/blockquote>/gi, '</blockquote>');
-  html = html.replace(/<\/blockquote>\s*<p>(?=\s*<(?:h[1-6]|div|figure|blockquote|table)|$)/gi, '</blockquote>');
-
-  // 6. Merge adjacent blockquotes or <p> tags where the second is an attribution (e.g. <blockquote>— Will Packer</blockquote>)
-  const adjBqRegex = /<blockquote\b[^>]*>([\s\S]*?)<\/blockquote>\s*<blockquote\b[^>]*>\s*(?:<p[^>]*>)?\s*(?:&ldquo;|“|"|'|‘|\s)*(?:&mdash;|—|-{1,2}|–)\s*([\s\S]*?)\s*(?:&rdquo;|”|"|'|’|\s)*(?:<\/p>)?\s*<\/blockquote>/gi;
-  while (adjBqRegex.test(html)) {
-    html = html.replace(adjBqRegex, (_, qInner, spkRaw) => {
-      const spk = spkRaw.replace(/<\/?(?:p|span|footer|figcaption)[^>]*>/gi, '').trim().replace(/^['"-—– \t\r\n]+|['"-—– \t\r\n.]+$/g, '');
-      return `<blockquote>${qInner}<footer>${spk}</footer></blockquote>`;
+  // 6. Merge adjacent attribution figure or paragraph into preceding figure
+  const adjAttrRegex = /(<figure\b[^>]*>\s*<blockquote\b[^>]*>[\s\S]*?<\/blockquote>\s*)(?:<figcaption\b[^>]*>[\s\S]*?<\/figcaption>\s*)?<\/figure>\s*<(?:p|blockquote|figure)[^>]*>(?:\s*<blockquote\b[^>]*>)?\s*(?:<p[^>]*>)?\s*(?:&ldquo;|“|"|\s)*(?:&mdash;|—|-{1,2}|–)\s*([A-Za-z0-9\s.,'\"()&/–—-]{3,120}?)\s*(?:&rdquo;|”|"|\s)*(?:<\/p>)?(?:\s*<\/blockquote>)?\s*<\/(?:p|blockquote|figure)>/gi;
+  while (adjAttrRegex.test(html)) {
+    html = html.replace(adjAttrRegex, (_, figHead, spkRaw) => {
+      const spk = spkRaw.replace(/<\/?(?:p|span|footer|figcaption)[^>]*>/gi, '').replace(/^[—–-]+\s*/, '').trim().replace(/^['"-—– \t\r\n]+|['"-—– \t\r\n.]+$/g, '');
+      return `${figHead.trim()}<figcaption class="mt-3.5 text-xs font-mono-meta text-stone-400 not-italic uppercase tracking-wider flex items-center gap-2"><span class="w-5 h-0.5 bg-[#E50914] inline-block shrink-0"></span><span>${spk}</span></figcaption></figure>`;
     });
   }
 
-  const adjPRegex = /<blockquote\b[^>]*>([\s\S]*?)<\/blockquote>\s*<p[^>]*>\s*(?:&ldquo;|“|"|'|‘|\s)*(?:&mdash;|—|-{1,2}|–)\s*([A-Z][a-zA-Z\s.,'"-]{3,80}?)\s*(?:&rdquo;|”|"|'|’|\s)*<\/p>/gi;
-  while (adjPRegex.test(html)) {
-    html = html.replace(adjPRegex, (_, qInner, spkRaw) => {
-      const spk = spkRaw.replace(/<\/?(?:p|span|footer|figcaption)[^>]*>/gi, '').trim().replace(/^['"-—– \t\r\n]+|['"-—– \t\r\n.]+$/g, '');
-      return `<blockquote>${qInner}<footer>${spk}</footer></blockquote>`;
-    });
-  }
+  // 7. Protect well-formed <figure> blocks with placeholders before processing bare blockquotes
+  const figBlocks: string[] = [];
+  html = html.replace(/<figure\b[\s\S]*?<\/figure>/gi, (fig) => {
+    figBlocks.push(fig);
+    return `<!--FIG_BLOCK_${figBlocks.length - 1}-->`;
+  });
 
-  // 7. Standardize blockquotes into exactly ONE clean broadsheet pullquote with correct speaker attribution
-  html = html.replace(/([\s\S]{0,450})<blockquote\b[^>]*>([\s\S]*?)<\/blockquote>/gi, (match, beforeContext, bqInner) => {
-    let inner = bqInner;
-    let speaker = '';
+  // 8. Transform any remaining bare blockquotes into clean broadsheet figures
+  const bareBqRegex = /<blockquote\b[^>]*>([\s\S]*?)<\/blockquote>(?:\s*<(?:p|figcaption|footer)[^>]*>\s*(?:&mdash;|—|-{1,2}|–)?\s*([A-Za-z0-9\s.,'\"()&/–—-]{3,100}?)\s*<\/(?:p|figcaption|footer)>)?/gi;
+  html = html.replace(bareBqRegex, (_, bqInner, trailingSpk) => {
+    let inner = bqInner.trim();
+    let speaker = trailingSpk ? trailingSpk.replace(/^[—–-]+\s*/, '').trim() : '';
 
-    // First check inside the quote for footer or figcaption
     const footerMatch = inner.match(/<(?:footer|figcaption)[^>]*>\s*(?:<span[^>]*><\/span>)?\s*(?:&mdash;|—|-)?\s*([\s\S]*?)<\/(?:footer|figcaption)>/i);
     if (footerMatch) {
-      const rawSpk = footerMatch[1].replace(/<[^>]+>/g, '').trim().replace(/^['"-— \t\r\n]+|['"-— \t\r\n]+$/g, '');
+      const rawSpk = footerMatch[1].replace(/<[^>]+>/g, '').replace(/^[—–-]+\s*/, '').trim().replace(/^['"-— \t\r\n]+|['"-— \t\r\n]+$/g, '');
       if (!/desk|affairs|statutory|disclosure|editorial/i.test(rawSpk)) {
         speaker = rawSpk;
       }
-      inner = inner.replace(/<(?:footer|figcaption)[^>]*>[\s\S]*?<\/(?:footer|figcaption)>/gi, '');
-    }
-
-    // Check if inner ends with trailing attribution: — Speaker
-    if (!speaker) {
-      const endSpkMatch = inner.trim().match(/(?:&mdash;|—|-{1,2}|–)\s*([A-Z][a-zA-Z\s.,'"-]{3,80})$/);
-      if (endSpkMatch) {
-        const rawSpk = endSpkMatch[1].replace(/<[^>]+>/g, '').trim().replace(/^['"-—– \t\r\n]+|['"-—– \t\r\n.]+$/g, '');
-        if (!/desk|affairs|statutory|disclosure|editorial/i.test(rawSpk) && rawSpk.length > 2) {
-          speaker = rawSpk;
-          inner = inner.slice(0, inner.lastIndexOf(endSpkMatch[0])).trim();
-        }
-      }
-    }
-
-    // If speaker is still empty, extract from the preceding text context
-    if (!speaker && beforeContext) {
-      const spkRoleMatch = beforeContext.match(/([A-Z][a-zA-Z\s.\'-]{2,35})\s*\(([^)]+)\)\s*:/);
-      if (spkRoleMatch) {
-        const name = spkRoleMatch[1].trim();
-        const role = spkRoleMatch[2].trim();
-        if (!/desk|affairs|statutory|disclosure|editorial|section|part|chapter/i.test(name)) {
-          speaker = `${name}, ${role}`;
-        }
-      } else {
-        const spkSaidMatch = beforeContext.match(/([A-Z][a-zA-Z\s.\'-]{2,35})\s*,\s*([^<.,\n]+?)\s*,\s*(?:said|stated|remarked|declared|noted|explained|added)\b/i);
-        if (spkSaidMatch) {
-          const name = spkSaidMatch[1].trim();
-          const role = spkSaidMatch[2].trim();
-          if (!/desk|affairs|statutory|disclosure|editorial/i.test(name)) {
-            speaker = `${name}, ${role}`;
-          }
-        } else {
-          const verbMatch = beforeContext.match(/(?:said|stated|remarked|declared|noted|warned|explained)\s+([A-Z][a-zA-Z\s.\'-]{2,35})(?:\s*,\s*([^<.,\n]+))?/i);
-          if (verbMatch) {
-            const name = verbMatch[1].trim();
-            const role = verbMatch[2] ? verbMatch[2].trim() : '';
-            if (!/desk|affairs|statutory|disclosure|editorial/i.test(name)) {
-              speaker = role ? `${name}, ${role}` : name;
-            }
-          } else {
-            const colonMatch = beforeContext.match(/([A-Z][a-zA-Z\s.\'-]{2,30})\s*:\s*["“']/);
-            if (colonMatch) {
-              const name = colonMatch[1].trim();
-              if (!/desk|affairs|statutory|disclosure|editorial|section|part|chapter|who|what|when|where|note/i.test(name)) {
-                speaker = name;
-              }
-            }
-          }
-        }
-      }
+      inner = inner.replace(/<(?:footer|figcaption)[^>]*>[\s\S]*?<\/(?:footer|figcaption)>/gi, '').trim();
     }
 
     let quoteText = inner.replace(/<\/?(?:p|blockquote)[^>]*>/gi, '').trim();
     quoteText = quoteText.replace(/^(?:&ldquo;|“|"|'|‘|\s)+|(?:&rdquo;|”|"|'|’|\s)+$/g, '').trim();
-    quoteText = quoteText.replace(/[,;]\.([”"’'])/g, '.$1').replace(/\.[,;]([”"’'])/g, '.$1');
-    quoteText = quoteText.replace(/([.,;!?])[.,;!?]+/g, '$1');
-    if (quoteText && !/[.!?]$/.test(quoteText)) quoteText += '.';
-
-    // Discard isolated attribution blockquote that has no quote content
     if (!quoteText || /^(?:&mdash;|—|-{1,2}|–)\s*[A-Z]/.test(quoteText)) {
-      return beforeContext;
+      return '';
     }
+    if (!/[.!?]$/.test(quoteText)) quoteText += '.';
 
     const figCap = speaker
       ? `<figcaption class="mt-3.5 text-xs font-mono-meta text-stone-400 not-italic uppercase tracking-wider flex items-center gap-2"><span class="w-5 h-0.5 bg-[#E50914] inline-block shrink-0"></span><span>${speaker}</span></figcaption>`
       : '';
-    return `${beforeContext}<figure class="my-8 py-5 px-6 border-l-4 border-[#E50914] bg-[#161616]/90 rounded-r-xs shadow-md"><blockquote class="font-editorial italic text-stone-100 text-lg sm:text-xl leading-relaxed border-none pl-0 m-0">&ldquo;${quoteText}&rdquo;</blockquote>${figCap}</figure>`;
+    return `<figure class="my-8 py-5 px-6 border-l-4 border-[#E50914] bg-[#161616]/90 rounded-r-xs shadow-md"><blockquote class="font-editorial italic text-stone-100 text-lg sm:text-xl leading-relaxed border-none pl-0 m-0">&ldquo;${quoteText}&rdquo;</blockquote>${figCap}</figure>`;
   });
 
-  // 5. Convert ASCII and Markdown tables into responsive broadsheet tables
-  const tableBlockRegex = /(?:<p>\s*([A-Z0-9\s()&;:/\.,'"-]{4,90})\s*<\/p>\s*)?((?:<p>\s*(?:\+[-+]+\+|\|(?:(?!<\/p>)[\s\S])+)\s*<\/p>\s*){2,})/gi;
+  // 9. Restore protected figures
+  html = html.replace(/<!--FIG_BLOCK_(\d+)-->/g, (_, idx) => figBlocks[Number(idx)] || '');
+
+  // 10. Clean quote spacing inside all figures and blockquotes
+  html = html.replace(/&ldquo;\s+/g, '&ldquo;');
+  html = html.replace(/\s+&rdquo;/g, '&rdquo;');
+  html = html.replace(/“\s+/g, '“');
+  html = html.replace(/\s+”/g, '”');
+  html = html.replace(/(<blockquote\b[^>]*>(?:&ldquo;|“|"))\s+([A-Za-z])/gi, '$1$2');
+
+  // 11. Protect well-formed broadsheet tables before processing raw ASCII tables
+  const tblBlocks: string[] = [];
+  html = html.replace(/<div\b[^>]*overflow-x-auto[\s\S]*?<\/table>\s*<\/div>/gi, (tbl) => {
+    tblBlocks.push(tbl);
+    return `<!--TBL_BLOCK_${tblBlocks.length - 1}-->`;
+  });
+
+  // 12. Convert ASCII, Unicode diagrams, and Markdown tables into responsive broadsheet tables
+  const tableBlockRegex = /(?:<p>\s*([A-Za-z0-9\s()&;:/\.,'"-]{4,90})\s*<\/p>\s*)?((?:<p>\s*(?:[+┌└├▼][-+═─│|\s►•₦X]+|[│|](?:(?!<\/p>)[\s\S])+)\s*<\/p>\s*){2,})/gi;
   html = html.replace(tableBlockRegex, (_, preTitle, rawBlock) => {
     let title = '';
     let leadHtml = '';
@@ -168,17 +127,22 @@ function sanitizeEditorialHtml(rawHtml: string): string {
     let isDiagram = false;
 
     for (const line of pLines) {
-      if (/^\+[-+=]+\+$/.test(line) || /^\|[-+=|]+\|$/.test(line)) continue;
-      if (line.includes('<---') || line.includes('--->') || /\s+\^\s+/.test(line)) {
+      if (/^[+┌└├▼][-+═─│|\s]+[+┐┘┤]?$/.test(line) || /^\+[-+=]+\+$/.test(line) || /^[│|][-+=|│]+[│|]$/.test(line)) continue;
+      if (line.includes('<---') || line.includes('--->') || line.includes('──►') || /\s+\^\s+/.test(line)) {
         isDiagram = true;
       }
-      if (line.startsWith('|') && line.endsWith('|')) {
+      if ((line.startsWith('|') || line.startsWith('│')) && (line.endsWith('|') || line.endsWith('│'))) {
         const inner = line.slice(1, -1);
-        rows.push(inner.split('|').map((c: string) => c.trim()));
-      } else if (line.startsWith('|')) {
-        rows.push(line.slice(1).split('|').map((c: string) => c.trim()));
+        rows.push(inner.split(/[|│]/).map((c: string) => c.replace(/^[•\s]+|[•\s]+$/g, '').trim()).filter(Boolean));
+      } else if (line.startsWith('|') || line.startsWith('│')) {
+        rows.push(line.slice(1).split(/[|│]/).map((c: string) => c.replace(/^[•\s]+|[•\s]+$/g, '').trim()).filter(Boolean));
       } else {
-        rows.push([line]);
+        const parts = line.split(/\s*[│|]\s*(?:──►\s*)?[│|]?\s*/).map((c: string) => c.replace(/^[•\s]+|[•\s]+$/g, '').trim()).filter(Boolean);
+        if (parts.length > 1) {
+          rows.push(parts);
+        } else {
+          rows.push([line]);
+        }
       }
     }
 
@@ -194,24 +158,24 @@ function sanitizeEditorialHtml(rawHtml: string): string {
     if (rows.length === 0) return rawBlock;
 
     if (isDiagram) {
-      const rawText = pLines.filter((l: string) => !/^\+[-+=]+\+$/.test(l)).map((l: string) => l.replace(/^\||\|$/g, '')).join('\n');
-      const titleHtml = title ? `<div class="p-3 font-editorial font-bold text-stone-200 uppercase tracking-wider bg-[#1B1B1B] border-b border-[#2D2D2D]">${title}</div>` : '';
-      return `${leadHtml}<div class="my-6 border border-[#2D2D2D] rounded-xs bg-[#161616] overflow-hidden">${titleHtml}<pre class="p-4 overflow-x-auto font-mono text-xs sm:text-sm text-stone-300 leading-relaxed bg-[#111111]">${rawText}</pre></div>`;
+      const rawText = pLines.filter((l: string) => !/^[+┌└├▼][-+═─│|\s]+[+┐┘┤]?$/.test(l) && !/^\+[-+=]+\+$/.test(l)).map((l: string) => l.replace(/^[|│]|[|│]$/g, '')).join('\n');
+      const titleHtml = title ? `<div class="bg-[#1C1C1C] border-b border-[#2D2D2D] px-4 py-3 font-editorial font-bold text-stone-200 uppercase tracking-wider">${title}</div>` : '';
+      return `${leadHtml}<div class="my-8 border border-[#2D2D2D] rounded-xs bg-[#161616] overflow-hidden">${titleHtml}<pre class="p-4 overflow-x-auto font-mono text-xs sm:text-sm text-stone-300 leading-relaxed bg-[#111111]">${rawText}</pre></div>`;
     }
 
     const maxCols = Math.max(...rows.map((r: string[]) => r.length));
     if (maxCols === 1) {
-      const titleHtml = title ? `<div class="p-3 font-editorial font-bold text-stone-200 uppercase tracking-wider bg-[#1B1B1B] border-b border-[#2D2D2D]">${title}</div>` : '';
+      const titleHtml = title ? `<div class="bg-[#1C1C1C] border-b border-[#2D2D2D] px-4 py-3 font-editorial font-bold text-stone-200 uppercase tracking-wider">${title}</div>` : '';
       const itemsHtml = rows.map((r: string[]) => {
         const val = r[0].replace(/^[ -*•]+|[ -*•]+$/g, '');
         return val ? `<div class="py-2.5 px-4 border-b border-[#262626] last:border-b-0 flex items-start gap-2.5"><span class="text-[#E50914] font-bold mt-0.5">&bull;</span><span class="text-stone-300 text-xs sm:text-sm font-sans-body">${val}</span></div>` : '';
       }).filter(Boolean).join('');
-      return `${leadHtml}<div class="my-6 border border-[#2D2D2D] rounded-xs bg-[#161616] overflow-hidden">${titleHtml}<div class="divide-y divide-[#222222]">${itemsHtml}</div></div>`;
+      return `${leadHtml}<div class="my-8 border border-[#2D2D2D] rounded-xs bg-[#161616] overflow-hidden">${titleHtml}<div class="divide-y divide-[#222222]">${itemsHtml}</div></div>`;
     }
 
     const headerRow = rows[0];
     const dataRows = rows.slice(1);
-    const captionHtml = title ? `<caption class="p-3 text-left font-editorial font-bold text-stone-200 uppercase tracking-wider bg-[#1B1B1B] border-b border-[#2D2D2D]">${title}</caption>` : '';
+    const titleHtml = title ? `<div class="bg-[#1C1C1C] border-b border-[#2D2D2D] px-4 py-3 flex items-center justify-between"><div class="font-editorial font-bold text-sm sm:text-base text-stone-100 uppercase tracking-wider flex items-center gap-2"><span class="w-2.5 h-2.5 bg-[#E50914] inline-block shrink-0 rounded-full"></span><span>${title}</span></div><span class="text-[10px] font-mono-meta text-stone-500 uppercase tracking-widest">DATA MATRIX / DISPATCH</span></div>` : '';
     const thCells = headerRow.map((c: string) => `<th class="py-2.5 px-4 font-semibold uppercase tracking-wider border-r border-[#262626] last:border-r-0">${c}</th>`).join('');
     const theadHtml = `<thead class="bg-[#1F1F1F] text-[#E50914] font-bold border-b border-[#2D2D2D]"><tr>${thCells}</tr></thead>`;
     const trList = dataRows.map((row: string[]) => {
@@ -220,8 +184,15 @@ function sanitizeEditorialHtml(rawHtml: string): string {
       return `<tr class="hover:bg-[#1E1E1E]/60 transition-colors odd:bg-[#161616] even:bg-[#191919]">${tdCells}</tr>`;
     }).join('');
     const tbodyHtml = `<tbody class="divide-y divide-[#262626] text-stone-300 font-mono-meta text-xs sm:text-sm">${trList}</tbody>`;
-    return `${leadHtml}<div class="my-6 overflow-x-auto border border-[#2D2D2D] rounded-xs bg-[#161616] shadow-md"><table class="w-full text-left font-mono-meta text-xs sm:text-sm border-collapse">${captionHtml}${theadHtml}${tbodyHtml}</table></div>`;
+    return `${leadHtml}<div class="my-8 overflow-x-auto border border-[#2D2D2D] rounded-xs bg-[#161616] shadow-md">${titleHtml}<table class="w-full text-left font-mono-meta text-xs sm:text-sm border-collapse m-0">${theadHtml}${tbodyHtml}</table></div>`;
   });
+
+  // 13. Strip orphan ASCII separator paragraphs
+  html = html.replace(/<p>\s*[+┌└├▼][-+═─│|\s►•₦X]+[+┐┘┤]?\s*<\/p>/gi, '');
+  html = html.replace(/<p>\s*\+[-=+]+\+\s*<\/p>/gi, '');
+
+  // 14. Restore protected broadsheet tables
+  html = html.replace(/<!--TBL_BLOCK_(\d+)-->/g, (_, idx) => tblBlocks[Number(idx)] || '');
 
   // 6. Fix punctuation spacing
   html = html.replace(/([a-z0-9])\.([A-Z])/g, '$1. $2');
@@ -511,33 +482,42 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
           </p>
         )}
 
-        {/* Cover Artwork or Image */}
-        {article.cover_image_url ? (
-          <div className="w-full h-64 sm:h-96 md:h-[480px] rounded-xs overflow-hidden border border-[#282828] mb-10 relative group shadow-2xl">
-            <img
-              src={article.cover_image_url || article.imageUrl}
-              alt={article.title}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = '/og-image.png';
-              }}
-            />
-          </div>
-        ) : article.imageKey ? (
-          <div className="w-full h-64 sm:h-96 md:h-[480px] rounded-xs overflow-hidden border border-[#282828] mb-10 relative group shadow-2xl">
-            <ArtGraphic type={article.imageKey} className="w-full h-full object-cover" />
-            {article.section === 'PODCASTS' && onPlayPodcast && (
-              <div className="absolute inset-0 bg-black/40 flex items-center justify-center p-4">
-                <button
-                  onClick={() => onPlayPodcast(article as Article)}
-                  className="bg-[#E50914] hover:bg-[#C40711] text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-2 font-mono-meta text-xs sm:text-sm font-bold transition-transform hover:scale-105"
-                >
-                  <Play className="w-5 h-5 fill-white ml-0.5" /> PLAY FULL AUDIO EPISODE
-                </button>
+        {/* Resolved Cover Artwork or Image - Balanced Desktop & Mobile Aspect */}
+        {(() => {
+          const resolvedImage = getPostPreviewImage(article);
+          if (resolvedImage) {
+            return (
+              <div className="w-full max-w-[980px] mx-auto aspect-[16/9] sm:aspect-[1.84/1] rounded-lg overflow-hidden border border-[#282828] mb-10 relative group shadow-2xl bg-[#141414]">
+                <img
+                  src={resolvedImage}
+                  alt={article.title}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/og-image.png';
+                  }}
+                />
+                {article.section === 'PODCASTS' && onPlayPodcast && (
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center p-4">
+                    <button
+                      onClick={() => onPlayPodcast(article as Article)}
+                      className="bg-[#E50914] hover:bg-[#C40711] text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-2 font-mono-meta text-xs sm:text-sm font-bold transition-transform hover:scale-105"
+                    >
+                      <Play className="w-5 h-5 fill-white ml-0.5" /> PLAY FULL AUDIO EPISODE
+                    </button>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        ) : null}
+            );
+          }
+          if (article.imageKey) {
+            return (
+              <div className="w-full max-w-[980px] mx-auto aspect-[16/9] sm:aspect-[1.84/1] rounded-lg overflow-hidden border border-[#282828] mb-10 relative group shadow-2xl bg-[#141414]">
+                <ArtGraphic type={article.imageKey} className="w-full h-full object-cover" />
+              </div>
+            );
+          }
+          return null;
+        })()}
 
         {/* Video Embed if Present */}
         {article.video_url && (

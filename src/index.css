@@ -226,11 +226,52 @@ figure blockquote {
   border-radius: 0 !important;
 }
 
+figure figure,
+.prose figure figure,
+.article-prose figure figure {
+  border-left: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
 .prose table, .article-prose table {
   border-collapse: collapse !important;
   width: 100% !important;
   margin: 1.5rem 0 !important;
   border: 1px solid #333333 !important;
+}
+
+.prose div.overflow-x-auto,
+.article-prose div.overflow-x-auto {
+  margin: 2rem 0 !important;
+  border: 1px solid #2d2d2d !important;
+  border-radius: 4px !important;
+  background-color: #161616 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+}
+
+.prose div.overflow-x-auto table,
+.article-prose div.overflow-x-auto table {
+  margin: 0 !important;
+  border: none !important;
+  width: 100% !important;
+  border-collapse: collapse !important;
+}
+
+.prose div.overflow-x-auto th,
+.article-prose div.overflow-x-auto th {
+  background-color: #1F1F1F !important;
+  color: #E50914 !important;
+  font-weight: 700 !important;
+  padding: 10px 16px !important;
+  border-bottom: 1px solid #2d2d2d !important;
+}
+
+.prose div.overflow-x-auto td,
+.article-prose div.overflow-x-auto td {
+  padding: 10px 16px !important;
+  border-bottom: 1px solid #222222 !important;
 }
 
 .prose td, .article-prose td,

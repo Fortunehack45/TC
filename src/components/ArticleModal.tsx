@@ -47,7 +47,26 @@ function sanitizeEditorialHtml(rawHtml: string): string {
     html = html.replace(/<\/figure>\s*<figcaption\b([^>]*)>([\s\S]*?)<\/figcaption>/gi, '<figcaption$1>$2</figcaption></figure>');
   }
 
-  // 6. Merge adjacent attribution figure or paragraph into preceding figure
+  // 6. Handle blockquote with TWO paragraphs where 2nd paragraph is attribution:
+  // <blockquote><p>"Quote"</p><p>— Speaker</p></blockquote>
+  html = html.replace(
+    /<blockquote\b[^>]*>\s*(<p\b[^>]*>[\s\S]*?<\/p>)\s*<p\b[^>]*>\s*(?:&ldquo;|“|"|\s)*(?:&mdash;|—|-{1,2}|–)\s*([^\s<>\r\n][^<>\r\n]{2,120}?)\s*(?:&rdquo;|”|"|\s)*<\/p>\s*<\/blockquote>/gi,
+    (_, qPart, spkPart) => {
+      const spk = spkPart.replace(/^[—–-]+\s*/, '').trim().replace(/^['"-—– \t\r\n]+|['"-—– \t\r\n.]+$/g, '');
+      return `<blockquote>${qPart}<footer>${spk}</footer></blockquote>`;
+    }
+  );
+
+  // 7. Handle inline attribution: <blockquote><p>"Quote..." - Speaker, Title</p></blockquote>
+  html = html.replace(
+    /(<blockquote\b[^>]*>\s*<p\b[^>]*>)\s*(?:&ldquo;|“|")\s*([\s\S]+?)\s*(?:&rdquo;|”|")\s*(?:&mdash;|—|-{1,2}|–)\s*([A-Za-z0-9\s.,'\"()&/–—-]{3,100}?)\s*<\/p>\s*<\/blockquote>/gi,
+    (_, prefix, qText, spkPart) => {
+      const spk = spkPart.replace(/^[—–-]+\s*/, '').trim().replace(/^['"-—– \t\r\n]+|['"-—– \t\r\n.]+$/g, '');
+      return `${prefix}&ldquo;${qText.trim()}&rdquo;<footer>${spk}</footer></p></blockquote>`;
+    }
+  );
+
+  // 8. Merge adjacent attribution figure or paragraph into preceding figure
   const adjAttrRegex = /(<figure\b[^>]*>\s*<blockquote\b[^>]*>[\s\S]*?<\/blockquote>\s*)(?:<figcaption\b[^>]*>[\s\S]*?<\/figcaption>\s*)?<\/figure>\s*<(?:p|blockquote|figure)[^>]*>(?:\s*<blockquote\b[^>]*>)?\s*(?:<p[^>]*>)?\s*(?:&ldquo;|“|"|\s)*(?:&mdash;|—|-{1,2}|–)\s*([A-Za-z0-9\s.,'\"()&/–—-]{3,120}?)\s*(?:&rdquo;|”|"|\s)*(?:<\/p>)?(?:\s*<\/blockquote>)?\s*<\/(?:p|blockquote|figure)>/gi;
   while (adjAttrRegex.test(html)) {
     html = html.replace(adjAttrRegex, (_, figHead, spkRaw) => {
@@ -56,14 +75,24 @@ function sanitizeEditorialHtml(rawHtml: string): string {
     });
   }
 
-  // 7. Protect well-formed <figure> blocks with placeholders before processing bare blockquotes
+  // 9. Protect well-formed <figure> blocks with placeholders before processing bare blockquotes
   const figBlocks: string[] = [];
   html = html.replace(/<figure\b[\s\S]*?<\/figure>/gi, (fig) => {
     figBlocks.push(fig);
     return `<!--FIG_BLOCK_${figBlocks.length - 1}-->`;
   });
 
-  // 8. Transform any remaining bare blockquotes into clean broadsheet figures
+  // 10. Merge consecutive bare blockquotes where 2nd is attribution:
+  // <blockquote>Quote</blockquote> <blockquote>— Speaker</blockquote>
+  const adjBqs = /<blockquote\b[^>]*>([\s\S]*?)<\/blockquote>\s*<blockquote\b[^>]*>\s*(?:<p[^>]*>)?\s*(?:&ldquo;|“|"|\s)*(?:&mdash;|—|-{1,2}|–)\s*([^\s<>\r\n][^<>\r\n]{2,120}?)\s*(?:&rdquo;|”|"|\s)*(?:<\/p>)?\s*<\/blockquote>/gi;
+  while (adjBqs.test(html)) {
+    html = html.replace(adjBqs, (_, qInner, spkRaw) => {
+      const spk = spkRaw.replace(/<\/?(?:p|span|footer|figcaption)[^>]*>/gi, '').replace(/^[—–-]+\s*/, '').trim().replace(/^['"-—– \t\r\n]+|['"-—– \t\r\n.]+$/g, '');
+      return `<blockquote>${qInner}<footer>${spk}</footer></blockquote>`;
+    });
+  }
+
+  // 11. Transform any remaining bare blockquotes into clean broadsheet figures
   const bareBqRegex = /<blockquote\b[^>]*>([\s\S]*?)<\/blockquote>(?:\s*<(?:p|figcaption|footer)[^>]*>\s*(?:&mdash;|—|-{1,2}|–)?\s*([A-Za-z0-9\s.,'\"()&/–—-]{3,100}?)\s*<\/(?:p|figcaption|footer)>)?/gi;
   html = html.replace(bareBqRegex, (_, bqInner, trailingSpk) => {
     let inner = bqInner.trim();
@@ -91,10 +120,10 @@ function sanitizeEditorialHtml(rawHtml: string): string {
     return `<figure class="my-8 py-5 px-6 border-l-4 border-[#E50914] bg-[#161616]/90 rounded-r-xs shadow-md"><blockquote class="font-editorial italic text-stone-100 text-lg sm:text-xl leading-relaxed border-none pl-0 m-0">&ldquo;${quoteText}&rdquo;</blockquote>${figCap}</figure>`;
   });
 
-  // 9. Restore protected figures
+  // 12. Restore protected figures
   html = html.replace(/<!--FIG_BLOCK_(\d+)-->/g, (_, idx) => figBlocks[Number(idx)] || '');
 
-  // 10. Clean quote spacing inside all figures and blockquotes
+  // 13. Clean quote spacing inside all figures and blockquotes
   html = html.replace(/&ldquo;\s+/g, '&ldquo;');
   html = html.replace(/\s+&rdquo;/g, '&rdquo;');
   html = html.replace(/“\s+/g, '“');

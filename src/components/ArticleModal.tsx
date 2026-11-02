@@ -70,7 +70,7 @@ function sanitizeEditorialHtml(rawHtml: string): string {
   const adjAttrRegex = /(<figure\b[^>]*>\s*<blockquote\b[^>]*>[\s\S]*?<\/blockquote>\s*)(?:<figcaption\b[^>]*>[\s\S]*?<\/figcaption>\s*)?<\/figure>\s*<(?:p|blockquote|figure)[^>]*>(?:\s*<blockquote\b[^>]*>)?\s*(?:<p[^>]*>)?\s*(?:&ldquo;|“|"|\s)*(?:&mdash;|—|-{1,2}|–)\s*([A-Za-z0-9\s.,'\"()&/–—-]{3,120}?)\s*(?:&rdquo;|”|"|\s)*(?:<\/p>)?(?:\s*<\/blockquote>)?\s*<\/(?:p|blockquote|figure)>/gi;
   while (adjAttrRegex.test(html)) {
     html = html.replace(adjAttrRegex, (_, figHead, spkRaw) => {
-      const spk = spkRaw.replace(/<\/?(?:p|span|footer|figcaption)[^>]*>/gi, '').replace(/^[—–-]+\s*/, '').trim().replace(/^['"-—– \t\r\n]+|['"-—– \t\r\n.]+$/g, '');
+      const spk = spkRaw.replace(/<\/?(?:p|span|footer|figcaption)[^>]*>/gi, '').replace(/^[—–-]+\s*/, '').trim().replace(/^['"-—– \t\r\n]+|['"-—– \t\r\n.]+$/g, '').replace(/[*_]+/g, '').trim();
       return `${figHead.trim()}<figcaption class="mt-3.5 text-xs font-mono-meta text-stone-400 not-italic uppercase tracking-wider flex items-center gap-2"><span class="w-5 h-0.5 bg-[#E50914] inline-block shrink-0"></span><span>${spk}</span></figcaption></figure>`;
     });
   }
@@ -87,7 +87,7 @@ function sanitizeEditorialHtml(rawHtml: string): string {
   const adjBqs = /<blockquote\b[^>]*>([\s\S]*?)<\/blockquote>\s*<blockquote\b[^>]*>\s*(?:<p[^>]*>)?\s*(?:&ldquo;|“|"|\s)*(?:&mdash;|—|-{1,2}|–)\s*([^\s<>\r\n][^<>\r\n]{2,120}?)\s*(?:&rdquo;|”|"|\s)*(?:<\/p>)?\s*<\/blockquote>/gi;
   while (adjBqs.test(html)) {
     html = html.replace(adjBqs, (_, qInner, spkRaw) => {
-      const spk = spkRaw.replace(/<\/?(?:p|span|footer|figcaption)[^>]*>/gi, '').replace(/^[—–-]+\s*/, '').trim().replace(/^['"-—– \t\r\n]+|['"-—– \t\r\n.]+$/g, '');
+      const spk = spkRaw.replace(/<\/?(?:p|span|footer|figcaption)[^>]*>/gi, '').replace(/^[—–-]+\s*/, '').trim().replace(/^['"-—– \t\r\n]+|['"-—– \t\r\n.]+$/g, '').replace(/[*_]+/g, '').trim();
       return `<blockquote>${qInner}<footer>${spk}</footer></blockquote>`;
     });
   }
@@ -96,11 +96,11 @@ function sanitizeEditorialHtml(rawHtml: string): string {
   const bareBqRegex = /<blockquote\b[^>]*>([\s\S]*?)<\/blockquote>(?:\s*<(?:p|figcaption|footer)[^>]*>\s*(?:&mdash;|—|-{1,2}|–)?\s*([A-Za-z0-9\s.,'\"()&/–—-]{3,100}?)\s*<\/(?:p|figcaption|footer)>)?/gi;
   html = html.replace(bareBqRegex, (_, bqInner, trailingSpk) => {
     let inner = bqInner.trim();
-    let speaker = trailingSpk ? trailingSpk.replace(/^[—–-]+\s*/, '').trim() : '';
+    let speaker = trailingSpk ? trailingSpk.replace(/^[—–-]+\s*/, '').trim().replace(/[*_]+/g, '').trim() : '';
 
     const footerMatch = inner.match(/<(?:footer|figcaption)[^>]*>\s*(?:<span[^>]*><\/span>)?\s*(?:&mdash;|—|-)?\s*([\s\S]*?)<\/(?:footer|figcaption)>/i);
     if (footerMatch) {
-      const rawSpk = footerMatch[1].replace(/<[^>]+>/g, '').replace(/^[—–-]+\s*/, '').trim().replace(/^['"-— \t\r\n]+|['"-— \t\r\n]+$/g, '');
+      const rawSpk = footerMatch[1].replace(/<[^>]+>/g, '').replace(/^[—–-]+\s*/, '').trim().replace(/^['"-— \t\r\n]+|['"-— \t\r\n]+$/g, '').replace(/[*_]+/g, '').trim();
       if (!/desk|affairs|statutory|disclosure|editorial/i.test(rawSpk)) {
         speaker = rawSpk;
       }
@@ -232,7 +232,16 @@ function sanitizeEditorialHtml(rawHtml: string): string {
   // 7. Format ASCII workflow arrows (+--->) into elegant broadsheet callout chips
   html = html.replace(/<p>\s*\+--+>\s*(.*?)\s*<\/p>/gi, '<div class="my-2 py-2 px-3.5 border-l-2 border-[#E50914] bg-[#161616] text-stone-300 text-xs sm:text-sm flex items-center gap-2.5 rounded-r-xs"><span class="text-[#E50914] font-bold">&rarr;</span><span>$1</span></div>');
 
-  // 8. Clean up redundant empty tags and residual paragraph wrappers
+  // 8. Purge prompt placeholder figures, leaked template headings, and raw markdown artifacts
+  html = html.replace(/<figure\b[^>]*>[\s\S]*?(?:Detailed official statement|witness testimony|Quote from named individual)[\s\S]*?<\/figure>/gi, '');
+  html = html.replace(/<h[1-6][^>]*>[^<]*?(?:Unvarnished[\w\s]*On[\w\s]*the[\w\s]*Record|Unvarnished|Official Quotes|Section Heading)[^<]*?<\/h[1-6]>/gi, '');
+  html = html.replace(/<p>\s*(?:These verbatim excerpts capture|These statements, delivered|Here is Part 2|Continuation chapters|\[BEGIN PART)[\s\S]*?<\/p>/gi, '');
+  html = html.replace(/(<figcaption\b[^>]*>[\s\S]*?)\*{1,3}(.*?)\*{1,3}/gi, '$1$2');
+  html = html.replace(/(<h[1-6][^>]*>)([\s\S]*?)(<\/h[1-6]>)/gi, (_, open, headingText, close) => `${open}${headingText.replace(/[*_]+/g, '').trim()}${close}`);
+  html = html.replace(/\*\*([^\*\n]+?)\*\*/g, '$1');
+  html = html.replace(/\*{2,}/g, '');
+
+  // 9. Clean up redundant empty tags and residual paragraph wrappers
   html = html.replace(/<p>\s*<\/p>/gi, '');
   html = html.replace(/<p>\s*(<(?:figure|div|table|h[1-6]|ul|ol|pre)\b)/gi, '$1');
   html = html.replace(/(<\/(?:figure|div|table|h[1-6]|ul|ol|pre)>)\s*<\/p>/gi, '$1');
